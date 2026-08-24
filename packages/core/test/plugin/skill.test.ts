@@ -24,6 +24,7 @@ describe("SkillPlugin.Plugin", () => {
           skill: {
             list: () => Effect.die("unused skill.list"),
             transform: skill.transform,
+            invalidate: skill.invalidate,
             reload: skill.reload,
           },
         }),
@@ -59,6 +60,7 @@ describe("SkillPlugin.Plugin", () => {
           skill: {
             list: () => Effect.die("unused skill.list"),
             transform: skill.transform,
+            invalidate: skill.invalidate,
             reload: skill.reload,
           },
         }),

@@ -124,6 +124,8 @@ const layer = Layer.effect(
 
     return Service.of({
       transform: state.transform,
+      invalidate: state.invalidate,
+      settle: state.settle,
       reload: state.reload,
       truncate,
       cleanup: () => cleanup(fs, directory),

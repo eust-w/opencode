@@ -69,16 +69,21 @@ export const layer = Layer.effect(
       })
 
     return Service.of({
+      invalidate: state.invalidate,
+      settle: state.settle,
       reload: state.reload,
       transform: state.transform,
-      get: Effect.fn("Command.get")((name) =>
-        Effect.sync(() => {
-          const definition = state.get().get(name)
-          return definition ? info(definition) : undefined
-        }),
-      ),
-      list: Effect.fn("Command.list")(() => Effect.sync(() => Array.from(state.get().values(), info))),
+      get: Effect.fn("Command.get")(function* (name) {
+        yield* state.settle()
+        const definition = state.get().get(name)
+        return definition ? info(definition) : undefined
+      }),
+      list: Effect.fn("Command.list")(function* () {
+        yield* state.settle()
+        return Array.from(state.get().values(), info)
+      }),
       execute: Effect.fn("Command.execute")(function* (input) {
+        yield* state.settle()
         const definition = state.get().get(input.name)
         if (!definition)
           return yield* new NotFoundError({ command: input.name, message: `Command not found: ${input.name}` })

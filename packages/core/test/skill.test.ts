@@ -52,6 +52,19 @@ describe("Skill", () => {
     }),
   )
 
+  it.effect("settles invalidated transforms before listing", () =>
+    Effect.gen(function* () {
+      const skill = yield* Skill.Service
+      let description = "Initial"
+      yield* skill.transform((draft) => draft.add(info("review", description)))
+
+      description = "Updated"
+      yield* skill.invalidate()
+
+      expect(yield* skill.list()).toEqual([info("review", "Updated")])
+    }),
+  )
+
   it.effect("restores earlier values when an updating transform is disposed", () =>
     Effect.gen(function* () {
       const skill = yield* Skill.Service

@@ -140,14 +140,18 @@ const layer = Layer.effect(
     })
     const result: Interface = {
       transform: state.transform,
+      invalidate: state.invalidate,
+      settle: state.settle,
       reload: state.reload,
 
       provider: {
         get: Effect.fn("Catalog.provider.get")(function* (providerID) {
+          yield* state.settle()
           return state.get().providers.get(providerID)?.provider
         }),
 
         all: Effect.fn("Catalog.provider.all")(function* () {
+          yield* state.settle()
           return Array.fromIterable(state.get().providers.values()).map((record) => record.provider)
         }),
 
@@ -161,6 +165,7 @@ const layer = Layer.effect(
 
       model: {
         get: Effect.fn("Catalog.model.get")(function* (providerID, modelID) {
+          yield* state.settle()
           const record = state.get().providers.get(providerID)
           if (!record) return
           const model = record.models.get(modelID)
@@ -168,6 +173,7 @@ const layer = Layer.effect(
         }),
 
         all: Effect.fn("Catalog.model.all")(function* () {
+          yield* state.settle()
           return pipe(
             Array.fromIterable(state.get().providers.values()),
             Array.flatMap((record) => {
@@ -207,6 +213,7 @@ const layer = Layer.effect(
         }),
 
         small: Effect.fn("Catalog.model.small")(function* (providerID) {
+          yield* state.settle()
           const record = state.get().providers.get(providerID)
           if (!record) return
           const models = pipe(

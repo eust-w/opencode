@@ -94,7 +94,13 @@ const layer = Layer.effect(
       return false
     })
 
-    return Service.of({ transform: state.transform, reload: state.reload, file })
+    return Service.of({
+      transform: state.transform,
+      invalidate: state.invalidate,
+      settle: state.settle,
+      reload: state.reload,
+      file,
+    })
   }),
 )
 

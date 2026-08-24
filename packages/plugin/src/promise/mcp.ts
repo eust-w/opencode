@@ -13,5 +13,6 @@ export interface MCPDraft {
 
 export interface MCPDomain extends Omit<McpApi, "resource"> {
   readonly transform: Transform<MCPDraft>
+  readonly invalidate: () => Promise<void>
   readonly reload: () => Promise<void>
 }

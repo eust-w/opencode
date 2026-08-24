@@ -12,5 +12,6 @@ export interface SkillDraft {
 
 export interface SkillDomain extends SkillApi<unknown> {
   readonly transform: Transform<SkillDraft>
+  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }

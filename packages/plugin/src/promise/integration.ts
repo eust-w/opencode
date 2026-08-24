@@ -83,6 +83,7 @@ export interface IntegrationDraft {
 
 export interface IntegrationDomain extends Omit<IntegrationApi, "wellknown"> {
   readonly transform: Transform<IntegrationDraft>
+  readonly invalidate: () => Promise<void>
   readonly reload: () => Promise<void>
   readonly connection: {
     readonly active: (integrationID: string) => Promise<ConnectionInfo | undefined>

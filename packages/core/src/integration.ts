@@ -538,6 +538,7 @@ const layer = Layer.effect(
       readonly answer?: Form.Answer
       readonly label?: string
     }) {
+      yield* state.settle()
       const method = state.get().integrations.get(input.integrationID)?.implementations.get(input.methodID)
       if (!method) {
         return yield* Effect.die(new Error(`OAuth method not found: ${input.integrationID}/${input.methodID}`))
@@ -589,6 +590,7 @@ const layer = Layer.effect(
       readonly methodID: MethodID
       readonly label?: string
     }) {
+      yield* state.settle()
       const method = state
         .get()
         .integrations.get(input.integrationID)
@@ -652,13 +654,17 @@ const layer = Layer.effect(
 
     return Service.of({
       transform: state.transform,
+      invalidate: state.invalidate,
+      settle: state.settle,
       reload: state.reload,
       get: Effect.fn("Integration.get")(function* (id) {
+        yield* state.settle()
         const entry = state.get().integrations.get(id)
         if (!entry) return undefined
         return project(entry, resolveConnections(entry, yield* credentials.list(id)))
       }),
       list: Effect.fn("Integration.list")(function* () {
+        yield* state.settle()
         const saved = Map.groupBy(yield* credentials.all(), (credential) => credential.integrationID)
         return Array.from(state.get().integrations.values(), (entry) =>
           project(entry, resolveConnections(entry, saved.get(entry.ref.id) ?? [])),
@@ -666,10 +672,12 @@ const layer = Layer.effect(
       }),
       connection: {
         active: Effect.fn("Integration.connection.active")(function* (id) {
+          yield* state.settle()
           const entry = state.get().integrations.get(id)
           return resolveConnections(entry, yield* credentials.list(id))[0]
         }),
         resolve: Effect.fn("Integration.connection.resolve")(function* (connection) {
+          yield* state.settle()
           if (connection.type === "env") {
             const key = process.env[connection.name]
             return key ? Credential.Key.make({ type: "key", key }) : undefined
@@ -689,6 +697,7 @@ const layer = Layer.effect(
           return value
         }),
         key: Effect.fn("Integration.connection.key")(function* (input) {
+          yield* state.settle()
           const method = state
             .get()
             .integrations.get(input.integrationID)

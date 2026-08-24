@@ -76,6 +76,64 @@ describe("State", () => {
     }),
   )
 
+  it.effect("settles an invalidation immediately on read", () =>
+    Effect.gen(function* () {
+      let value = "first"
+      let finalized = 0
+      const state = State.create({
+        initial: () => ({ values: [] as string[] }),
+        draft: (draft) => ({ add: (item: string) => draft.values.push(item) }),
+        finalize: () => Effect.sync(() => finalized++),
+      })
+      yield* state.transform((editor) => {
+        editor.add(value)
+      })
+      finalized = 0
+
+      value = "second"
+      yield* state.invalidate()
+      expect(state.get().values).toEqual(["first"])
+      expect(finalized).toBe(0)
+
+      yield* state.settle()
+      expect(state.get().values).toEqual(["second"])
+      expect(finalized).toBe(1)
+    }),
+  )
+
+  it.effect("single-flights concurrent settles", () =>
+    Effect.gen(function* () {
+      const rebuilding = yield* Deferred.make<void>()
+      const release = yield* Deferred.make<void>()
+      let block = false
+      let finalized = 0
+      const state = State.create({
+        initial: () => ({ values: [] as string[] }),
+        draft: (draft) => ({ add: (item: string) => draft.values.push(item) }),
+        finalize: () =>
+          Effect.gen(function* () {
+            finalized++
+            if (!block) return
+            yield* Deferred.succeed(rebuilding, undefined)
+            yield* Deferred.await(release)
+          }),
+      })
+      yield* state.transform((editor) => editor.add("value"))
+      finalized = 0
+      block = true
+      yield* state.invalidate()
+
+      const first = yield* state.settle().pipe(Effect.forkChild({ startImmediately: true }))
+      yield* Deferred.await(rebuilding)
+      const second = yield* state.settle().pipe(Effect.forkChild({ startImmediately: true }))
+      yield* Deferred.succeed(release, undefined)
+      yield* Fiber.join(first)
+      yield* Fiber.join(second)
+
+      expect(finalized).toBe(1)
+    }),
+  )
+
   it.effect("disposes a transform once and rebuilds remaining state", () =>
     Effect.gen(function* () {
       const state = State.create({

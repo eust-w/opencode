@@ -186,7 +186,16 @@ const layer = Layer.effect(
         .pipe(Effect.mapError((cause) => failure("restore", cause)))
     })
 
-    return Service.of({ transform: state.transform, reload: state.reload, capture, files, diff, restore })
+    return Service.of({
+      transform: state.transform,
+      invalidate: state.invalidate,
+      settle: state.settle,
+      reload: state.reload,
+      capture,
+      files,
+      diff,
+      restore,
+    })
   }).pipe(Effect.withSpan("Snapshot.boot")),
 )
 
@@ -200,6 +209,8 @@ export const noopLayer = Layer.succeed(
   Service,
   Service.of({
     transform: () => Effect.succeed({ dispose: Effect.void }),
+    invalidate: () => Effect.void,
+    settle: () => Effect.void,
     reload: () => Effect.void,
     capture: () => Effect.undefined,
     files: () => Effect.succeed([]),

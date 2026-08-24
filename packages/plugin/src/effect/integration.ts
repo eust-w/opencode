@@ -88,6 +88,7 @@ export interface IntegrationDraft {
 
 export interface IntegrationDomain extends Omit<IntegrationApi<unknown>, "wellknown"> {
   readonly transform: Transform<IntegrationDraft>
+  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
   readonly connection: {
     readonly active: (integrationID: string) => Effect.Effect<ConnectionInfo | undefined>

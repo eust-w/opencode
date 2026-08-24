@@ -88,7 +88,13 @@ const layer = Layer.effect(
       const normalize = yield* loadAdapter
       return yield* normalize(resource, content, state.get())
     })
-    return Service.of({ transform: state.transform, reload: state.reload, normalize })
+    return Service.of({
+      transform: state.transform,
+      invalidate: state.invalidate,
+      settle: state.settle,
+      reload: state.reload,
+      normalize,
+    })
   }),
 )
 

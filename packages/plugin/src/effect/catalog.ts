@@ -29,5 +29,6 @@ export interface CatalogDraft {
 
 export interface CatalogDomain extends CatalogApi<unknown> {
   readonly transform: Transform<CatalogDraft>
+  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }

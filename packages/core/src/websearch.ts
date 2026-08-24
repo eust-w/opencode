@@ -97,6 +97,7 @@ const layer = Layer.effect(
     }
 
     const defaultProvider = Effect.fn("WebSearch.default")(function* () {
+      yield* state.settle()
       const data = state.get()
       const stored = data.selection === undefined ? yield* kv.get(ProviderKey) : undefined
       const decoded = Schema.decodeUnknownOption(Selection)(stored)
@@ -111,6 +112,7 @@ const layer = Layer.effect(
     })
 
     const resolve = Effect.fn("WebSearch.resolve")(function* (input: Input) {
+      yield* state.settle()
       const providers = state.get().providers
       if (input.providerID) return yield* requireProvider(providers, input.providerID)
       const provider = yield* defaultProvider()
@@ -120,8 +122,11 @@ const layer = Layer.effect(
 
     return Service.of({
       transform: state.transform,
+      invalidate: state.invalidate,
+      settle: state.settle,
       reload: state.reload,
       providers: Effect.fn("WebSearch.providers")(function* () {
+        yield* state.settle()
         return Array.from(state.get().providers.values(), (provider) => ({
           id: provider.id,
           name: provider.name,

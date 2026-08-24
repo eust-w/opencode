@@ -11,5 +11,6 @@ export interface ReferenceDraft {
 
 export interface ReferenceDomain extends ReferenceApi<unknown> {
   readonly transform: Transform<ReferenceDraft>
+  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }

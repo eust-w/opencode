@@ -3,9 +3,10 @@
 The Promise plugin API at `@opencode-ai/plugin` is the async/await equivalent of `@opencode-ai/plugin/effect`. It grants plugins the same two in-process capabilities:
 
 - `hook` installs behavior at an OpenCode extension point.
-- `reload` reruns every transform hook for a stateful domain.
+- `invalidate` marks a stateful domain dirty. Its next read reruns every transform hook before returning.
+- `reload` marks a stateful domain dirty and waits for its debounced rebuild.
 
-The only difference from the Effect API is the async boundary: hook callbacks, hook registration, `reload`, and `Registration.dispose` use Promises instead of Effects.
+The only difference from the Effect API is the async boundary: hook callbacks, hook registration, `invalidate`, `reload`, and `Registration.dispose` use Promises instead of Effects.
 
 ## Defining A Plugin
 

@@ -13,5 +13,6 @@ export interface MCPDraft {
 
 export interface MCPDomain extends Omit<McpApi<unknown>, "resource"> {
   readonly transform: Transform<MCPDraft>
+  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }

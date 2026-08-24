@@ -73,6 +73,8 @@ describe("SkillTool", () => {
             Skill.Service,
             Skill.Service.of({
               transform: (_transform) => Effect.die("unused"),
+              invalidate: () => Effect.die("unused"),
+              settle: () => Effect.void,
               reload: () => Effect.die("unused"),
               list: () => Effect.succeed(current),
             }),

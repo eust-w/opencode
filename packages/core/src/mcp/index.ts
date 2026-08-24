@@ -718,8 +718,11 @@ export const layer = (options?: Options) =>
       )
       return Service.of({
         transform: state.transform,
+        invalidate: state.invalidate,
+        settle: state.settle,
         reload: state.reload,
         servers: Effect.fn("MCP.servers")(function* () {
+          yield* state.settle()
           return Array.from(entries)
             .toSorted(([a], [b]) => a.localeCompare(b))
             .map(([name, entry]) => new ServerInfo({ name, status: entry.status, integrationID: entry.integrationID }))
@@ -730,6 +733,7 @@ export const layer = (options?: Options) =>
           yield* state.reload()
         }),
         connect: Effect.fn("MCP.connect")(function* (server) {
+          yield* state.settle()
           const name = ServerName.make(server)
           yield* Effect.gen(function* () {
             const target = yield* requireServer(name)
@@ -738,6 +742,7 @@ export const layer = (options?: Options) =>
           }).pipe(locks.withLock(name))
         }),
         disconnect: Effect.fn("MCP.disconnect")(function* (server) {
+          yield* state.settle()
           const name = ServerName.make(server)
           yield* Effect.gen(function* () {
             const target = yield* requireServer(name)
@@ -753,12 +758,14 @@ export const layer = (options?: Options) =>
           yield* state.reload()
         }),
         tools: Effect.fn("MCP.tools")(function* () {
+          yield* state.settle()
           yield* whenAllReady
           return Array.from(entries.values())
             .flatMap((entry) => entry.tools ?? [])
             .toSorted((a, b) => a.server.localeCompare(b.server) || a.name.localeCompare(b.name))
         }),
         callTool: Effect.fn("MCP.callTool")(function* (input) {
+          yield* state.settle()
           const target = yield* requireServer(input.server)
           yield* target.entry.startup.await
           if (!target.entry.client)
@@ -783,6 +790,7 @@ export const layer = (options?: Options) =>
           })
         }),
         instructions: Effect.fn("MCP.instructions")(function* () {
+          yield* state.settle()
           yield* whenAllReady
           return Array.from(entries)
             .flatMap(([server, entry]) => {
@@ -793,11 +801,13 @@ export const layer = (options?: Options) =>
             .toSorted((a, b) => a.server.localeCompare(b.server))
         }),
         prompts: Effect.fn("MCP.prompts")(function* () {
+          yield* state.settle()
           return Array.from(entries.values())
             .flatMap((entry) => entry.prompts ?? [])
             .toSorted((a, b) => a.server.localeCompare(b.server) || a.name.localeCompare(b.name))
         }),
         prompt: Effect.fn("MCP.prompt")(function* (input) {
+          yield* state.settle()
           const target = yield* requireServer(input.server)
           yield* target.entry.startup.await
           if (!target.entry.client) return undefined
@@ -814,6 +824,7 @@ export const layer = (options?: Options) =>
           })
         }),
         resourceCatalog: Effect.fn("MCP.resourceCatalog")(function* () {
+          yield* state.settle()
           yield* whenAllReady
           const catalogs = yield* Effect.forEach(
             Array.from(entries),
@@ -852,6 +863,7 @@ export const layer = (options?: Options) =>
           })
         }),
         readResource: Effect.fn("MCP.readResource")(function* (input) {
+          yield* state.settle()
           const target = yield* requireServer(input.server)
           yield* target.entry.startup.await
           if (!target.entry.client) return undefined

@@ -105,15 +105,20 @@ const layer = Layer.effect(
 
     return Service.of({
       transform: state.transform,
+      invalidate: state.invalidate,
+      settle: state.settle,
       reload: state.reload,
       get: Effect.fn("Agent.get")(function* (id) {
+        yield* state.settle()
         return state.get().agents.get(id)
       }),
       resolve: Effect.fnUntraced(function* (id) {
+        yield* state.settle()
         if (id !== undefined) return state.get().agents.get(ID.make(id))
         return selectedDefault()
       }),
       select: Effect.fn("Agent.select")(function* (id) {
+        yield* state.settle()
         if (id !== undefined) {
           const selected = ID.make(id)
           return { id: selected, info: state.get().agents.get(selected) }
@@ -122,6 +127,7 @@ const layer = Layer.effect(
         return { id: info?.id ?? defaultID, info }
       }),
       list: Effect.fn("Agent.list")(function* () {
+        yield* state.settle()
         const agents = Array.fromIterable(state.get().agents.values())
         const selected = selectedDefault()
         if (!selected) return agents

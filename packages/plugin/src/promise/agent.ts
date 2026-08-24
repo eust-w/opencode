@@ -13,5 +13,6 @@ export interface AgentDraft {
 
 export interface AgentDomain extends AgentApi {
   readonly transform: Transform<AgentDraft>
+  readonly invalidate: () => Promise<void>
   readonly reload: () => Promise<void>
 }

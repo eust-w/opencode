@@ -1,6 +1,6 @@
 export * as State from "./state.js"
 
-import { Clock, Context, Deferred, Effect, Scope, Semaphore } from "effect"
+import { Clock, Context, Deferred, Effect, Exit, Scope, Semaphore } from "effect"
 
 /**
  * A replayable transform applied to a draft during reload.
@@ -24,9 +24,13 @@ export type Transform<DraftApi> = (
 ) => Effect.Effect<Registration, never, Scope.Scope>
 
 export type Reload = () => Effect.Effect<void>
+export type Invalidate = () => Effect.Effect<void>
+export type Settle = () => Effect.Effect<void>
 
 export interface Transformable<DraftApi> {
   readonly transform: Transform<DraftApi>
+  readonly invalidate: Invalidate
+  readonly settle: Settle
   readonly reload: Reload
 }
 
@@ -79,6 +83,7 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
   let state = options.initial()
   let transforms: { run: TransformCallback<DraftApi> }[] = []
   let generation = 0
+  let settledGeneration = 0
   let requestedAt = 0
   let running = false
   let waiters: { generation: number; done: Deferred.Deferred<void> }[] = []
@@ -102,6 +107,24 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
 
   const materializeReload = () => semaphore.withPermit(materialize())
 
+  const materializeThrough = (target: number) => {
+    if (settledGeneration >= target) return Effect.void
+    return semaphore.withPermit(
+      Effect.gen(function* () {
+        if (settledGeneration >= target) return
+        const exit = yield* materialize().pipe(Effect.exit)
+        if (Exit.isSuccess(exit)) settledGeneration = Math.max(settledGeneration, target)
+        const completed = waiters.filter((waiter) => waiter.generation <= target)
+        waiters = waiters.filter((waiter) => waiter.generation > target)
+        yield* Effect.forEach(completed, (waiter) => Deferred.done(waiter.done, exit), {
+          concurrency: "unbounded",
+          discard: true,
+        })
+        return yield* exit
+      }),
+    )
+  }
+
   const rebuild = (): Effect.Effect<void> =>
     Effect.gen(function* () {
       const clock = yield* Clock.Clock
@@ -110,27 +133,29 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
       if (clock.currentTimeMillisUnsafe() < requestedAt + reloadDebounce) return yield* rebuild()
 
       const target = generation
-      const exit = yield* materializeReload().pipe(Effect.exit)
-      const completed = waiters.filter((waiter) => waiter.generation <= target)
-      waiters = waiters.filter((waiter) => waiter.generation > target)
-      yield* Effect.forEach(completed, (waiter) => Deferred.done(waiter.done, exit), {
-        concurrency: "unbounded",
-        discard: true,
-      })
+      yield* materializeThrough(target).pipe(Effect.exit)
       if (generation > target) return yield* rebuild()
       running = false
     })
 
-  const reload = Effect.fnUntraced(function* () {
-    const done = Deferred.makeUnsafe<void>()
+  const request = Effect.fnUntraced(function* (done?: Deferred.Deferred<void>) {
     const clock = yield* Clock.Clock
     generation++
     requestedAt = clock.currentTimeMillisUnsafe()
-    waiters.push({ generation, done })
+    if (done) waiters.push({ generation, done })
     if (!running) {
       running = true
       yield* rebuild().pipe(Effect.forkDetach)
     }
+  })
+
+  const invalidate = () => request()
+  const settle = Effect.fnUntraced(function* () {
+    yield* materializeThrough(generation)
+  })
+  const reload = Effect.fnUntraced(function* () {
+    const done = Deferred.makeUnsafe<void>()
+    yield* request(done)
     return yield* Deferred.await(done)
   })
 
@@ -173,6 +198,8 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
         }),
       )
     }),
+    invalidate,
+    settle,
     reload,
   }
 }

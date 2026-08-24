@@ -23,6 +23,7 @@ export function host(overrides: Overrides = {}): Plugin.Context {
       get: () => Effect.die("unused agent.get"),
       list: () => Effect.die("unused agent.list"),
       transform: () => Effect.die("unused agent.transform"),
+      invalidate: () => Effect.die("unused agent.invalidate"),
       reload: () => Effect.die("unused agent.reload"),
     },
     aisdk: overrides.aisdk ?? {
@@ -38,11 +39,13 @@ export function host(overrides: Overrides = {}): Plugin.Context {
         default: () => Effect.die("unused catalog.model.default"),
       },
       transform: () => Effect.die("unused catalog.transform"),
+      invalidate: () => Effect.die("unused catalog.invalidate"),
       reload: () => Effect.die("unused catalog.reload"),
     },
     command: overrides.command ?? {
       list: () => Effect.die("unused command.list"),
       transform: () => Effect.die("unused command.transform"),
+      invalidate: () => Effect.die("unused command.invalidate"),
       reload: () => Effect.die("unused command.reload"),
     },
     event: overrides.event ?? {
@@ -66,6 +69,7 @@ export function host(overrides: Overrides = {}): Plugin.Context {
         cancel: () => Effect.die("unused integration.command.cancel"),
       },
       transform: () => Effect.die("unused integration.transform"),
+      invalidate: () => Effect.die("unused integration.invalidate"),
       reload: () => Effect.die("unused integration.reload"),
       connection: {
         active: () => Effect.die("unused integration.connection.active"),
@@ -79,6 +83,7 @@ export function host(overrides: Overrides = {}): Plugin.Context {
       connect: () => Effect.die("unused mcp.connect"),
       disconnect: () => Effect.die("unused mcp.disconnect"),
       transform: () => Effect.die("unused mcp.transform"),
+      invalidate: () => Effect.die("unused mcp.invalidate"),
       reload: () => Effect.die("unused mcp.reload"),
     },
     plugin: overrides.plugin ?? {
@@ -87,11 +92,13 @@ export function host(overrides: Overrides = {}): Plugin.Context {
     reference: overrides.reference ?? {
       list: () => Effect.die("unused reference.list"),
       transform: () => Effect.die("unused reference.transform"),
+      invalidate: () => Effect.die("unused reference.invalidate"),
       reload: () => Effect.die("unused reference.reload"),
     },
     skill: overrides.skill ?? {
       list: () => Effect.die("unused skill.list"),
       transform: () => Effect.die("unused skill.transform"),
+      invalidate: () => Effect.die("unused skill.invalidate"),
       reload: () => Effect.die("unused skill.reload"),
     },
     storage: overrides.storage ?? {
@@ -111,6 +118,7 @@ export function host(overrides: Overrides = {}): Plugin.Context {
       providers: () => Effect.die("unused websearch.providers"),
       query: () => Effect.die("unused websearch.query"),
       transform: () => Effect.die("unused websearch.transform"),
+      invalidate: () => Effect.die("unused websearch.invalidate"),
       reload: () => Effect.die("unused websearch.reload"),
     },
     session: {
@@ -151,6 +159,7 @@ export function agentHost(agent: Agent.Interface): Plugin.Context["agent"] {
         ),
       ),
     list: () => Effect.die("unused agent.list"),
+    invalidate: agent.invalidate,
     reload: agent.reload,
     transform: (callback) =>
       agent.transform((draft) =>
@@ -196,6 +205,7 @@ export function catalogHost(catalog: Catalog.Interface): Plugin.Context["catalog
         ),
       default: () => Effect.die("unused catalog.model.default"),
     },
+    invalidate: catalog.invalidate,
     reload: catalog.reload,
     transform: (callback) =>
       catalog.transform((draft) =>
@@ -275,6 +285,7 @@ export function integrationHost(integration: Integration.Interface): Plugin.Cont
       status: () => Effect.die("unused integration.command.status"),
       cancel: () => Effect.die("unused integration.command.cancel"),
     },
+    invalidate: integration.invalidate,
     reload: integration.reload,
     connection: {
       active: (id) => integration.connection.active(Integration.ID.make(id)),
@@ -393,6 +404,7 @@ export function webSearchHost(websearch: WebSearch.Interface): Plugin.Context["w
       websearch
         .query({ query: input.query, providerID: input.providerID && WebSearch.ID.make(input.providerID) })
         .pipe(Effect.map((data) => ({ location, data }))),
+    invalidate: websearch.invalidate,
     reload: websearch.reload,
     transform: (callback) =>
       websearch.transform((draft) => {

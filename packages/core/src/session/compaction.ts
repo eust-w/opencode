@@ -404,6 +404,8 @@ const make = (dependencies: Dependencies) => {
   })
   return Service.of({
     transform: state.transform,
+    invalidate: state.invalidate,
+    settle: state.settle,
     reload: state.reload,
     required,
     compact,

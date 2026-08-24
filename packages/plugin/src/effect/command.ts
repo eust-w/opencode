@@ -23,5 +23,6 @@ export interface CommandDraft {
 
 export interface CommandDomain extends Pick<CommandApi<unknown>, "list"> {
   readonly transform: Transform<CommandDraft>
+  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }
