@@ -8,6 +8,7 @@ import { Bus } from "@opencode-ai/core/bus"
 import { Plugin } from "@opencode-ai/core/plugin"
 import { PluginHost } from "@opencode-ai/core/plugin/host"
 import { PluginRuntime } from "@opencode-ai/core/plugin/runtime"
+import { ToolInputRepairPlugin } from "@opencode-ai/core/plugin/tool-input-repair"
 import { Location } from "@opencode-ai/core/location"
 import { Project } from "@opencode-ai/core/project"
 import { AbsolutePath } from "@opencode-ai/core/schema"
@@ -478,6 +479,40 @@ describe("Plugin", () => {
         "plain",
         "execute",
       ])
+    }),
+  )
+
+  it.effect("repairs tool input before validating its original schema", () =>
+    Effect.gen(function* () {
+      const plugins = yield* Plugin.Service
+      const registry = yield* Tool.Service
+      const executed: unknown[] = []
+      const plugin = EffectPlugin.define({
+        id: "repairable-tool",
+        effect: (ctx) =>
+          ctx.tool
+            .transform((draft) =>
+              draft.add({
+                name: "repairable",
+                options: { codemode: false },
+                description: "Repairable",
+                input: Schema.Struct({ count: Schema.Int, enabled: Schema.Boolean }),
+                execute: (input) => Effect.sync(() => executed.push(input)).pipe(Effect.as({ content: "ok" })),
+              }),
+            )
+            .pipe(Effect.orDie),
+      })
+
+      yield* plugins.activate([versioned(ToolInputRepairPlugin.Plugin), versioned(plugin)])
+      const toolSet = yield* registry.snapshot()
+      yield* toolSet.execute({
+        sessionID: Session.ID.make("ses_repair"),
+        agent: Agent.ID.make("build"),
+        messageID: SessionMessage.ID.make("msg_repair"),
+        call: { type: "tool-call", id: "call-repair", name: "repairable", input: { count: "2", enabled: "true" } },
+      })
+
+      expect(executed).toEqual([{ count: 2, enabled: true }])
     }),
   )
 

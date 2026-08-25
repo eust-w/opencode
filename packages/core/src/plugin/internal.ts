@@ -84,6 +84,7 @@ import { WebSearchPlugins } from "./websearch/index.js"
 import { PluginRuntime } from "./runtime.js"
 import { SkillPlugin } from "./skill.js"
 import { SystemPromptPlugin } from "./system-prompt.js"
+import { ToolInputRepairPlugin } from "./tool-input-repair.js"
 import { VariantPlugin } from "./variant.js"
 import { WarmingPlugin } from "./warming.js"
 import { WellKnownPlugin } from "../wellknown/plugin.js"
@@ -232,6 +233,7 @@ export const requirements = LayerNode.group([
 export type InternalPlugin = Plugin<Requirements | Scope.Scope>
 
 const pre = [
+  ToolInputRepairPlugin.Plugin,
   ConfigMCPPlugin.Plugin,
   MCPCodeModeExclusionPlugin.Plugin,
   WellKnownPlugin.Plugin,
