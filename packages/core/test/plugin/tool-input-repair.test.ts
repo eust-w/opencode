@@ -72,6 +72,39 @@ describe("tool input repair plugin", () => {
     }),
   )
 
+  it.effect("removes empty object placeholders only from optional non-object fields", () =>
+    Effect.gen(function* () {
+      const input = {
+        optional: {},
+        array: {},
+        required: {},
+        object: {},
+        populated: { value: 1 },
+        union: {},
+        unknown: {},
+      }
+      const event = yield* run(
+        input,
+        object(
+          {
+            optional: { type: "integer" },
+            array: { type: "array", items: { type: "string" } },
+            required: { type: "boolean" },
+            object: { type: "object" },
+            populated: { type: "string" },
+            union: { type: "string", anyOf: [{ type: "string" }, { type: "object" }] },
+            unknown: {},
+          },
+          ["required"],
+        ),
+      )
+
+      expect(event.input).toEqual({ required: {}, object: {}, populated: { value: 1 }, union: {}, unknown: {} })
+      expect(input.optional).toEqual({})
+      expect(input.array).toEqual({})
+    }),
+  )
+
   it.effect("coerces valid numeric and boolean strings without changing invalid candidates", () =>
     Effect.gen(function* () {
       const event = yield* run(

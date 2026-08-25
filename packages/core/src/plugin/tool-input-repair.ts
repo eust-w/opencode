@@ -74,6 +74,21 @@ function repairObject(value: unknown, schema: JsonSchema.JsonSchema, depth: numb
       return next
     }
 
+    // Empty objects are placeholders only when the optional property expects another type.
+    if (
+      Predicate.isObject(current) &&
+      Object.keys(current).length === 0 &&
+      !required.includes(key) &&
+      typeof property.type === "string" &&
+      property.type !== "object" &&
+      !("anyOf" in property) &&
+      !("oneOf" in property)
+    ) {
+      const next = { ...result }
+      delete next[key]
+      return next
+    }
+
     const next = repair(current, property, depth + 1)
     return next === current ? result : { ...result, [key]: next }
   }, parsed)
