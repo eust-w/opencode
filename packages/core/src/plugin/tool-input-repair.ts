@@ -12,6 +12,7 @@ import type { JsonSchema } from "effect"
 // - Stringified array: { tags: '["a"]' } -> { tags: ["a"] }
 // - Stringified object: { options: '{"enabled":true}' } -> { options: { enabled: true } }
 // - Compatible array item: { tags: "a" } -> { tags: ["a"] }
+// - Repaired array item: { counts: "2" } -> { counts: [2] }
 // - Nested fields: { items: [{ count: "2" }] } -> { items: [{ count: 2 }] }
 
 const decodeJson = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Unknown))
@@ -109,11 +110,13 @@ function repairArray(value: unknown, schema: JsonSchema.JsonSchema, depth: numbe
   if (!Predicate.isObject(items)) return value
 
   const parsed = typeof value === "string" ? Option.getOrUndefined(decodeJson(value)) : value
-  const array = Array.isArray(parsed) ? parsed : matchesArrayItem(value, items) ? [value] : undefined
-  if (!array) return value
+  if (Array.isArray(parsed)) {
+    const repaired = parsed.map((item) => repair(item, items, depth + 1))
+    return repaired.every((item, index) => item === parsed[index]) ? parsed : repaired
+  }
 
-  const repaired = array.map((item) => repair(item, items, depth + 1))
-  return repaired.every((item, index) => item === array[index]) ? array : repaired
+  const item = repair(value, items, depth + 1)
+  return matchesArrayItem(item, items) ? [item] : value
 }
 
 function matchesArrayItem(value: unknown, schema: JsonSchema.JsonSchema) {

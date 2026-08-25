@@ -168,11 +168,23 @@ describe("tool input repair plugin", () => {
   it.effect("wraps only values that clearly match array items", () =>
     Effect.gen(function* () {
       const event = yield* run(
-        { text: "one", number: 2, item: { name: "one" }, incompatible: 2, fractional: 1.5 },
+        {
+          text: "one",
+          number: 2,
+          integer: "42",
+          boolean: "false",
+          item: { name: "one" },
+          stringified: '{"count":"2"}',
+          incompatible: 2,
+          fractional: 1.5,
+        },
         object({
           text: { type: "array", items: { type: "string" } },
           number: { type: "array", items: { type: "number" } },
+          integer: { type: "array", items: { type: "integer" } },
+          boolean: { type: "array", items: { type: "boolean" } },
           item: { type: "array", items: object({ name: { type: "string" } }) },
+          stringified: { type: "array", items: object({ count: { type: "integer" } }) },
           incompatible: { type: "array", items: { type: "string" } },
           fractional: { type: "array", items: { type: "integer" } },
         }),
@@ -180,7 +192,10 @@ describe("tool input repair plugin", () => {
       expect(event.input).toEqual({
         text: ["one"],
         number: [2],
+        integer: [42],
+        boolean: [false],
         item: [{ name: "one" }],
+        stringified: [{ count: 2 }],
         incompatible: 2,
         fractional: 1.5,
       })
