@@ -5,6 +5,7 @@ import { Effect, Option, Predicate, Schema } from "effect"
 import type { JsonSchema } from "effect"
 
 const decodeJson = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Unknown))
+const maxDepth = 6
 
 export const Plugin = define({
   id: "opencode.tool.input.repair",
@@ -18,7 +19,7 @@ export const Plugin = define({
 })
 
 function repair(value: unknown, schema: JsonSchema.JsonSchema, depth: number): unknown {
-  if (depth > 6 || "anyOf" in schema || "oneOf" in schema) return value
+  if (depth > maxDepth || "anyOf" in schema || "oneOf" in schema) return value
 
   switch (schema.type) {
     case "number":
