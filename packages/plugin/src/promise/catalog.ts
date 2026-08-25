@@ -29,6 +29,5 @@ export interface CatalogDraft {
 
 export interface CatalogDomain extends CatalogApi {
   readonly transform: Transform<CatalogDraft>
-  readonly invalidate: () => Promise<void>
   readonly reload: () => Promise<void>
 }

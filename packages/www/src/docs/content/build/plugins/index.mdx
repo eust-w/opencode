@@ -146,8 +146,8 @@ export default Plugin.define({
 })
 ```
 
-Now say the first plugin fetches its model list from a dynamic source. It can
-call `invalidate` when that list changes.
+Now say the first plugin dynamically fetches can fetch its model list from a
+dynamic source. It can call `reload` when that list changes.
 
 ```ts title="plugins/models.ts"
 import { Plugin } from "@opencode-ai/plugin"
@@ -168,7 +168,7 @@ export default Plugin.define({
 
     const refresh = async () => {
       models = await loadFromSource()
-      await ctx.catalog.invalidate()
+      await ctx.catalog.reload()
     }
 
     const timer = setInterval(() => void refresh().catch(console.error), 60_000)
@@ -177,10 +177,10 @@ export default Plugin.define({
 })
 ```
 
-`invalidate` marks the catalog dirty and returns. The next catalog read replays every transform in order before
-returning, so the output-price policy still filters the refreshed models without making the producer wait for the
-debounce window. If no read arrives first, OpenCode rebuilds the catalog in the background. Use `reload` when the
-producer itself must wait for that debounced rebuild.
+`reload` immediately marks the catalog stale and schedules a debounced reload that replays every transform in order,
+so the output-price policy still filters the refreshed models. A concurrent catalog read immediately performs the pending
+reload; otherwise, it runs in the background after the debounce window. In either case, `reload` resolves after the
+actual reload.
 
 ## API
 
@@ -223,7 +223,6 @@ interface AgentContext {
   list(input?: AgentListInput, requestOptions?: RequestOptions): Promise<AgentListOutput>
   get(input: AgentGetInput, requestOptions?: RequestOptions): Promise<AgentGetOutput>
   transform(callback: (draft: AgentDraft) => void): Promise<Registration>
-  invalidate(): Promise<void>
   reload(): Promise<void>
 }
 
@@ -292,7 +291,6 @@ interface CatalogContext {
     default(input?: ModelDefaultInput, requestOptions?: RequestOptions): Promise<ModelDefaultOutput>
   }
   transform(callback: (draft: CatalogDraft) => void): Promise<Registration>
-  invalidate(): Promise<void>
   reload(): Promise<void>
 }
 
@@ -362,7 +360,6 @@ Schemas: [`Command.Info`](/api#schema-Command.Info),
 interface CommandContext {
   list(input?: CommandListInput, requestOptions?: RequestOptions): Promise<CommandListOutput>
   transform(callback: (draft: CommandDraft) => void): Promise<Registration>
-  invalidate(): Promise<void>
   reload(): Promise<void>
 }
 
@@ -472,7 +469,6 @@ interface IntegrationContext {
     cancel(input: IntegrationCommandCancelInput, requestOptions?: RequestOptions): Promise<void>
   }
   transform(callback: (draft: IntegrationDraft) => void): Promise<Registration>
-  invalidate(): Promise<void>
   reload(): Promise<void>
   connection: {
     active(integrationID: string): Promise<ConnectionInfo | undefined>
@@ -546,7 +542,6 @@ interface MCPContext {
   connect(input: McpConnectInput, requestOptions?: RequestOptions): Promise<void>
   disconnect(input: McpDisconnectInput, requestOptions?: RequestOptions): Promise<void>
   transform(callback: (draft: MCPDraft) => void): Promise<Registration>
-  invalidate(): Promise<void>
   reload(): Promise<void>
 }
 
@@ -611,7 +606,6 @@ Schemas: [`Reference.Info`](/api#schema-Reference.Info), [`Reference.LocalSource
 interface ReferenceContext {
   list(input?: ReferenceListInput, requestOptions?: RequestOptions): Promise<ReferenceListOutput>
   transform(callback: (draft: ReferenceDraft) => void): Promise<Registration>
-  invalidate(): Promise<void>
   reload(): Promise<void>
 }
 
@@ -717,7 +711,6 @@ Schema: [`Skill.Info`](/api#schema-Skill.Info)
 interface SkillContext {
   list(input?: SkillListInput, requestOptions?: RequestOptions): Promise<SkillListOutput>
   transform(callback: (draft: SkillDraft) => void): Promise<Registration>
-  invalidate(): Promise<void>
   reload(): Promise<void>
 }
 
@@ -849,7 +842,6 @@ interface WebSearchContext {
   providers(input?: WebsearchProvidersInput, requestOptions?: RequestOptions): Promise<WebsearchProvidersOutput>
   query(input: WebsearchQueryInput, requestOptions?: RequestOptions): Promise<WebsearchQueryOutput>
   transform(callback: (draft: WebSearchDraft) => void): Promise<Registration>
-  invalidate(): Promise<void>
   reload(): Promise<void>
 }
 

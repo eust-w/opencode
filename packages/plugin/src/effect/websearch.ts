@@ -11,7 +11,6 @@ export interface WebSearchDefinition {
 
 export interface WebSearchDomain extends WebsearchApi<unknown> {
   readonly transform: Transform<WebSearchDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }
 

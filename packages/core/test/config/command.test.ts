@@ -35,8 +35,6 @@ const shellLayer = Layer.succeed(
   ShellSelect.Service.of({
     preferred: () => Effect.succeed("sh"),
     transform: () => Effect.die("unused shell.transform"),
-    invalidate: () => Effect.die("unused shell.invalidate"),
-    settle: () => Effect.die("unused shell.settle"),
     reload: () => Effect.die("unused shell.reload"),
   }),
 )
@@ -88,7 +86,6 @@ Review files`,
               command: {
                 list: () => Effect.die("unused command.list"),
                 transform: command.transform,
-                invalidate: command.invalidate,
                 reload: command.reload,
               },
               event: { subscribe: () => Stream.fromPubSub(updates) },
@@ -187,7 +184,6 @@ Review files`,
                 command: {
                   list: () => Effect.die("unused command.list"),
                   transform: command.transform,
-                  invalidate: command.invalidate,
                   reload: command.reload,
                 },
               }),
@@ -233,7 +229,6 @@ Review files`,
               command: {
                 list: () => Effect.die("unused command.list"),
                 transform: command.transform,
-                invalidate: command.invalidate,
                 reload: () => command.reload().pipe(Effect.tap(() => Effect.sync(() => reloads++))),
               },
             }),
@@ -276,7 +271,6 @@ Review files`,
               command: {
                 list: () => Effect.die("unused command.list"),
                 transform: command.transform,
-                invalidate: command.invalidate,
                 reload: () => command.reload().pipe(Effect.tap(() => Effect.sync(() => reloads++))),
               },
             }),
@@ -323,7 +317,6 @@ describeNative("ConfigCommandPlugin native watcher", () => {
             command: {
               list: () => Effect.die("unused command.list"),
               transform: command.transform,
-              invalidate: command.invalidate,
               reload: command.reload,
             },
           }),

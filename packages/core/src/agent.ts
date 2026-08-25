@@ -91,8 +91,7 @@ const layer = Layer.effect(
     })
     const selectable = (agent: Info | undefined) =>
       agent && agent.mode !== "subagent" && !agent.hidden ? agent : undefined
-    const selectedDefault = () => {
-      const data = state.get()
+    const selectedDefault = (data: Data) => {
       const configured = data.default ? selectable(data.agents.get(data.default)) : undefined
       if (configured) return configured
       const build = selectable(data.agents.get(ID.make("build")))
@@ -105,31 +104,28 @@ const layer = Layer.effect(
 
     return Service.of({
       transform: state.transform,
-      invalidate: state.invalidate,
-      settle: state.settle,
       reload: state.reload,
       get: Effect.fn("Agent.get")(function* (id) {
-        yield* state.settle()
-        return state.get().agents.get(id)
+        return (yield* state.read()).agents.get(id)
       }),
       resolve: Effect.fnUntraced(function* (id) {
-        yield* state.settle()
-        if (id !== undefined) return state.get().agents.get(ID.make(id))
-        return selectedDefault()
+        const data = yield* state.read()
+        if (id !== undefined) return data.agents.get(ID.make(id))
+        return selectedDefault(data)
       }),
       select: Effect.fn("Agent.select")(function* (id) {
-        yield* state.settle()
+        const data = yield* state.read()
         if (id !== undefined) {
           const selected = ID.make(id)
-          return { id: selected, info: state.get().agents.get(selected) }
+          return { id: selected, info: data.agents.get(selected) }
         }
-        const info = selectedDefault()
+        const info = selectedDefault(data)
         return { id: info?.id ?? defaultID, info }
       }),
       list: Effect.fn("Agent.list")(function* () {
-        yield* state.settle()
-        const agents = Array.fromIterable(state.get().agents.values())
-        const selected = selectedDefault()
+        const data = yield* state.read()
+        const agents = Array.fromIterable(data.agents.values())
+        const selected = selectedDefault(data)
         if (!selected) return agents
         return [selected, ...agents.filter((agent) => agent.id !== selected.id)]
       }),

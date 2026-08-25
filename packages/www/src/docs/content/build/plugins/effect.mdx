@@ -208,9 +208,9 @@ effect: (ctx) =>
   }),
 ```
 
-Call `invalidate` when external state used by a transform changes. It marks the domain dirty and returns. The next
-domain read replays every transform in order before returning; if no read arrives first, OpenCode rebuilds in the
-background. Use `reload` when the producer itself must wait for that debounced rebuild.
+Call `reload` when external state used by a transform changes. It immediately marks the domain stale and schedules a
+debounced reload that replays every transform in order. A concurrent domain read immediately performs the pending reload;
+otherwise, it runs in the background after the debounce window. In either case, `reload` resolves after the actual reload.
 
 ```ts title="plugins/models-effect.ts"
 effect: (ctx) =>
@@ -229,7 +229,7 @@ effect: (ctx) =>
     yield* Effect.repeat(
       Effect.gen(function* () {
         state.models = yield* loadFromSource()
-        yield* catalog.invalidate()
+        yield* catalog.reload()
       }),
       { schedule: Schedule.spaced("1 minute") },
     ).pipe(Effect.forkScoped)
@@ -280,7 +280,6 @@ interface AgentDraft {
 
 interface AgentDomain extends AgentApi<unknown> {
   readonly transform: Transform<AgentDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }
 ```
@@ -351,7 +350,6 @@ interface CatalogDraft {
 
 interface CatalogDomain extends CatalogApi<unknown> {
   readonly transform: Transform<CatalogDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }
 ```
@@ -415,7 +413,6 @@ interface CommandDraft {
 
 interface CommandDomain extends Pick<CommandApi<unknown>, "list"> {
   readonly transform: Transform<CommandDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }
 ```
@@ -527,7 +524,6 @@ interface IntegrationDraft {
 
 interface IntegrationDomain extends Omit<IntegrationApi<unknown>, "wellknown"> {
   readonly transform: Transform<IntegrationDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
   readonly connection: {
     readonly active: (integrationID: string) => Effect.Effect<ConnectionInfo | undefined>
@@ -582,7 +578,6 @@ interface MCPDraft {
 
 interface MCPDomain extends Omit<McpApi<unknown>, "resource"> {
   readonly transform: Transform<MCPDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }
 ```
@@ -666,7 +661,6 @@ interface ReferenceDraft {
 
 interface ReferenceDomain extends ReferenceApi<unknown> {
   readonly transform: Transform<ReferenceDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }
 ```
@@ -776,7 +770,6 @@ interface SkillDraft {
 
 interface SkillDomain extends SkillApi<unknown> {
   readonly transform: Transform<SkillDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }
 ```
@@ -916,7 +909,6 @@ interface WebSearchDraft {
 
 interface WebSearchDomain extends WebsearchApi<unknown> {
   readonly transform: Transform<WebSearchDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }
 ```

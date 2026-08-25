@@ -388,9 +388,8 @@ const layer = Layer.effect(
           }
 
           yield* Effect.gen(function* () {
-            const implementation = state
-              .get()
-              .integrations.get(attempt.integrationID)
+            const implementation = (yield* state.read()).integrations
+              .get(attempt.integrationID)
               ?.implementations.get(attempt.methodID)
             const persistence = yield* Effect.sync(() => attempt.label ?? implementation?.label?.(exit.value)).pipe(
               Effect.flatMap((label) =>
@@ -538,8 +537,7 @@ const layer = Layer.effect(
       readonly answer?: Form.Answer
       readonly label?: string
     }) {
-      yield* state.settle()
-      const method = state.get().integrations.get(input.integrationID)?.implementations.get(input.methodID)
+      const method = (yield* state.read()).integrations.get(input.integrationID)?.implementations.get(input.methodID)
       if (!method) {
         return yield* Effect.die(new Error(`OAuth method not found: ${input.integrationID}/${input.methodID}`))
       }
@@ -590,9 +588,7 @@ const layer = Layer.effect(
       readonly methodID: MethodID
       readonly label?: string
     }) {
-      yield* state.settle()
-      const method = state
-        .get()
+      const method = (yield* state.read())
         .integrations.get(input.integrationID)
         ?.methods.find((method) => method.type === "command" && method.id === input.methodID)
       if (!method || method.type !== "command" || !method.command[0]) {
@@ -654,30 +650,24 @@ const layer = Layer.effect(
 
     return Service.of({
       transform: state.transform,
-      invalidate: state.invalidate,
-      settle: state.settle,
       reload: state.reload,
       get: Effect.fn("Integration.get")(function* (id) {
-        yield* state.settle()
-        const entry = state.get().integrations.get(id)
+        const entry = (yield* state.read()).integrations.get(id)
         if (!entry) return undefined
         return project(entry, resolveConnections(entry, yield* credentials.list(id)))
       }),
       list: Effect.fn("Integration.list")(function* () {
-        yield* state.settle()
         const saved = Map.groupBy(yield* credentials.all(), (credential) => credential.integrationID)
-        return Array.from(state.get().integrations.values(), (entry) =>
+        return Array.from((yield* state.read()).integrations.values(), (entry) =>
           project(entry, resolveConnections(entry, saved.get(entry.ref.id) ?? [])),
         ).toSorted((a, b) => a.name.localeCompare(b.name))
       }),
       connection: {
         active: Effect.fn("Integration.connection.active")(function* (id) {
-          yield* state.settle()
-          const entry = state.get().integrations.get(id)
+          const entry = (yield* state.read()).integrations.get(id)
           return resolveConnections(entry, yield* credentials.list(id))[0]
         }),
         resolve: Effect.fn("Integration.connection.resolve")(function* (connection) {
-          yield* state.settle()
           if (connection.type === "env") {
             const key = process.env[connection.name]
             return key ? Credential.Key.make({ type: "key", key }) : undefined
@@ -685,21 +675,18 @@ const layer = Layer.effect(
           const credential = yield* credentials.get(connection.id)
           if (!credential) return undefined
           if (credential.value.type === "key") return credential.value
-          const implementation = state
-            .get()
-            .integrations.get(credential.integrationID)
-            ?.implementations.get(credential.value.methodID)
-          if (!implementation?.refresh) return credential.value
           const now = yield* Clock.currentTimeMillis
           if (credential.value.expires > now + Duration.toMillis(Duration.minutes(5))) return credential.value
+          const implementation = (yield* state.read()).integrations
+            .get(credential.integrationID)
+            ?.implementations.get(credential.value.methodID)
+          if (!implementation?.refresh) return credential.value
           const value = yield* authorize(implementation.refresh(credential.value))
           yield* credentials.update(credential.id, { value })
           return value
         }),
         key: Effect.fn("Integration.connection.key")(function* (input) {
-          yield* state.settle()
-          const method = state
-            .get()
+          const method = (yield* state.read())
             .integrations.get(input.integrationID)
             ?.methods.find((method) => method.type === "key")
           if (!method) return yield* Effect.die(new Error(`Key method not found: ${input.integrationID}`))

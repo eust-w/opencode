@@ -22,6 +22,5 @@ export interface CommandDraft {
 
 export interface CommandDomain extends Pick<CommandApi, "list"> {
   readonly transform: Transform<CommandDraft>
-  readonly invalidate: () => Promise<void>
   readonly reload: () => Promise<void>
 }

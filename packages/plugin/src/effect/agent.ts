@@ -13,6 +13,5 @@ export interface AgentDraft {
 
 export interface AgentDomain extends AgentApi<unknown> {
   readonly transform: Transform<AgentDraft>
-  readonly invalidate: () => Effect.Effect<void>
   readonly reload: () => Effect.Effect<void>
 }

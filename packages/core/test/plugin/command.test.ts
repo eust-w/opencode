@@ -40,7 +40,6 @@ describe("CommandPlugin.Plugin", () => {
           command: {
             list: () => Effect.die("unused command.list"),
             transform: command.transform,
-            invalidate: command.invalidate,
             reload: command.reload,
           },
           session: {

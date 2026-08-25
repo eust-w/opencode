@@ -86,8 +86,6 @@ const websearch = Layer.succeed(
         })
         return { dispose: Effect.void }
       }),
-    invalidate: () => Effect.die("unused"),
-    settle: () => Effect.void,
     reload: () => Effect.die("unused"),
     providers: () => Effect.succeed(providers),
     default: () =>

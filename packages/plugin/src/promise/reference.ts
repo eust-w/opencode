@@ -10,6 +10,5 @@ export interface ReferenceDraft {
 
 export interface ReferenceDomain extends ReferenceApi {
   readonly transform: Transform<ReferenceDraft>
-  readonly invalidate: () => Promise<void>
   readonly reload: () => Promise<void>
 }

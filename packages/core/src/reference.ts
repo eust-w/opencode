@@ -109,11 +109,9 @@ const layer = Layer.effect(
 
     return Service.of({
       transform: state.transform,
-      invalidate: state.invalidate,
-      settle: state.settle,
       reload: state.reload,
       list: Effect.fn("Reference.list")(function* () {
-        yield* state.settle()
+        yield* state.read()
         return Array.from(materialized.values())
       }),
     })

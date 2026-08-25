@@ -13,7 +13,6 @@ export interface WebSearchDefinition {
 
 export interface WebSearchDomain extends WebSearchApi {
   readonly transform: Transform<WebSearchDraft>
-  readonly invalidate: () => Promise<void>
   readonly reload: () => Promise<void>
 }
 

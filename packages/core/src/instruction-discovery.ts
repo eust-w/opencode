@@ -88,8 +88,7 @@ export const layer = (options?: Options) =>
         })
 
       const list = Effect.fn("InstructionDiscovery.list")(function* () {
-        yield* state.settle()
-        const current = state.get()
+        const current = yield* state.read()
         if (!current.available) return Instructions.unavailable
         return Array.from(current.files.values())
       })
@@ -97,8 +96,6 @@ export const layer = (options?: Options) =>
       return Service.of({
         project: options?.project !== false,
         transform: state.transform,
-        invalidate: state.invalidate,
-        settle: state.settle,
         reload: state.reload,
         list,
         load: Effect.fn("InstructionDiscovery.load")(function* () {

@@ -12,6 +12,5 @@ export interface SkillDraft {
 
 export interface SkillDomain extends SkillApi {
   readonly transform: Transform<SkillDraft>
-  readonly invalidate: () => Promise<void>
   readonly reload: () => Promise<void>
 }

@@ -9,8 +9,6 @@ export const emptyMcpLayer = Layer.succeed(
   MCP.Service,
   MCP.Service.of({
     transform: () => Effect.die("unused mcp.transform"),
-    invalidate: () => Effect.die("unused mcp.invalidate"),
-    settle: () => Effect.die("unused mcp.settle"),
     reload: () => Effect.die("unused mcp.reload"),
     servers: () => Effect.succeed([]),
     add: () => Effect.die("unused mcp.add"),
