@@ -99,7 +99,7 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
   let reloading: Deferred.Deferred<void> | undefined
   let requestedAt = 0
   let running = false
-  let committing = 0
+  let committing = false
   let waiters: { generation: number; done: Deferred.Deferred<void> }[] = []
   const semaphore = Semaphore.makeUnsafe(1)
   const batches = new Set<Batch>()
@@ -108,13 +108,13 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
     state = next
     if (options.finalize) {
       const current: Commit = { active: true }
-      committing++
+      committing = true
       yield* options.finalize(options.draft(next)).pipe(
         Effect.provideService(CurrentCommit, current),
         Effect.ensuring(
           Effect.sync(() => {
             current.active = false
-            committing--
+            committing = false
           }),
         ),
       )
@@ -135,16 +135,15 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
   const materializeCurrent = Effect.fnUntraced(function* () {
     const target = generation
     const exit = yield* materialize().pipe(Effect.exit)
-    if (Exit.isSuccess(exit)) reloadedGeneration = Math.max(reloadedGeneration, target)
+    if (Exit.isSuccess(exit)) reloadedGeneration = target
     for (const batch of batches) {
       if (!batch.active) batches.delete(batch)
     }
-    const completed = waiters.filter((waiter) => waiter.generation <= target)
-    waiters = waiters.filter((waiter) => waiter.generation > target)
-    yield* Effect.forEach(completed, (waiter) => Deferred.done(waiter.done, exit), {
-      concurrency: "unbounded",
-      discard: true,
-    })
+    if (waiters.length) {
+      const completed = waiters.filter((waiter) => waiter.generation <= target)
+      waiters = waiters.filter((waiter) => waiter.generation > target)
+      for (const waiter of completed) Deferred.doneUnsafe(waiter.done, exit)
+    }
     return yield* exit
   })
   const materializeReload = () => semaphore.withPermit(materializeCurrent())
@@ -156,25 +155,24 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
       const done = Deferred.makeUnsafe<void>()
       reloading = done
       return Effect.gen(function* () {
-        yield* Effect.forEach(batches, (batch) => Deferred.await(batch.done), { discard: true })
-          .pipe(
-            Effect.andThen(
-              semaphore.withPermit(
-                Effect.suspend(() => {
-                  if (reloadedGeneration >= generation) return Effect.void
-                  return materializeCurrent()
-                }),
-              ),
-            ),
-            Effect.exit,
-            Effect.flatMap((exit) =>
-              Effect.sync(() => {
-                reloading = undefined
-                Deferred.doneUnsafe(done, exit)
+        yield* Effect.forEach(batches, (batch) => Deferred.await(batch.done), { discard: true }).pipe(
+          Effect.andThen(
+            semaphore.withPermit(
+              Effect.suspend(() => {
+                if (reloadedGeneration >= generation) return Effect.void
+                return materializeCurrent()
               }),
             ),
-            Effect.forkDetach,
-          )
+          ),
+          Effect.exit,
+          Effect.flatMap((exit) =>
+            Effect.sync(() => {
+              reloading = undefined
+              Deferred.doneUnsafe(done, exit)
+            }),
+          ),
+          Effect.forkDetach,
+        )
         return yield* Deferred.await(done)
       })
     })
@@ -213,7 +211,7 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
     get: () => state,
     read: Effect.fnUntraced(function* () {
       while (reloadedGeneration < generation) {
-        if ((yield* CurrentCommit)?.active && committing > 0) return state
+        if ((yield* CurrentCommit)?.active && committing) return state
         const batch = yield* CurrentBatch
         if (batch?.active || (batch && batches.has(batch))) return state
         yield* materializePending()

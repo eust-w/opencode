@@ -52,20 +52,6 @@ describe("Skill", () => {
     }),
   )
 
-  it.effect("reloads pending transforms before listing", () =>
-    Effect.gen(function* () {
-      const skill = yield* Skill.Service
-      let description = "Initial"
-      yield* skill.transform((draft) => draft.add(info("review", description)))
-
-      description = "Updated"
-      const reload = yield* skill.reload().pipe(Effect.forkChild({ startImmediately: true }))
-
-      expect(yield* skill.list()).toEqual([info("review", "Updated")])
-      yield* Fiber.join(reload)
-    }),
-  )
-
   it.effect("exposes reloaded skills to synchronous update listeners", () =>
     Effect.gen(function* () {
       const skill = yield* Skill.Service

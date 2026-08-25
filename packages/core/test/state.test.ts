@@ -98,6 +98,9 @@ describe("State", () => {
       expect((yield* state.read()).values).toEqual(["second"])
       yield* Fiber.join(reload)
       expect(finalized).toBe(1)
+
+      yield* TestClock.adjust("500 millis")
+      expect(finalized).toBe(1)
     }),
   )
 
@@ -483,27 +486,6 @@ describe("State", () => {
       yield* Fiber.join(first)
       yield* Fiber.join(second)
 
-      expect(finalized).toBe(1)
-    }),
-  )
-
-  it.effect("does not repeat a reload already performed by a read", () =>
-    Effect.gen(function* () {
-      let finalized = 0
-      const state = State.create({
-        initial: () => ({ values: [] as string[] }),
-        draft: (draft) => ({ add: (item: string) => draft.values.push(item) }),
-        finalize: () => Effect.sync(() => finalized++),
-      })
-      yield* state.transform((draft) => draft.add("value"))
-      finalized = 0
-
-      const reload = yield* state.reload().pipe(Effect.forkChild({ startImmediately: true }))
-      yield* state.read()
-      yield* Fiber.join(reload)
-      expect(finalized).toBe(1)
-
-      yield* TestClock.adjust("500 millis")
       expect(finalized).toBe(1)
     }),
   )

@@ -111,8 +111,9 @@ const layer = Layer.effect(
     })
 
     const resolve = Effect.fn("WebSearch.resolve")(function* (input: Input) {
-      const providers = (yield* state.read()).providers
-      if (input.providerID) return yield* requireProvider(providers, input.providerID)
+      if (input.providerID) {
+        return yield* requireProvider((yield* state.read()).providers, input.providerID)
+      }
       const provider = yield* defaultProvider()
       if (!provider) return yield* new ProviderRequiredError()
       return provider
