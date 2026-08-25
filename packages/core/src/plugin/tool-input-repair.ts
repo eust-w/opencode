@@ -4,6 +4,16 @@ import { define } from "@opencode-ai/plugin/effect/plugin"
 import { Effect, Option, Predicate, Schema } from "effect"
 import type { JsonSchema } from "effect"
 
+// Repairs apply only when the input schema unambiguously supports them:
+// - Optional non-nullable null: { limit: null } -> {}
+// - Optional non-object placeholder: { limit: {} } -> {}
+// - Numeric string: { limit: "20" } -> { limit: 20 }
+// - Boolean string: { enabled: "false" } -> { enabled: false }
+// - Stringified array: { tags: '["a"]' } -> { tags: ["a"] }
+// - Stringified object: { options: '{"enabled":true}' } -> { options: { enabled: true } }
+// - Compatible array item: { tags: "a" } -> { tags: ["a"] }
+// - Nested fields: { items: [{ count: "2" }] } -> { items: [{ count: 2 }] }
+
 const decodeJson = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Unknown))
 const maxDepth = 6
 
