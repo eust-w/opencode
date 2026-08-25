@@ -509,7 +509,12 @@ describe("Plugin", () => {
         sessionID: Session.ID.make("ses_repair"),
         agent: Agent.ID.make("build"),
         messageID: SessionMessage.ID.make("msg_repair"),
-        call: { type: "tool-call", id: "call-repair", name: "repairable", input: { count: "2", enabled: "true" } },
+        call: {
+          type: "tool-call",
+          id: "call-repair",
+          name: "repairable",
+          input: '{"count":"2","enabled":"true","extra":true}',
+        },
       })
 
       expect(executed).toEqual([{ count: 2, enabled: true }])

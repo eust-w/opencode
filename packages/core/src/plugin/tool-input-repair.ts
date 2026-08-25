@@ -5,6 +5,8 @@ import { Effect, Option, Predicate, Schema } from "effect"
 import type { JsonSchema } from "effect"
 
 // Repairs apply only when the input schema unambiguously supports them:
+// - Stringified root object: '{"limit":"20"}' -> { limit: 20 }
+// - Unknown closed-object property: { limit: 20, extra: true } -> { limit: 20 }
 // - Optional non-nullable null: { limit: null } -> {}
 // - Optional non-object placeholder: { limit: {} } -> {}
 // - Numeric string: { limit: "20" } -> { limit: 20 }
@@ -23,7 +25,7 @@ export const Plugin = define({
   effect: (ctx) =>
     ctx.tool.hook("execute.before", (event) =>
       Effect.sync(() => {
-        if (!Predicate.isObject(event.input) || event.inputSchema.type !== "object") return
+        if (event.inputSchema.type !== "object") return
         event.input = repair(event.input, event.inputSchema, 0)
       }),
     ),
@@ -66,43 +68,66 @@ function repairObject(value: unknown, schema: JsonSchema.JsonSchema, depth: numb
   if (!Predicate.isObject(schema.properties)) return parsed
 
   const required = Array.isArray(schema.required) ? schema.required : []
-  return Object.entries(schema.properties).reduce<Record<string, unknown>>((result, [key, property]) => {
-    if (!(key in result) || !Predicate.isObject(property)) return result
-    const current = result[key]
+  return Object.entries(schema.properties).reduce<Record<string, unknown>>(
+    (result, [key, property]) => {
+      if (!(key in result) || !Predicate.isObject(property)) return result
+      const current = result[key]
 
-    // Null is removable only when omission is valid and the property cannot itself accept null.
-    if (
-      current === null &&
-      !required.includes(key) &&
-      typeof property.type === "string" &&
-      property.type !== "null" &&
-      property.nullable !== true &&
-      !("anyOf" in property) &&
-      !("oneOf" in property)
-    ) {
-      const next = { ...result }
-      delete next[key]
-      return next
-    }
+      // Null is removable only when omission is valid and the property cannot itself accept null.
+      if (
+        current === null &&
+        !required.includes(key) &&
+        typeof property.type === "string" &&
+        property.type !== "null" &&
+        property.nullable !== true &&
+        !("anyOf" in property) &&
+        !("oneOf" in property)
+      ) {
+        const next = { ...result }
+        delete next[key]
+        return next
+      }
 
-    // Empty objects are placeholders only when the optional property expects another type.
-    if (
-      Predicate.isObject(current) &&
-      Object.keys(current).length === 0 &&
-      !required.includes(key) &&
-      typeof property.type === "string" &&
-      property.type !== "object" &&
-      !("anyOf" in property) &&
-      !("oneOf" in property)
-    ) {
-      const next = { ...result }
-      delete next[key]
-      return next
-    }
+      // Empty objects are placeholders only when the optional property expects another type.
+      if (
+        Predicate.isObject(current) &&
+        Object.keys(current).length === 0 &&
+        !required.includes(key) &&
+        typeof property.type === "string" &&
+        property.type !== "object" &&
+        !("anyOf" in property) &&
+        !("oneOf" in property)
+      ) {
+        const next = { ...result }
+        delete next[key]
+        return next
+      }
 
-    const next = repair(current, property, depth + 1)
-    return next === current ? result : { ...result, [key]: next }
-  }, parsed)
+      const next = repair(current, property, depth + 1)
+      return next === current ? result : { ...result, [key]: next }
+    },
+    removeUnknownProperties(parsed, schema),
+  )
+}
+
+function removeUnknownProperties(value: Record<string, unknown>, schema: JsonSchema.JsonSchema) {
+  const properties = schema.properties
+  if (
+    schema.additionalProperties !== false ||
+    !Predicate.isObject(properties) ||
+    "patternProperties" in schema ||
+    "$ref" in schema ||
+    "allOf" in schema
+  ) {
+    return value
+  }
+
+  return Object.keys(value).reduce<Record<string, unknown>>((result, key) => {
+    if (Object.hasOwn(properties, key)) return result
+    const next = { ...result }
+    delete next[key]
+    return next
+  }, value)
 }
 
 function repairArray(value: unknown, schema: JsonSchema.JsonSchema, depth: number): unknown {

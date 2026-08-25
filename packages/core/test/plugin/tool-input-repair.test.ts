@@ -53,6 +53,71 @@ describe("tool input repair plugin", () => {
     }),
   )
 
+  it.effect("parses stringified root objects and repairs their fields", () =>
+    Effect.gen(function* () {
+      const schema = object({ count: { type: "integer" } })
+
+      expect((yield* run('{"count":"2"}', schema)).input).toEqual({ count: 2 })
+      expect((yield* run("{broken", schema)).input).toBe("{broken")
+      expect((yield* run("[]", schema)).input).toBe("[]")
+      expect((yield* run(null, schema)).input).toBeNull()
+    }),
+  )
+
+  it.effect("removes unknown properties only from explicitly closed objects", () =>
+    Effect.gen(function* () {
+      const input = {
+        known: "2",
+        extra: true,
+        closed: { keep: "3", extra: true },
+        open: { keep: "4", extra: true },
+        items: [{ keep: "5", extra: true }],
+      }
+      const event = yield* run(input, {
+        ...object({
+          known: { type: "integer" },
+          closed: { ...object({ keep: { type: "integer" } }), additionalProperties: false },
+          open: object({ keep: { type: "integer" } }),
+          items: {
+            type: "array",
+            items: { ...object({ keep: { type: "integer" } }), additionalProperties: false },
+          },
+        }),
+        additionalProperties: false,
+      })
+
+      expect(event.input).toEqual({
+        known: 2,
+        closed: { keep: 3 },
+        open: { keep: 4, extra: true },
+        items: [{ keep: 5 }],
+      })
+      expect(input.extra).toBeTrue()
+      expect(input.closed.extra).toBeTrue()
+      expect(input.items[0]?.extra).toBeTrue()
+
+      const empty = yield* run({ extra: true }, { ...object({}), additionalProperties: false })
+      expect(empty.input).toEqual({})
+    }),
+  )
+
+  it.effect("preserves unknown properties allowed by open or dynamic schemas", () =>
+    Effect.gen(function* () {
+      const input = { known: 1, extra: true }
+      const properties = { known: { type: "integer" } }
+      const schemas = [
+        object(properties),
+        { ...object(properties), additionalProperties: true },
+        { ...object(properties), additionalProperties: { type: "boolean" } },
+        { ...object(properties), additionalProperties: false, patternProperties: { "^extra$": { type: "boolean" } } },
+        { ...object(properties), additionalProperties: false, allOf: [{ properties: { extra: { type: "boolean" } } }] },
+        { ...object(properties), additionalProperties: false, $ref: "#/$defs/example" },
+      ]
+
+      for (const schema of schemas) expect((yield* run(input, schema)).input).toBe(input)
+    }),
+  )
+
   it.effect("removes only optional nulls that explicitly exclude null", () =>
     Effect.gen(function* () {
       const event = yield* run(
@@ -235,7 +300,7 @@ describe("tool input repair plugin", () => {
     }),
   )
 
-  it.effect("skips ambiguous unions, unsupported schemas, and root repairs", () =>
+  it.effect("skips ambiguous unions and unsupported schemas", () =>
     Effect.gen(function* () {
       const input = { either: "2", variants: "true", types: "3", unknown: "4" }
       const event = yield* run(
@@ -248,7 +313,6 @@ describe("tool input repair plugin", () => {
         }),
       )
       expect(event.input).toBe(input)
-      expect((yield* run('{"count":"2"}', object({ count: { type: "integer" } }))).input).toBe('{"count":"2"}')
     }),
   )
 })
