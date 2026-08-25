@@ -714,7 +714,7 @@ describe("LocationServiceMap", () => {
           const blockedState = yield* update(blocked.path, blockedID)
           expect(blockedState.providers.some((provider) => provider.id === blockedID)).toBe(true)
           expect(blockedState.providers.some((provider) => provider.id === allowedID)).toBe(false)
-          const blockedTools = blockedState.tools.map((tool) => tool.name)
+          const blockedTools = blockedState.tools.map((tool) => tool.name).filter((name) => !/^browser_/.test(name))
           expect(blockedTools.filter((name) => name !== "execute").sort()).toEqual([
             "edit",
             "glob",
@@ -732,7 +732,7 @@ describe("LocationServiceMap", () => {
           const allowedState = yield* update(allowed.path, allowedID)
           expect(allowedState.providers.some((provider) => provider.id === allowedID)).toBe(true)
           expect(allowedState.providers.some((provider) => provider.id === blockedID)).toBe(false)
-          const allowedTools = allowedState.tools.map((tool) => tool.name)
+          const allowedTools = allowedState.tools.map((tool) => tool.name).filter((name) => !/^browser_/.test(name))
           expect(blockedTools.includes("execute")).toBe(allowedTools.includes("execute"))
           expect(allowedTools.filter((name) => name !== "execute").sort()).toEqual([
             "edit",

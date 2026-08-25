@@ -8,7 +8,7 @@ import type { SessionModel } from "./model"
 import { sessionPanelLayout } from "./session-panel-layout"
 import { clampSessionPanelWidth, sessionPanelWidthMax } from "./session-panel-width"
 
-export function createSessionScreenLayout(session: SessionModel, serverScope: string) {
+export function createSessionScreenLayout(session: SessionModel, serverScope: string, browserOpen: () => boolean) {
   const layout = useLayout()
   const settings = useSettings()
   const size = createSizing()
@@ -26,7 +26,7 @@ export function createSessionScreenLayout(session: SessionModel, serverScope: st
         opened: layout.fileTree.opened(),
       }),
   )
-  const resizable = createMemo(() => reviewPanelOpen() || sideTerminalOpen())
+  const resizable = createMemo(() => reviewPanelOpen() || browserOpen() || sideTerminalOpen())
   const sidePanelOpen = createMemo(() => resizable() || fileTreeOpen())
   const [rowSize, setRowSize] = createStore<{ width?: number; height?: number }>({})
   let row: HTMLDivElement | undefined
@@ -60,6 +60,7 @@ export function createSessionScreenLayout(session: SessionModel, serverScope: st
   const panelLayout = createMemo(() =>
     sessionPanelLayout({
       review: reviewPanelOpen(),
+      browser: browserOpen(),
       terminal: sideTerminalOpen(),
       files: fileTreeOpen(),
     }),
@@ -70,7 +71,7 @@ export function createSessionScreenLayout(session: SessionModel, serverScope: st
     if (previous !== stacked) setMotion({ gap: stacked, closing: !stacked })
     return stacked
   }, panelLayout().stacked)
-  const sideRegionOpen = createMemo(() => reviewPanelOpen() || fileTreeOpen())
+  const sideRegionOpen = createMemo(() => reviewPanelOpen() || browserOpen() || fileTreeOpen())
   const terminalPane = createMemo(() =>
     Math.min(layout.terminal.height(), typeof window === "undefined" ? 600 : window.innerHeight * 0.6),
   )

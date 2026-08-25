@@ -39,6 +39,7 @@ export interface Settings {
     showCustomAgents: boolean
     mobileTitlebarPosition: "top" | "bottom"
     terminalPlacement: TerminalPlacement
+    experimentalBrowser: boolean
   }
   appearance: {
     fontSize: number
@@ -126,6 +127,7 @@ const defaultSettings: Settings = {
     showCustomAgents: false,
     mobileTitlebarPosition: "top",
     terminalPlacement: "side",
+    experimentalBrowser: true,
   },
   appearance: {
     fontSize: 14,
@@ -255,6 +257,13 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         ),
         setTerminalPlacement(value: TerminalPlacement) {
           setStore("general", "terminalPlacement", value)
+        },
+        experimentalBrowser: withFallback(
+          () => store.general?.experimentalBrowser,
+          defaultSettings.general.experimentalBrowser,
+        ),
+        setExperimentalBrowser(value: boolean) {
+          setStore("general", "experimentalBrowser", value)
         },
       },
       visibility: {

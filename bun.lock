@@ -181,12 +181,14 @@
       "dependencies": {
         "@opencode-ai/protocol": "workspace:*",
         "@opencode-ai/schema": "workspace:*",
+        "ws": "8.21.0",
       },
       "devDependencies": {
         "@effect/platform-node": "catalog:",
         "@opencode-ai/httpapi-codegen": "workspace:*",
         "@tsconfig/bun": "catalog:",
         "@types/bun": "catalog:",
+        "@types/ws": "8.18.1",
         "@typescript/native-preview": "catalog:",
         "effect": "catalog:",
         "solid-js": "catalog:",

@@ -5,6 +5,7 @@ import { LayerNode } from "@opencode-ai/util/effect/layer-node"
 import { httpClient } from "@opencode-ai/util/effect/app-node-platform"
 import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { Bus } from "@opencode-ai/core/bus"
+import { BrowserHost } from "@opencode-ai/core/browser-host"
 import { EventLogger } from "@opencode-ai/core/event-logger"
 import { FileSystemSearch } from "@opencode-ai/core/filesystem/search"
 import { Credential } from "@opencode-ai/core/credential"
@@ -42,12 +43,14 @@ import { layer } from "./location"
 import { formLocationLayer } from "./middleware/form-location"
 import { sessionLocationLayer } from "./middleware/session-location"
 import { ServerInfo } from "./server-info"
+import { BrowserTunnelServer } from "./browser-tunnel"
 import type { ServerOptions } from "./options"
 
 const applicationServiceNodes = [
   Global.node,
   Database.node,
   Bus.node,
+  BrowserHost.node,
   EventLogger.node,
   httpClient,
   Job.node,
@@ -139,6 +142,7 @@ function makeRoutes<AuthError, AuthServices>(
   return serviceLayer.pipe(
     Layer.flatMap((context) => {
       const services = Layer.succeedContext(context)
+      const browserTunnel = BrowserTunnelServer.layer.pipe(Layer.provide(services))
       const requestServices = Layer.merge(
         Layer.succeedContext(
           Context.pick(Database.Service, PermissionSaved.Service, Project.Service, WellKnown.Service)(context),
@@ -154,6 +158,7 @@ function makeRoutes<AuthError, AuthServices>(
         Layer.provide(schemaErrorLayer),
         Layer.provide(auth),
         HttpRouter.provideRequest(requestServices),
+        Layer.provideMerge(browserTunnel),
         Layer.provideMerge(services),
         Layer.provideMerge(HttpRouter.layer),
       )

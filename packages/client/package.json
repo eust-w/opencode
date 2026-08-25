@@ -17,6 +17,7 @@
   ],
   "exports": {
     ".": "./src/promise/index.ts",
+    "./node": "./src/node/index.ts",
     "./promise": "./src/promise/index.ts",
     "./promise/api": "./src/promise/api.ts",
     "./service": "./src/promise/service.ts",
@@ -34,7 +35,8 @@
   },
   "dependencies": {
     "@opencode-ai/schema": "workspace:*",
-    "@opencode-ai/protocol": "workspace:*"
+    "@opencode-ai/protocol": "workspace:*",
+    "ws": "8.21.0"
   },
   "peerDependencies": {
     "effect": "4.0.0-rc.111",
@@ -53,6 +55,7 @@
     "@opencode-ai/httpapi-codegen": "workspace:*",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
+    "@types/ws": "8.18.1",
     "@typescript/native-preview": "catalog:",
     "effect": "catalog:",
     "solid-js": "catalog:"

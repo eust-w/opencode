@@ -57,6 +57,9 @@ const layer = Layer.effect(
     const bus = yield* Bus.Service
     const global = yield* Global.Service
     const permissions: Info["permissions"] = [
+      { action: "browser_navigate", resource: "*", effect: "ask" },
+      { action: "browser_read", resource: "*", effect: "ask" },
+      { action: "browser_interact", resource: "*", effect: "ask" },
       { action: "external_directory", resource: SHELL_OUTPUT_GLOB(global.data), effect: "allow" },
       { action: "external_directory", resource: TOOL_OUTPUT_GLOB(global.data), effect: "allow" },
       { action: "external_directory", resource: path.join(global.tmp, "*"), effect: "allow" },

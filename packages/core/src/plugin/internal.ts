@@ -7,6 +7,7 @@ import { AppProcess } from "@opencode-ai/util/process"
 import { Context, Effect, Scope } from "effect"
 import { HttpClient } from "effect/unstable/http"
 import { Agent } from "../agent.js"
+import { BrowserHost } from "../browser-host.js"
 import { Catalog } from "../catalog.js"
 import { Command } from "../command.js"
 import { Config } from "../config.js"
@@ -58,6 +59,7 @@ import { Snapshot } from "../snapshot.js"
 import { Skill } from "../skill.js"
 import { SkillDiscovery } from "../skill/discovery.js"
 import { Watcher } from "../filesystem/watcher.js"
+import { BrowserTool } from "../tool/plugin/browser.js"
 import { PatchTool } from "../tool/plugin/patch.js"
 import { EditTool } from "../tool/plugin/edit.js"
 import { GlobTool } from "../tool/plugin/glob.js"
@@ -90,6 +92,7 @@ import { WellKnownPlugin } from "../wellknown/plugin.js"
 
 const services = Effect.fn("PluginInternal.services")(function* () {
   const agent = yield* Agent.Service
+  const browser = yield* BrowserHost.Service
   const processes = yield* AppProcess.Service
   const catalog = yield* Catalog.Service
   const command = yield* Command.Service
@@ -134,6 +137,7 @@ const services = Effect.fn("PluginInternal.services")(function* () {
   const wellknown = yield* WellKnown.Service
   return Context.mergeAll(
     Context.make(Agent.Service, agent),
+    Context.make(BrowserHost.Service, browser),
     Context.make(AppProcess.Service, processes),
     Context.make(Catalog.Service, catalog),
     Context.make(Command.Service, command),
@@ -185,6 +189,7 @@ export type Requirements = ContextServices<Effect.Success<ReturnType<typeof serv
 
 export const requirements = LayerNode.group([
   Agent.node,
+  BrowserHost.node,
   AppProcess.node,
   Catalog.node,
   Command.node,
@@ -243,6 +248,7 @@ const pre = [
   ModelsDevPlugin,
   ...ProviderPlugins,
   ...WebSearchPlugins,
+  BrowserTool.Plugin,
   PatchTool.Plugin,
   EditTool.Plugin,
   GlobTool.Plugin,

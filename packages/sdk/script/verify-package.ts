@@ -171,8 +171,18 @@ for (const module of modules) {
   ])
 
   const sdk = archives.get("@opencode-ai/sdk")
-  if (!sdk) throw new Error("Packed SDK archive was not created")
-  await $`npm install --ignore-scripts --no-audit --no-fund --package-lock=false ${sdk} wrangler@4.110.0`.cwd(consumer)
+  const client = archives.get("@opencode-ai/client")
+  if (!sdk || !client) throw new Error("Packed SDK or client archive was not created")
+  await $`npm install --ignore-scripts --no-audit --no-fund --package-lock=false ${sdk} ${client} wrangler@4.110.0`.cwd(
+    consumer,
+  )
+  const node = `import { BrowserDriver, OpenCode } from "@opencode-ai/client/node"
+if (typeof OpenCode.make !== "function") throw new Error("Packed client is missing OpenCode.make")
+if (typeof BrowserDriver.chromium !== "function") throw new Error("Packed client is missing BrowserDriver.chromium")
+if (typeof OpenCode.make({ baseUrl: "http://127.0.0.1:1" }).browser.register !== "function") {
+  throw new Error("Packed client is missing browser registration")
+}`
+  await $`node --input-type=module --eval ${node}`.cwd(consumer)
   await $`bun imports.mjs`.cwd(consumer)
   await $`bun --conditions=workerd imports.mjs`.cwd(consumer)
   await $`node_modules/.bin/wrangler deploy --dry-run --config wrangler.jsonc --outdir dist`.cwd(consumer)

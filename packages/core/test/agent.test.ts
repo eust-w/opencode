@@ -150,6 +150,9 @@ describe("Agent", () => {
       expect(info?.permissions.slice(0, Agent.Info.default(id).permissions.length)).toEqual(
         Agent.Info.default(id).permissions,
       )
+      for (const action of ["browser_navigate", "browser_read", "browser_interact"]) {
+        expect(Permission.evaluate(action, "https://example.com/", info?.permissions ?? []).effect).toBe("ask")
+      }
       expect(
         Permission.evaluate("external_directory", path.join(global.data, "shell", "*", "*"), info?.permissions ?? [])
           .effect,

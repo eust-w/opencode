@@ -24,6 +24,9 @@ const it = testEffect(AppNodeBuilder.build(LayerNode.group([Agent.node, Bus.node
 const decode = Schema.decodeUnknownSync(Info)
 const defaultPermissions = (global: Global.Interface): Permission.Ruleset => [
   ...Agent.Info.default(Agent.ID.make("test")).permissions,
+  { action: "browser_navigate", resource: "*", effect: "ask" },
+  { action: "browser_read", resource: "*", effect: "ask" },
+  { action: "browser_interact", resource: "*", effect: "ask" },
   { action: "external_directory", resource: path.join(global.data, "shell", "*", "*"), effect: "allow" },
   { action: "external_directory", resource: path.join(global.data, "tool-output", "*"), effect: "allow" },
   { action: "external_directory", resource: path.join(global.tmp, "*"), effect: "allow" },
