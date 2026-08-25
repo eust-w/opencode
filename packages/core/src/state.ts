@@ -1,6 +1,6 @@
 export * as State from "./state.js"
 
-import { Clock, Context, Deferred, Effect, Scope, Semaphore } from "effect"
+import { Clock, Context, Deferred, Effect, Exit, Scope, Semaphore } from "effect"
 
 /**
  * A replayable transform applied to a draft during reload.
@@ -30,9 +30,11 @@ export interface Transformable<DraftApi> {
   readonly reload: Reload
 }
 
+type Commit = () => Effect.Effect<Effect.Effect<void>>
+
 type Batch = {
   active: boolean
-  readonly reloads: Set<Reload>
+  readonly commits: Set<Commit>
 }
 
 const CurrentBatch = Context.Reference<Batch | undefined>("@opencode/State/CurrentBatch", {
@@ -44,10 +46,11 @@ export function batch<A, E, R>(effect: Effect.Effect<A, E, R>) {
   return Effect.gen(function* () {
     const current = yield* CurrentBatch
     if (current?.active) return yield* effect
-    const batch: Batch = { active: true, reloads: new Set() }
+    const batch: Batch = { active: true, commits: new Set() }
     const exit = yield* effect.pipe(Effect.provideService(CurrentBatch, batch), Effect.exit)
     batch.active = false
-    yield* Effect.forEach(batch.reloads, (reload) => reload(), { discard: true })
+    const notifications = yield* Effect.forEach(batch.commits, (commit) => commit())
+    yield* Effect.forEach(notifications, (notify) => notify, { discard: true })
     return yield* exit
   })
 }
@@ -63,12 +66,10 @@ export interface Options<State, DraftApi> {
   readonly initial: () => State
   /** Wraps mutable state in a domain-specific draft API. */
   readonly draft: MakeDraft<State, DraftApi>
-  /**
-   * Runs after the rebuilt state becomes visible. Update events published here
-   * act as read barriers: subscribers refetching on the event observe the
-   * committed state.
-   */
+  /** Runs after the rebuilt state becomes visible while mutation coordination is held. */
   readonly finalize?: (draft: DraftApi) => Effect.Effect<void>
+  /** Runs after the rebuilt state is finalized and mutation coordination is released. */
+  readonly notify?: (draft: DraftApi) => Effect.Effect<void>
 }
 
 export interface Interface<State, DraftApi> extends Transformable<DraftApi> {
@@ -86,7 +87,10 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
 
   const commit = Effect.fn("State.commit")(function* (next: State) {
     state = next
-    if (options.finalize) yield* options.finalize(options.draft(next))
+    const draft = options.draft(next)
+    if (options.finalize) yield* options.finalize(draft)
+    const notify = options.notify
+    return notify ? Effect.suspend(() => notify(draft)) : Effect.void
   })
 
   const materialize = Effect.fnUntraced(function* () {
@@ -97,10 +101,11 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
         transform.run(api)
       })
     }
-    yield* commit(next)
+    return yield* commit(next)
   })
 
-  const materializeReload = () => semaphore.withPermit(materialize())
+  const materializeCommit = () => semaphore.withPermit(materialize())
+  const materializeReload = () => materializeCommit().pipe(Effect.flatMap((notify) => notify))
 
   const rebuild = (): Effect.Effect<void> =>
     Effect.gen(function* () {
@@ -110,15 +115,19 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
       if (clock.currentTimeMillisUnsafe() < requestedAt + reloadDebounce) return yield* rebuild()
 
       const target = generation
-      const exit = yield* materializeReload().pipe(Effect.exit)
+      const committed = yield* materializeCommit().pipe(Effect.exit)
       const completed = waiters.filter((waiter) => waiter.generation <= target)
       waiters = waiters.filter((waiter) => waiter.generation > target)
+      running = false
+      if (generation > target) {
+        running = true
+        yield* rebuild().pipe(Effect.forkDetach)
+      }
+      const exit = Exit.isFailure(committed) ? committed : yield* committed.value.pipe(Effect.exit)
       yield* Effect.forEach(completed, (waiter) => Deferred.done(waiter.done, exit), {
         concurrency: "unbounded",
         discard: true,
       })
-      if (generation > target) return yield* rebuild()
-      running = false
     })
 
   const reload = Effect.fnUntraced(function* () {
@@ -144,21 +153,23 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
           const transform = { run: update }
           let active = true
           const dispose = Effect.uninterruptible(
-            semaphore.withPermit(
-              Effect.suspend(() => {
-                if (!active) return Effect.void
-                active = false
-                transforms = transforms.filter((item) => item !== transform)
-                return Effect.gen(function* () {
-                  const batch = yield* CurrentBatch
-                  if (batch?.active) {
-                    batch.reloads.add(materializeReload)
-                    return
-                  }
-                  yield* materialize()
-                })
-              }),
-            ),
+            semaphore
+              .withPermit(
+                Effect.suspend(() => {
+                  if (!active) return Effect.succeed(Effect.void)
+                  active = false
+                  transforms = transforms.filter((item) => item !== transform)
+                  return Effect.gen(function* () {
+                    const batch = yield* CurrentBatch
+                    if (batch?.active) {
+                      batch.commits.add(materializeCommit)
+                      return Effect.void
+                    }
+                    return yield* materialize()
+                  })
+                }),
+              )
+              .pipe(Effect.flatMap((notify) => notify)),
           )
           yield* semaphore.withPermit(
             Effect.sync(() => {
@@ -167,7 +178,7 @@ export function create<State, DraftApi>(options: Options<State, DraftApi>): Inte
           )
           yield* Scope.addFinalizer(scope, dispose)
           const batch = yield* CurrentBatch
-          if (batch?.active) batch.reloads.add(materializeReload)
+          if (batch?.active) batch.commits.add(materializeCommit)
           else yield* materializeReload()
           return { dispose }
         }),

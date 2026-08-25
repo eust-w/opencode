@@ -326,7 +326,7 @@ const layer = Layer.effect(
           },
         },
       }),
-      finalize: () => bus.publish(Integration.Event.Updated, {}).pipe(Effect.asVoid),
+      notify: () => bus.publish(Integration.Event.Updated, {}).pipe(Effect.asVoid),
     })
 
     const resolveConnections = (entry: Entry | undefined, saved: readonly Credential.Info[]) => {
