@@ -110,6 +110,7 @@ import { createDelayedPresence } from "../../util/delayed-presence"
 import { SessionLocationMissing } from "./location-missing"
 import { isRecord } from "../../util/record"
 import { createHistoryPrepend } from "./history"
+import { useSessionTerminals } from "../../context/session-terminals"
 
 addDefaultParsers(parsers.parsers)
 
@@ -148,7 +149,7 @@ function use() {
   return ctx
 }
 
-export function Session(props: { verticalTabsWidth: number }) {
+export function Session(props: { verticalTabsWidth: number; promptMuted?: boolean }) {
   const setEpilogue = useEpilogue()
   const clipboard = useClipboard()
   const writeExport = async (file: string, content: string) => {
@@ -280,6 +281,7 @@ export function Session(props: { verticalTabsWidth: number }) {
   const [navigationSlack, setNavigationSlack] = createSignal(0)
   const [synced, setSynced] = createSignal(false)
   const sessionTabs = useSessionTabs()
+  const terminals = useSessionTerminals()
   const [awayFromBottom, setAwayFromBottom] = createSignal(false)
   const [latestHovered, setLatestHovered] = createSignal(false)
   let ensureAllRowsPending: (() => void)[] | undefined
@@ -897,6 +899,16 @@ export function Session(props: { verticalTabsWidth: number }) {
       },
     },
     {
+      title: "New terminal",
+      id: "session.terminal",
+      group: "Session",
+      slash: { name: "terminal" },
+      run: async () => {
+        dialog.clear()
+        await terminals.newTerminal(route.sessionID).catch(toast.error)
+      },
+    },
+    {
       title: (() => {
         const next = nextThinkingMode(thinkingMode())
         if (next === "hide") return "Collapse thinking"
@@ -1334,6 +1346,7 @@ export function Session(props: { verticalTabsWidth: number }) {
                     visible={true}
                     ref={bind}
                     disabled={false}
+                    muted={props.promptMuted}
                     onSubmit={() => {
                       toBottom()
                     }}
