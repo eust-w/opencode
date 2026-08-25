@@ -11,7 +11,11 @@ import type { JsonSchema } from "effect"
 // - Optional non-object placeholder: { limit: {} } -> {}
 // - Numeric string: { limit: "20" } -> { limit: 20 }
 // - Boolean string: { enabled: "false" } -> { enabled: false }
+// - Nullable numeric union: { limit: "20" } -> { limit: 20 }
+// - Tagged object union: { item: { kind: "count", value: "2" } } -> { item: { kind: "count", value: 2 } }
 // - Stringified array: { tags: '["a"]' } -> { tags: ["a"] }
+// - Positional tuple: { pair: ["2", "false"] } -> { pair: [2, false] }
+// - Typed dictionary: { counts: { first: "2" } } -> { counts: { first: 2 } }
 // - Stringified object: { options: '{"enabled":true}' } -> { options: { enabled: true } }
 // - Compatible array item: { tags: "a" } -> { tags: ["a"] }
 // - Repaired array item: { counts: "2" } -> { counts: [2] }
@@ -32,8 +36,36 @@ export const Plugin = define({
 })
 
 function repair(value: unknown, schema: JsonSchema.JsonSchema, depth: number): unknown {
-  if (depth > maxDepth || "anyOf" in schema || "oneOf" in schema) return value
+  if (depth > maxDepth) return value
 
+  const alternatives = Array.isArray(schema.anyOf)
+    ? schema.anyOf
+    : Array.isArray(schema.oneOf)
+      ? schema.oneOf
+      : Array.isArray(schema.type)
+        ? schema.type.map((type) => ({ ...schema, type }))
+        : undefined
+
+  const base =
+    alternatives && schema.type === "object"
+      ? repairObject(value, schema, depth)
+      : alternatives
+        ? value
+        : repairType(value, schema, depth)
+  const selected = alternatives ? repairUnion(base, alternatives, depth) : base
+  if (!Array.isArray(schema.allOf)) return selected
+
+  return schema.allOf.reduce<unknown>((result, member) => {
+    if (!Predicate.isObject(member)) return result
+    const intersection =
+      Predicate.isObject(result) && member.additionalProperties === false
+        ? { ...member, additionalProperties: true }
+        : member
+    return repair(result, intersection, depth + 1)
+  }, selected)
+}
+
+function repairType(value: unknown, schema: JsonSchema.JsonSchema, depth: number): unknown {
   switch (schema.type) {
     case "number":
     case "integer":
@@ -45,8 +77,70 @@ function repair(value: unknown, schema: JsonSchema.JsonSchema, depth: number): u
     case "array":
       return repairArray(value, schema, depth)
     default:
+      if (Predicate.isObject(schema.properties) || Array.isArray(schema.required)) {
+        return repairObject(value, schema, depth)
+      }
       return value
   }
+}
+
+function repairUnion(value: unknown, alternatives: unknown[], depth: number): unknown {
+  const branches = alternatives.filter(Predicate.isObject)
+  const matching = branches.filter((branch) => matchesSchema(value, branch))
+  const matched = matching[0]
+  if (matching.length === 1 && matched) {
+    return Predicate.isObject(value) ? repair(value, matched, depth + 1) : value
+  }
+  if (matching.length > 1) return value
+
+  const candidates = branches
+    .map((branch) => ({ branch, value: repair(value, branch, depth + 1) }))
+    .filter((candidate) => matchesSchema(candidate.value, candidate.branch))
+  const candidate = candidates[0]
+  if (candidates.length !== 1 || !candidate) return value
+  if (branches.filter((branch) => matchesSchema(candidate.value, branch)).length !== 1) return value
+  return candidate.value
+}
+
+function matchesSchema(value: unknown, schema: JsonSchema.JsonSchema): boolean {
+  if ("const" in schema && value !== schema.const) return false
+  if (Array.isArray(schema.enum) && !schema.enum.includes(value)) return false
+
+  if (Array.isArray(schema.type)) return schema.type.some((type) => matchesSchema(value, { ...schema, type }))
+
+  switch (schema.type) {
+    case "null":
+      return value === null
+    case "object":
+      return matchesObject(value, schema)
+    case "array":
+      return Array.isArray(value)
+    case "integer":
+      return typeof value === "number" && Number.isSafeInteger(value)
+    case "number":
+      return typeof value === "number" && Number.isFinite(value)
+    case "string":
+    case "boolean":
+      return typeof value === schema.type
+    default:
+      if (Predicate.isObject(schema.properties) || Array.isArray(schema.required)) return matchesObject(value, schema)
+      return "const" in schema || Array.isArray(schema.enum)
+  }
+}
+
+function matchesObject(value: unknown, schema: JsonSchema.JsonSchema): boolean {
+  if (!Predicate.isObject(value)) return false
+  if (Array.isArray(schema.required) && !schema.required.every((key) => typeof key === "string" && key in value)) {
+    return false
+  }
+  if (!Predicate.isObject(schema.properties)) return true
+
+  return Object.entries(schema.properties).every(([key, property]) => {
+    if (!(key in value) || !Predicate.isObject(property)) return true
+    if ("const" in property) return value[key] === property.const
+    if (Array.isArray(property.enum) && property.enum.length === 1) return value[key] === property.enum[0]
+    return true
+  })
 }
 
 function repairNumber(value: unknown, integer: boolean): unknown {
@@ -65,10 +159,10 @@ function repairBoolean(value: unknown): unknown {
 function repairObject(value: unknown, schema: JsonSchema.JsonSchema, depth: number): unknown {
   const parsed = typeof value === "string" ? Option.getOrUndefined(decodeJson(value)) : value
   if (!Predicate.isObject(parsed)) return value
-  if (!Predicate.isObject(schema.properties)) return parsed
 
+  const properties = Predicate.isObject(schema.properties) ? schema.properties : {}
   const required = Array.isArray(schema.required) ? schema.required : []
-  return Object.entries(schema.properties).reduce<Record<string, unknown>>(
+  const declared = Object.entries(properties).reduce<Record<string, unknown>>(
     (result, [key, property]) => {
       if (!(key in result) || !Predicate.isObject(property)) return result
       const current = result[key]
@@ -108,6 +202,18 @@ function repairObject(value: unknown, schema: JsonSchema.JsonSchema, depth: numb
     },
     removeUnknownProperties(parsed, schema),
   )
+
+  const additional = schema.additionalProperties
+  if (!Predicate.isObject(additional) || "patternProperties" in schema || "$ref" in schema || "allOf" in schema) {
+    return declared
+  }
+
+  return Object.keys(declared).reduce<Record<string, unknown>>((result, key) => {
+    if (Object.hasOwn(properties, key)) return result
+    const current = result[key]
+    const next = repair(current, additional, depth + 1)
+    return next === current ? result : { ...result, [key]: next }
+  }, declared)
 }
 
 function removeUnknownProperties(value: Record<string, unknown>, schema: JsonSchema.JsonSchema) {
@@ -131,35 +237,24 @@ function removeUnknownProperties(value: Record<string, unknown>, schema: JsonSch
 }
 
 function repairArray(value: unknown, schema: JsonSchema.JsonSchema, depth: number): unknown {
-  const items = schema.items
-  if (!Predicate.isObject(items)) return value
+  const tuple = Array.isArray(schema.prefixItems)
+    ? schema.prefixItems
+    : Array.isArray(schema.items)
+      ? schema.items
+      : undefined
+  const items = Predicate.isObject(schema.items) ? schema.items : undefined
+  if (!tuple && !items) return value
 
   const parsed = typeof value === "string" ? Option.getOrUndefined(decodeJson(value)) : value
   if (Array.isArray(parsed)) {
-    const repaired = parsed.map((item) => repair(item, items, depth + 1))
+    const repaired = parsed.map((item, index) => {
+      const itemSchema = tuple ? (tuple[index] ?? (Array.isArray(schema.prefixItems) ? items : undefined)) : items
+      return Predicate.isObject(itemSchema) ? repair(item, itemSchema, depth + 1) : item
+    })
     return repaired.every((item, index) => item === parsed[index]) ? parsed : repaired
   }
+  if (tuple || !items) return value
 
   const item = repair(value, items, depth + 1)
-  return matchesArrayItem(item, items) ? [item] : value
-}
-
-function matchesArrayItem(value: unknown, schema: JsonSchema.JsonSchema) {
-  if ("anyOf" in schema || "oneOf" in schema) return false
-
-  switch (schema.type) {
-    case "object":
-      return Predicate.isObject(value)
-    case "array":
-      return Array.isArray(value)
-    case "integer":
-      return typeof value === "number" && Number.isSafeInteger(value)
-    case "number":
-      return typeof value === "number" && Number.isFinite(value)
-    case "string":
-    case "boolean":
-      return typeof value === schema.type
-    default:
-      return false
-  }
+  return matchesSchema(item, items) ? [item] : value
 }
