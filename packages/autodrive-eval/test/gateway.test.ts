@@ -35,10 +35,12 @@ describe("gateway experiment transport", () => {
   test("separates worker and controller routes from the upstream path", () => {
     expect(gatewayRoute("/worker/v1/chat/completions")).toEqual({
       kind: "worker",
+      endpoint: "chat",
       upstreamPath: "/v1/chat/completions",
     })
     expect(gatewayRoute("/controller/v1/responses")).toEqual({
       kind: "controller",
+      endpoint: "responses",
       upstreamPath: "/v1/responses",
     })
     expect(() => gatewayRoute("/v1/chat/completions")).toThrow("Gateway route must identify")
@@ -48,6 +50,7 @@ describe("gateway experiment transport", () => {
     const request = createGatewayRequest({
       sequence: 0,
       kind: "worker",
+      endpoint: "chat",
       body: {
         temperature: 0,
         model: "qwen3.8-max",
@@ -69,7 +72,12 @@ describe("gateway experiment transport", () => {
     )
     expect(request.requestSHA256).toMatch(/^[a-f0-9]{64}$/)
     expect(() =>
-      createGatewayRequest({ sequence: 0, kind: "worker", body: { model: "qwen3.8-max", temperature: 0.2 } }),
+      createGatewayRequest({
+        sequence: 0,
+        kind: "worker",
+        endpoint: "chat",
+        body: { model: "qwen3.8-max", temperature: 0.2 },
+      }),
     ).toThrow("temperature zero")
   })
 
@@ -77,6 +85,7 @@ describe("gateway experiment transport", () => {
     const request = createGatewayRequest({
       sequence: 1,
       kind: "worker",
+      endpoint: "chat",
       body: {
         model: "qwen3.8-max",
         messages: [{ content: "Fix the task", role: "user" }],
@@ -94,6 +103,7 @@ describe("gateway experiment transport", () => {
       createGatewayRequest({
         sequence: 2,
         kind: "controller",
+        endpoint: "chat",
         body: {
           model: "qwen3.8-max",
           max_tokens: 1_024,
@@ -106,9 +116,29 @@ describe("gateway experiment transport", () => {
       createGatewayRequest({
         sequence: 2,
         kind: "controller",
+        endpoint: "chat",
         body: { model: "qwen3.8-max", max_tokens: 32_000, temperature: 0 },
       }),
     ).toThrow("frozen output allowance")
+  })
+
+  test("preserves Responses output limits instead of rewriting them as chat limits", () => {
+    const request = createGatewayRequest({
+      sequence: 3,
+      kind: "worker",
+      endpoint: "responses",
+      body: {
+        input: [{ content: [{ text: "Fix the task", type: "input_text" }], role: "user" }],
+        max_output_tokens: 32_000,
+        model: "qwen3.8-max",
+        temperature: 0,
+      },
+    })
+
+    expect(request.normalized).toBe(
+      '{"input":[{"content":[{"text":"Fix the task","type":"input_text"}],"role":"user"}],"max_output_tokens":32000,"model":"qwen3.8-max","temperature":0}',
+    )
+    expect(request.endpoint).toBe("responses")
   })
 
   test("replaces client credentials instead of forwarding them", () => {
@@ -142,6 +172,14 @@ describe("gateway experiment transport", () => {
         JSON.stringify({ model: "glm-5.3", usage: { prompt_tokens: 8, completion_tokens: 2, total_tokens: 10 } }),
       ),
     ).toEqual({ modelVersion: "glm-5.3", promptTokens: 8, completionTokens: 2 })
+    expect(
+      parseGatewayUsage(
+        [
+          'event: response.created\ndata: {"type":"response.created","response":{"model":"qwen3.8-max"}}',
+          'event: response.completed\ndata: {"type":"response.completed","response":{"model":"qwen3.8-max","usage":{"input_tokens":12,"output_tokens":5,"total_tokens":17}}}',
+        ].join("\n\n"),
+      ),
+    ).toEqual({ modelVersion: "qwen3.8-max", promptTokens: 12, completionTokens: 5 })
   })
 
   test("fails closed when the gateway spend cap is exhausted or unknown", () => {

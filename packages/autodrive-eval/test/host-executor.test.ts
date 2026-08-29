@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { buildTaskPrompt, gradePytest, parsePytestLog, parseTaskInput } from "../src/host-executor"
+import { buildExperimentConfig, buildTaskPrompt, gradePytest, parsePytestLog, parseTaskInput } from "../src/host-executor"
 
 const task = {
   schemaVersion: 1,
@@ -18,6 +18,20 @@ const task = {
 }
 
 describe("SWE-EVO host executor", () => {
+  test("routes workers through OpenAI Responses while keeping the controller chat-compatible", () => {
+    const config = buildExperimentConfig({
+      controllerModel: "qwen3.8-max",
+      segmentSteps: 6,
+      temperature: 0,
+      workerModel: "qwen3.8-max",
+    })
+
+    expect(config.model).toBe("openai/qwen3.8-max")
+    expect(config.providers.openai.api.package).toBe("@ai-sdk/openai")
+    expect(config.providers.openai.api.url).toBe("http://autodrive-proxy:8080/worker/v1")
+    expect(config.providers["autodrive-controller"].api.package).toBe("@ai-sdk/openai-compatible")
+  })
+
   test("keeps the hidden test patch out of the worker prompt", () => {
     const parsed = parseTaskInput(task)
     const prompt = buildTaskPrompt(parsed)

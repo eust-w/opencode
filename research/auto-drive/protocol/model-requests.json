@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "protocol": "auto-drive-swe-evo-v1.3",
+  "protocol": "auto-drive-swe-evo-v1.4",
   "worker": {
     "models": ["d-robotics/qwen3.8-max", "d-robotics/deepseek-v4-pro", "d-robotics/glm-5.3"],
     "temperature": 0,
@@ -9,6 +9,7 @@
     "maxContinuations": 5,
     "timeoutSeconds": 2700,
     "toolChoice": "auto",
+    "transport": "openai-responses",
     "providerVersion": null,
     "resolvedRequestSHA256": null,
     "resolutionRule": "Executor must save the exact provider model version and normalized outbound request SHA-256 in every trajectory. Null is invalid for a completed trajectory."
@@ -18,6 +19,7 @@
     "temperature": 0,
     "maxOutputTokens": 1024,
     "tools": [],
+    "transport": "openai-chat-completions",
     "timeoutSeconds": 15,
     "fallback": "regex",
     "providerVersion": null,

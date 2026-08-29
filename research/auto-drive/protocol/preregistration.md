@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.3
+# AutoDrive Preregistration v1.4
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -15,6 +15,12 @@ The rejected v1.1 engineering pilot showed that a single declared request hash w
 Before any end-to-end trajectory was accepted, the user authorized the sponsored D-Robotics LiteLLM-compatible gateway for execution. Its sealed catalog does not expose the v1.2 Google, Anthropic, or OpenAI model IDs, so the matrix is changed transparently instead of relabeling gateway models as the originally planned workers. The primary worker and every supervisor call use `d-robotics/qwen3.8-max`; the two twelve-task replication workers use `d-robotics/deepseek-v4-pro` and `d-robotics/glm-5.3`. Gateway aliases and undisclosed upstream revisions are not treated as direct-provider model identities; this limitation must be reported in the paper.
 
 The gateway key is classified as sponsored and metered because `/key/info` exposes cumulative spend but no provider-confirmed account budget. The host proxy therefore fails closed with a local spend cap, and a full 384-run receipt remains invalid until trajectory capacity is independently confirmed. The proxy is the frozen generation-parameter boundary: it materializes omitted worker defaults as `temperature=0,max_tokens=32000`, requires controller requests to use `temperature=0,max_tokens=1024`, replaces task-side credentials, and hashes the exact normalized outbound body. The dataset, four policies, task selection, repeat counts, six-step segment limit, five-continuation limit, statistics, and USD 800 overall budget remain unchanged. Because the protocol version and model IDs are part of the deterministic run key, all 384 run IDs are regenerated; all v1.2 engineering canaries remain excluded from results.
+
+## Responses transport amendment (v1.4)
+
+The first v1.3 end-to-end gateway canary received HTTP 200 for one charged worker request but the gateway's streamed Chat Completions tool-call delta omitted the tool-call ID or name required by the worker runtime. The runtime rejected the stream before executing a tool or modifying the checkout. No v1.3 trajectory, task outcome, boundary decision, or ledger row was accepted. The request manifest and raw proxy trace are retained as an excluded transport-qualification artifact; the same v1.3 configuration is not retried.
+
+Before any experimental trajectory was accepted, a direct gateway probe established that the OpenAI Responses endpoint returns a complete structured function call with a call ID, function name, and arguments. Version 1.4 therefore sends worker traffic through OpenAI Responses while leaving the tool-free supervisor on Chat Completions. The proxy freezes endpoint-specific fields as `temperature=0,max_output_tokens=32000` for Responses workers and `temperature=0,max_tokens=1024` for Chat supervisors, and parses both Responses `input_tokens/output_tokens` and Chat `prompt_tokens/completion_tokens` usage. The models, prompts, policies, dataset, task selection, sampling, limits, statistics, and budget are unchanged. All 384 deterministic run IDs are regenerated because transport is part of the frozen executable protocol.
 
 ## Claim boundary
 
@@ -53,7 +59,7 @@ The off result is the first-boundary prefix of each paid trajectory. It is never
 
 The primary worker is `d-robotics/qwen3.8-max`. Replication workers are `d-robotics/deepseek-v4-pro` and `d-robotics/glm-5.3`. Every supervisor call uses `d-robotics/qwen3.8-max`. Cross-model results are a generalization replication and not the primary estimate.
 
-Every run uses the pinned task image and base commit, temperature zero, the exact request record in `model-requests.json`, six worker steps per segment, at most five automatic continuations, at most 45 minutes, and no more than two concurrent tasks. The resolved provider/model version and normalized request body must be saved before a record is accepted.
+Every run uses the pinned task image and base commit, temperature zero, the endpoint-specific request record in `model-requests.json`, six worker steps per segment, at most five automatic continuations, at most 45 minutes, and no more than two concurrent tasks. The resolved provider/model version and normalized request body must be saved before a record is accepted.
 
 ## Boundary corpus and ablations
 

@@ -3,8 +3,8 @@
 import { appendFile, chmod, mkdir } from "node:fs/promises"
 import path from "node:path"
 import { z } from "zod"
-import { assertSecretFree, parseTrajectory, type Trajectory } from "../src/artifact"
-import { buildTaskPrompt, gradePytest, parsePytestLog, parseTaskInput } from "../src/host-executor"
+import { assertSecretFree, parseTrajectory } from "../src/artifact"
+import { buildExperimentConfig, buildTaskPrompt, gradePytest, parsePytestLog, parseTaskInput } from "../src/host-executor"
 import { protocol, Run } from "../src/protocol"
 
 const Input = z.object({
@@ -69,7 +69,19 @@ let taskStarted = false
 let networkCreated = false
 
 try {
-  await Bun.write(path.join(opencodeConfigRoot, "opencode.json"), JSON.stringify(createConfig(), null, 2) + "\n")
+  await Bun.write(
+    path.join(opencodeConfigRoot, "opencode.json"),
+    JSON.stringify(
+      buildExperimentConfig({
+        workerModel,
+        controllerModel,
+        segmentSteps: input.run.segmentSteps,
+        temperature: input.run.temperature,
+      }),
+      null,
+      2,
+    ) + "\n",
+  )
   await Bun.write(path.join(configRoot, "models.json"), await Bun.file(modelMetadataPath).text())
   await command(["docker", "pull", task.image], { timeoutMS: 20 * 60_000 })
   const imageDigest = await inspectImageDigest()
@@ -187,7 +199,7 @@ try {
   const headers = { "content-type": "application/json", "x-opencode-directory": "/testbed" }
   const availableModels = await api<{ providerID: string; id: string }[]>(address, "/api/model", { headers })
   if (
-    !availableModels.some((model) => model.providerID === "autodrive-worker" && model.id === workerModel) ||
+    !availableModels.some((model) => model.providerID === "openai" && model.id === workerModel) ||
     !availableModels.some((model) => model.providerID === "autodrive-controller" && model.id === controllerModel)
   )
     throw new Error("Frozen worker or controller model is unavailable in the task server")
@@ -197,7 +209,7 @@ try {
     headers,
     body: JSON.stringify({
       agent: "experiment",
-      model: { providerID: "autodrive-worker", id: workerModel },
+      model: { providerID: "openai", id: workerModel },
     }),
   })
   await api(address, `/api/session/${session.id}/auto-drive`, {
@@ -221,7 +233,6 @@ try {
 
   const boundaryPatches = await drain(address, session.id, headers)
   const finalPatch = await capturePatch("final")
-  const finalPatchSHA256 = digest(finalPatch)
   const firstPatch = boundaryPatches[0]?.content ?? finalPatch
   const firstGrade = await gradePatch("first-boundary", firstPatch)
   const finalGrade = firstPatch === finalPatch ? firstGrade : await gradePatch("final", finalPatch)
@@ -414,56 +425,10 @@ try {
     throw new Error("OpenCode server did not become ready")
   }
 
-  function createConfig() {
-    return {
-      model: `autodrive-worker/${workerModel}`,
-      default_agent: "experiment",
-      permissions: [
-        { action: "*", resource: "*", effect: "allow" },
-        { action: "question", resource: "*", effect: "deny" },
-        { action: "external_directory", resource: "*", effect: "deny" },
-      ],
-      agents: {
-        experiment: {
-          mode: "primary",
-          steps: input.run.segmentSteps,
-          request: { body: { temperature: input.run.temperature } },
-          permissions: [
-            { action: "*", resource: "*", effect: "allow" },
-            { action: "question", resource: "*", effect: "deny" },
-            { action: "external_directory", resource: "*", effect: "deny" },
-          ],
-        },
-      },
-      providers: {
-        "autodrive-worker": provider("http://autodrive-proxy:8080/worker/v1", workerModel, true, 32_000),
-        "autodrive-controller": provider(
-          "http://autodrive-proxy:8080/controller/v1",
-          controllerModel,
-          false,
-          1_024,
-        ),
-      },
-    }
-  }
 } finally {
   if (taskStarted) await command(["docker", "rm", "--force", taskName], { allowFailure: true })
   if (proxyStarted) await command(["docker", "rm", "--force", proxyName], { allowFailure: true })
   if (networkCreated) await command(["docker", "network", "rm", networkName], { allowFailure: true })
-}
-
-function provider(url: string, model: string, tools: boolean, output: number) {
-  return {
-    api: { type: "aisdk", package: "@ai-sdk/openai-compatible", url },
-    request: { body: { apiKey: "proxy-only-no-secret" } },
-    models: {
-      [model]: {
-        api: { id: model },
-        capabilities: { tools, input: ["text"], output: ["text"] },
-        limit: { context: 131_072, output },
-      },
-    },
-  }
 }
 
 async function api<T = unknown>(address: string, pathname: string, init: RequestInit = {}) {

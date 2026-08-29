@@ -37,6 +37,59 @@ export function buildTaskPrompt(task: TaskInput) {
   ].join("\n")
 }
 
+export function buildExperimentConfig(input: {
+  workerModel: string
+  controllerModel: string
+  segmentSteps: number
+  temperature: number
+}) {
+  return {
+    model: `openai/${input.workerModel}`,
+    default_agent: "experiment",
+    permissions: permissions(),
+    agents: {
+      experiment: {
+        mode: "primary",
+        steps: input.segmentSteps,
+        request: { body: { temperature: input.temperature } },
+        permissions: permissions(),
+      },
+    },
+    providers: {
+      openai: provider("http://autodrive-proxy:8080/worker/v1", input.workerModel, true, 32_000, "@ai-sdk/openai"),
+      "autodrive-controller": provider(
+        "http://autodrive-proxy:8080/controller/v1",
+        input.controllerModel,
+        false,
+        1_024,
+        "@ai-sdk/openai-compatible",
+      ),
+    },
+  }
+}
+
+function permissions() {
+  return [
+    { action: "*", resource: "*", effect: "allow" },
+    { action: "question", resource: "*", effect: "deny" },
+    { action: "external_directory", resource: "*", effect: "deny" },
+  ]
+}
+
+function provider(url: string, model: string, tools: boolean, output: number, pkg: string) {
+  return {
+    api: { type: "aisdk", package: pkg, url },
+    request: { body: { apiKey: "proxy-only-no-secret" } },
+    models: {
+      [model]: {
+        api: { id: model },
+        capabilities: { tools, input: ["text"], output: ["text"] },
+        limit: { context: 131_072, output },
+      },
+    },
+  }
+}
+
 const statuses = new Set(["PASSED", "FAILED", "SKIPPED", "ERROR", "XFAIL"])
 
 export function parsePytestLog(content: string) {

@@ -30,6 +30,7 @@ export function gatewayRoute(pathname: string) {
   if (!match) throw new Error("Gateway route must identify worker or controller traffic")
   return {
     kind: z.enum(["worker", "controller"]).parse(match[1]),
+    endpoint: match[2] === "/v1/responses" ? ("responses" as const) : ("chat" as const),
     upstreamPath: match[2],
   }
 }
@@ -37,6 +38,7 @@ export function gatewayRoute(pathname: string) {
 export function createGatewayRequest(input: {
   sequence: number
   kind: "worker" | "controller"
+  endpoint: "chat" | "responses"
   body: unknown
 }) {
   if (!input.body || typeof input.body !== "object" || Array.isArray(input.body))
@@ -51,15 +53,20 @@ export function createGatewayRequest(input: {
     throw new Error("Gateway request differs from the frozen output allowance")
   const normalizedBody = Object.fromEntries(
     Object.entries(body).filter(
-      ([name]) => name !== "temperature" && name !== "max_completion_tokens" && name !== "max_output_tokens",
+      ([name]) =>
+        name !== "temperature" &&
+        name !== "max_tokens" &&
+        name !== "max_completion_tokens" &&
+        name !== "max_output_tokens",
     ),
   )
   normalizedBody.temperature = 0
-  normalizedBody.max_tokens = maxOutputTokens
+  normalizedBody[input.endpoint === "responses" ? "max_output_tokens" : "max_tokens"] = maxOutputTokens
   const normalized = serializeNormalizedRequest(normalizedBody)
   return {
     sequence: z.number().int().nonnegative().parse(input.sequence),
     kind: input.kind,
+    endpoint: input.endpoint,
     provider: "d-robotics-gateway",
     modelID,
     modelVersion: modelID,
@@ -81,20 +88,26 @@ export function gatewayHeaders(input: Headers, key: string) {
 }
 
 export function parseGatewayUsage(input: string) {
-  const values = input.trimStart().startsWith("data:")
+  const data = input
+    .split("\n")
+    .filter((line) => line.startsWith("data: ") && line !== "data: [DONE]")
+  const values = data.length
     ? input
         .split("\n")
         .filter((line) => line.startsWith("data: ") && line !== "data: [DONE]")
         .map((line) => JSON.parse(line.slice(6)))
     : [JSON.parse(input)]
   const result = values.reduce(
-    (current, value) => ({
-      modelVersion: typeof value.model === "string" ? value.model : current.modelVersion,
-      promptTokens:
-        typeof value.usage?.prompt_tokens === "number" ? value.usage.prompt_tokens : current.promptTokens,
-      completionTokens:
-        typeof value.usage?.completion_tokens === "number" ? value.usage.completion_tokens : current.completionTokens,
-    }),
+    (current, value) => {
+      const event = UsageEvent.parse(value)
+      const response = event.response ?? event
+      return {
+        modelVersion: response.model ?? current.modelVersion,
+        promptTokens: response.usage?.prompt_tokens ?? response.usage?.input_tokens ?? current.promptTokens,
+        completionTokens:
+          response.usage?.completion_tokens ?? response.usage?.output_tokens ?? current.completionTokens,
+      }
+    },
     { modelVersion: "", promptTokens: -1, completionTokens: -1 },
   )
   return z
@@ -105,6 +118,24 @@ export function parseGatewayUsage(input: string) {
     })
     .parse(result)
 }
+
+const Usage = z
+  .object({
+    prompt_tokens: z.number().int().nonnegative().optional(),
+    completion_tokens: z.number().int().nonnegative().optional(),
+    input_tokens: z.number().int().nonnegative().optional(),
+    output_tokens: z.number().int().nonnegative().optional(),
+  })
+  .loose()
+
+const UsageResponse = z
+  .object({
+    model: z.string().min(1).optional(),
+    usage: Usage.optional(),
+  })
+  .loose()
+
+const UsageEvent = UsageResponse.extend({ response: UsageResponse.optional() }).loose()
 
 export function requireGatewayBudget(input: {
   baselineSpend: number
@@ -142,6 +173,7 @@ export async function proxyGatewayRequest(
   const request = createGatewayRequest({
     sequence: options.sequence,
     kind: route.kind,
+    endpoint: route.endpoint,
     body: await input.json(),
   })
   await options.onRequest(request)
@@ -156,7 +188,7 @@ export async function proxyGatewayRequest(
   await options.onResponse({
     sequence: request.sequence,
     status: upstream.status,
-    ...(usage ?? {}),
+    ...usage,
   })
   const headers = new Headers(upstream.headers)
   ;["content-length", "set-cookie", "transfer-encoding"].forEach((name) => headers.delete(name))

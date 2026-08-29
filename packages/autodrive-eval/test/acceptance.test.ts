@@ -13,7 +13,7 @@ const preflight = {
   receipt: parsePreflight(
     {
       schemaVersion: 1,
-      protocol: "auto-drive-swe-evo-v1.3",
+      protocol: "auto-drive-swe-evo-v1.4",
       scope: "canary",
       capturedAt: "2026-08-30T02:00:00.000Z",
       expiresAt: "2026-08-30T14:00:00.000Z",

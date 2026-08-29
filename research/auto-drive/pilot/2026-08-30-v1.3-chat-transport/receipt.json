@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "protocol": "auto-drive-swe-evo-v1.3",
+  "classification": "excluded_transport_canary",
+  "taskID": "iterative__dvc_2.21.1_2.21.2",
+  "runID": "adr_7f0339648ba7afdd4efb",
+  "requestSHA256": "b06b37eab1273e9371c65c2afbaad29efd50850f0daea855cda10caa3c1269a2",
+  "providerStatus": 200,
+  "usage": {
+    "promptTokens": 2898,
+    "completionTokens": 149
+  },
+  "accountSpendObservationUSD": {
+    "before": 2.5027573,
+    "after": 2.6663893,
+    "delta": 0.163632,
+    "attribution": "unconfirmed_due_to_possible_billing_lag"
+  },
+  "requestRows": 1,
+  "proxyTraceRows": 2,
+  "toolExecutions": 0,
+  "controllerRequests": 0,
+  "acceptedTrajectory": false,
+  "acceptedLedgerEntry": false
+}
