@@ -514,11 +514,25 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       const commandName = cmdName.slice(1)
       const customCommand = sync().data.command.find((c) => c.name === commandName)
       if (customCommand) {
+        if (commandName === "autodrive" || commandName === "auto-drive") {
+          try {
+            await sdk().client.v2.session.autoDrive({
+              sessionID: session.id,
+              sessionAutoDriveUpdate: { enabled: true },
+            })
+          } catch (err) {
+            showToast({
+              title: language.t("prompt.toast.autoDriveEnableFailed.title"),
+              description: formatServerError(err, language.t, language.t("common.requestFailed")),
+            })
+            return
+          }
+        }
         clearInput()
         const messageID = Identifier.ascending("message")
         serverSync().session.set("session_status", session.id, { type: "busy" })
-        sdk()
-          .api.session.command({
+        try {
+          await sdk().api.session.command({
             sessionID: session.id,
             id: messageID,
             command: commandName,
@@ -532,14 +546,14 @@ export function createPromptSubmit(input: PromptSubmitInput) {
               })),
             ),
           })
-          .catch((err) => {
-            serverSync().session.set("session_status", session.id, { type: "idle" })
-            showToast({
-              title: language.t("prompt.toast.commandSendFailed.title"),
-              description: formatServerError(err, language.t, language.t("common.requestFailed")),
-            })
-            restoreInput()
+        } catch (err) {
+          serverSync().session.set("session_status", session.id, { type: "idle" })
+          showToast({
+            title: language.t("prompt.toast.commandSendFailed.title"),
+            description: formatServerError(err, language.t, language.t("common.requestFailed")),
           })
+          restoreInput()
+        }
         return
       }
     }

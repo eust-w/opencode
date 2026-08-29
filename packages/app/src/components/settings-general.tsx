@@ -31,6 +31,7 @@ import { decode64 } from "@/utils/base64"
 import { playSoundById, SOUND_OPTIONS } from "@/utils/sound"
 import { ExternalLink } from "./external-link"
 import { SettingsList } from "./settings-list"
+import { createSessionAutoDriveController } from "./auto-drive-control"
 
 let demoSoundState = {
   cleanup: undefined as (() => void) | undefined,
@@ -54,6 +55,9 @@ type ShellSelectOption = {
   value: string
   label: string
 }
+
+const autoDrivePolicies: { id: "supervisor" | "heuristic" }[] = [{ id: "supervisor" }, { id: "heuristic" }]
+const autoDriveRunLimits = Array.from({ length: 20 }, (_, index) => ({ id: `${index + 1}`, value: index + 1 }))
 
 // To prevent audio from overlapping/playing very quickly when navigating the settings menus,
 // delay the playback by 100ms during quick selection changes and pause existing sounds.
@@ -125,6 +129,11 @@ export const SettingsGeneral: Component = () => {
 
   const serverSync = useServerSync()
   const serverSdk = useServerSDK()
+  const autoDrive = createSessionAutoDriveController(() => params.id)
+
+  const updateAutoDrive = (update: Parameters<typeof autoDrive.update>[0]) => {
+    void autoDrive.update(update).catch(autoDrive.report)
+  }
 
   const [shells] = createResource(
     async () => {
@@ -348,27 +357,73 @@ export const SettingsGeneral: Component = () => {
         </SettingsRow>
 
         <SettingsRow
-          title="Auto-Drive"
-          description="Automatically continue executing when the model proposes next steps or asks to proceed upon turn completion."
+          title={language.t("settings.general.row.autoDrive.title")}
+          description={language.t("settings.general.row.autoDrive.description", { status: autoDrive.status() })}
         >
           <div data-action="settings-auto-drive">
             <Switch
-              checked={settings.general.autoDrive()}
-              onChange={(checked) => settings.general.setAutoDrive(checked)}
+              checked={autoDrive.enabled()}
+              disabled={!autoDrive.available() || autoDrive.saving()}
+              onChange={(enabled) => updateAutoDrive({ enabled })}
             />
           </div>
         </SettingsRow>
 
-        <Show when={settings.general.autoDrive()}>
+        <Show when={autoDrive.enabled()}>
           <SettingsRow
-            title="Auto-Drive Prompt"
-            description="Prompt content sent to the model for automatic continuation."
+            title={language.t("settings.general.row.autoDrive.policy.title")}
+            description={language.t("settings.general.row.autoDrive.policy.description")}
+          >
+            <Select
+              data-action="settings-auto-drive-policy"
+              options={autoDrivePolicies}
+              current={
+                autoDrivePolicies.find((option) => option.id === autoDrive.state()?.settings.policy) ??
+                autoDrivePolicies[0]
+              }
+              value={(option) => option.id}
+              label={(option) =>
+                language.t(
+                  option.id === "supervisor"
+                    ? "settings.general.row.autoDrive.policy.supervisor"
+                    : "settings.general.row.autoDrive.policy.heuristic",
+                )
+              }
+              onSelect={(option) => option && updateAutoDrive({ policy: option.id })}
+              variant="secondary"
+              size="small"
+            />
+          </SettingsRow>
+
+          <SettingsRow
+            title={language.t("settings.general.row.autoDrive.maxRuns.title")}
+            description={language.t("settings.general.row.autoDrive.maxRuns.description")}
+          >
+            <Select
+              data-action="settings-auto-drive-max-runs"
+              options={autoDriveRunLimits}
+              current={
+                autoDriveRunLimits.find((option) => option.value === autoDrive.state()?.settings.maxRuns) ??
+                autoDriveRunLimits[4]
+              }
+              value={(option) => option.id}
+              label={(option) => option.id}
+              onSelect={(option) => option && updateAutoDrive({ maxRuns: option.value })}
+              variant="secondary"
+              size="small"
+            />
+          </SettingsRow>
+
+          <SettingsRow
+            title={language.t("settings.general.row.autoDrive.prompt.title")}
+            description={language.t("settings.general.row.autoDrive.prompt.description")}
           >
             <div class="w-72" data-action="settings-auto-drive-prompt">
               <TextField
-                value={settings.general.autoDrivePrompt()}
-                onChange={(value) => settings.general.setAutoDrivePrompt(value)}
-                placeholder="Please proceed with the next step."
+                value={autoDrive.state()?.settings.prompt ?? ""}
+                disabled={autoDrive.saving()}
+                onChange={(prompt) => updateAutoDrive({ prompt })}
+                placeholder={language.t("settings.general.row.autoDrive.prompt.placeholder")}
                 variant="normal"
                 size="small"
               />

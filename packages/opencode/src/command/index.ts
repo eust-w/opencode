@@ -88,18 +88,18 @@ const layer = Layer.effect(
       }
       commands["autodrive"] = {
         name: "autodrive",
-        description: "autonomous Auto-Drive continuous execution mode",
+        description: "enable safe turn-boundary Auto-Drive for a task",
         source: "command",
         template:
-          "Please execute the following task with Auto-Drive enabled. Continuously execute subsequent steps, code modifications, and test verifications until fully finished without stopping mid-way for confirmation.\n\nTask:\n$ARGUMENTS",
+          "Execute the task below. Auto-Drive is enabled for safe turn-boundary continuation; defer when information, permission, or a subjective choice is required.\n\nTask:\n$ARGUMENTS",
         hints: ["$ARGUMENTS"],
       }
       commands["auto-drive"] = {
         name: "auto-drive",
-        description: "autonomous Auto-Drive continuous execution mode",
+        description: "enable safe turn-boundary Auto-Drive for a task",
         source: "command",
         template:
-          "Please execute the following task with Auto-Drive enabled. Continuously execute subsequent steps, code modifications, and test verifications until fully finished without stopping mid-way for confirmation.\n\nTask:\n$ARGUMENTS",
+          "Execute the task below. Auto-Drive is enabled for safe turn-boundary continuation; defer when information, permission, or a subjective choice is required.\n\nTask:\n$ARGUMENTS",
         hints: ["$ARGUMENTS"],
       }
 

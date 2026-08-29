@@ -82,6 +82,7 @@ import { createPromptInputTransientState } from "./prompt-input/transient-state"
 import { showToast } from "@/utils/toast"
 import { ImagePreview } from "@opencode-ai/ui/image-preview"
 import type { ReferenceInfo } from "@opencode-ai/sdk/v2/client"
+import { AutoDrivePromptControl } from "./auto-drive-control"
 
 export { createPromptInputHistory }
 export type { PromptInputControls, PromptInputHistory, PromptInputProps, PromptInputState, PromptInputSubmission }
@@ -1783,6 +1784,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     </Show>
                   </Show>
                 </Show>
+                <AutoDrivePromptControl sessionID={() => props.controls.session.id} />
               </div>
             </div>
           </div>

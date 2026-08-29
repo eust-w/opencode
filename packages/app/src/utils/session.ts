@@ -1,9 +1,10 @@
 import type { SessionApi, SessionInfo, SessionListInput } from "@opencode-ai/client/promise"
-import type { Session } from "@opencode-ai/sdk/v2/client"
+import type { Session, SessionAutoDriveState } from "@opencode-ai/sdk/v2/client"
 import { withTimestampedFallback } from "./session-title"
 
 export function normalizeSessionInfo(input: SessionInfo | Session): Session {
   if (!("location" in input)) return input
+  const autoDrive = (input as SessionInfo & { autoDrive?: SessionAutoDriveState }).autoDrive
   return {
     id: input.id,
     slug: input.id,
@@ -19,6 +20,7 @@ export function normalizeSessionInfo(input: SessionInfo | Session): Session {
     model: input.model,
     version: "",
     time: input.time,
+    ...(autoDrive ? { autoDrive } : {}),
     revert: input.revert && {
       messageID: input.revert.messageID,
       partID: input.revert.partID,

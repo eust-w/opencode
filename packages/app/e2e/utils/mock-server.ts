@@ -12,6 +12,7 @@ export interface MockServerConfig {
   directory: string
   project: unknown
   sessions: ({ id: string } & Record<string, unknown>)[]
+  commands?: unknown[]
   pageMessages: (sessionId: string, limit: number, before?: string) => { items: unknown[]; cursor?: string }
   vcsDiff?: unknown[]
   messageDelay?: number
@@ -46,6 +47,7 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
     "/agent": [{ name: "build", mode: "primary" }],
     "/vcs": { branch: "main", default_branch: "main" },
     "/session": config.sessions,
+    "/command": config.commands ?? [],
   }
 
   await page.route("**/*", async (route) => {
@@ -134,7 +136,13 @@ export async function mockOpenCodeServer(page: Page, config: MockServerConfig) {
           },
         ],
       })
-    if (path === "/api/command") return json(route, { location: location(config), data: [] })
+    if (path === "/api/provider") return json(route, { data: currentProviders(config) })
+    if (path === "/api/model") return json(route, { data: currentModels(config) })
+    if (path === "/api/model/default") {
+      const model = currentProviderFixture(config).default
+      return json(route, { data: model ? { providerID: model.providerID, id: model.modelID } : null })
+    }
+    if (path === "/api/command") return json(route, { location: location(config), data: config.commands ?? [] })
     if (path === "/api/mcp") return json(route, { location: location(config), data: [] })
     if (path === "/api/mcp/resource")
       return json(route, { location: location(config), data: { resources: [], templates: [] } })
@@ -321,6 +329,51 @@ function location(config: MockServerConfig) {
   }
 }
 
+function currentProviderFixture(config: MockServerConfig) {
+  return (typeof config.provider === "function" ? config.provider() : config.provider) as {
+    all?: Array<{ id: string; name?: string; models?: Record<string, Record<string, unknown>> }>
+    default?: { providerID?: string; modelID?: string }
+  }
+}
+
+function currentProviders(config: MockServerConfig) {
+  return (currentProviderFixture(config).all ?? []).map((provider) => ({
+    id: provider.id,
+    name: provider.name ?? provider.id,
+    api: { type: "native", settings: {} },
+    request: { headers: {}, body: {} },
+  }))
+}
+
+function currentModels(config: MockServerConfig) {
+  return (currentProviderFixture(config).all ?? []).flatMap((provider) =>
+    Object.entries(provider.models ?? {}).map(([id, model]) => ({
+      id,
+      providerID: provider.id,
+      name: typeof model.name === "string" ? model.name : id,
+      family: typeof model.family === "string" ? model.family : undefined,
+      api: { id, type: "native", settings: {} },
+      capabilities: { tools: true, input: ["text"], output: ["text"] },
+      request: { headers: {}, body: {} },
+      variants: [],
+      time: { released: 0 },
+      cost: [],
+      status: "active",
+      enabled: true,
+      limit: {
+        context:
+          typeof model.limit === "object" &&
+          model.limit &&
+          "context" in model.limit &&
+          typeof model.limit.context === "number"
+            ? model.limit.context
+            : 200_000,
+        output: 8_192,
+      },
+    })),
+  )
+}
+
 function currentPermission(value: unknown) {
   const permission = value as Record<string, unknown>
   if (permission.action) return permission
@@ -361,6 +414,7 @@ export function currentSession(session: { id: string } & Record<string, unknown>
     },
     subpath: session.path,
     revert: session.revert,
+    autoDrive: session.autoDrive,
   }
 }
 

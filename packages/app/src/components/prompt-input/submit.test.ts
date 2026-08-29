@@ -31,6 +31,7 @@ const promotedDrafts: Array<{ draftID: string; server: string; sessionId: string
 const sentPrompts: string[] = []
 const promptInputs: unknown[] = []
 const sentCommands: unknown[] = []
+const autoDriveUpdates: unknown[] = []
 const commands: Array<{ name: string }> = []
 let serverSessionSyncs = 0
 
@@ -109,6 +110,14 @@ const clientFor = (directory: string) => {
       command: async () => ({ data: undefined }),
       abort: async () => ({ data: undefined }),
     },
+    v2: {
+      session: {
+        autoDrive: async (input: unknown) => {
+          autoDriveUpdates.push(input)
+          return { data: undefined }
+        },
+      },
+    },
     worktree: {
       create: async () => ({ data: { directory: `${directory}/new` } }),
     },
@@ -134,6 +143,7 @@ beforeAll(async () => {
 
   mock.module("@opencode-ai/ui/toast", () => ({
     Toast: { Region: () => null },
+    toaster: { show: () => 0 },
     showToast: () => 0,
   }))
 
@@ -290,6 +300,7 @@ beforeEach(() => {
   sentPrompts.length = 0
   promptInputs.length = 0
   sentCommands.length = 0
+  autoDriveUpdates.length = 0
   commands.length = 0
   promptValue = [{ type: "text", content: "ls", start: 0, end: 2 }]
   params = {}
@@ -531,6 +542,36 @@ describe("prompt submit worktree selection", () => {
       },
     ])
     expect(serverSessionSyncs).toBe(0)
+  })
+
+  test("enables durable Session Auto-Drive before submitting the slash command", async () => {
+    params = { id: "session-1" }
+    commands.push({ name: "autodrive" })
+    promptValue = [{ type: "text", content: "/autodrive finish tests", start: 0, end: 23 }]
+
+    const submit = createPromptSubmit({
+      prompt,
+      info: () => ({ id: "session-1" }),
+      imageAttachments: () => [],
+      commentCount: () => 0,
+      autoAccept: () => false,
+      mode: () => "normal",
+      working: () => false,
+      editor: () => undefined,
+      queueScroll: () => undefined,
+      promptLength: (value) => value.reduce((sum, part) => sum + ("content" in part ? part.content.length : 0), 0),
+      addToHistory: () => undefined,
+      resetHistoryNavigation: () => undefined,
+      setMode: () => undefined,
+      setPopover: () => undefined,
+    })
+
+    await submit.handleSubmit({ preventDefault: () => undefined } as unknown as Event)
+
+    expect(autoDriveUpdates).toEqual([{ sessionID: "session-1", sessionAutoDriveUpdate: { enabled: true } }])
+    expect(sentCommands).toEqual([
+      expect.objectContaining({ sessionID: "session-1", command: "autodrive", arguments: "finish tests" }),
+    ])
   })
 
   test("uses an injected model selection", async () => {

@@ -8,6 +8,7 @@ import type {
   PermissionRequest,
   QuestionRequest,
   Session,
+  SessionAutoDriveState,
   SessionStatus,
   Todo,
 } from "@opencode-ai/sdk/v2/client"
@@ -956,6 +957,11 @@ export function createServerSession(
       })
     if (event.type === "session.usage.updated" && info)
       remember({ ...info, cost: event.data.cost, tokens: event.data.tokens })
+    const eventType: string = event.type
+    if ((eventType === "session.next.auto-drive.updated" || eventType === "session.next.auto-drive.decided") && info) {
+      const next = event as unknown as { data: { state: SessionAutoDriveState } }
+      remember({ ...info, autoDrive: next.data.state } as Session & { autoDrive: SessionAutoDriveState })
+    }
     // if (event.type === "session.archived") {
     //   if (info) remember({ ...info, time: { ...info.time, archived: event.created, updated: event.created } })
     //   evict([sessionID])

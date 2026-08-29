@@ -44,6 +44,26 @@ describe("normalizeSessionInfo", () => {
     expect(normalizeSessionInfo(root).title).toBe("New session - 1970-01-01T00:00:00.000Z")
     expect(normalizeSessionInfo(child).title).toBe("Child session - 1970-01-01T00:00:00.000Z")
   })
+
+  test("preserves durable Auto-Drive state from current Session info", () => {
+    const input = {
+      ...currentSession("session-auto-drive"),
+      autoDrive: {
+        settings: {
+          enabled: true,
+          policy: "supervisor",
+          maxRuns: 5,
+          contextual: false,
+          memory: true,
+        },
+        status: { action: "continue", continuationCount: 2 },
+      },
+    } as SessionInfo & { autoDrive: unknown }
+
+    expect(
+      (normalizeSessionInfo(input) as ReturnType<typeof normalizeSessionInfo> & { autoDrive?: unknown }).autoDrive,
+    ).toEqual(input.autoDrive)
+  })
 })
 
 describe("listAllSessions", () => {

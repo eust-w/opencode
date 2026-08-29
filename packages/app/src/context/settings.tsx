@@ -24,9 +24,6 @@ export interface Settings {
     autoSave: boolean
     releaseNotes: boolean
     followup: "queue" | "steer"
-    autoDrive: boolean
-    autoDrivePrompt: string
-    autoDriveMaxRuns: number
     showFileTree: boolean
     showNavigation: boolean
     showSearch: boolean
@@ -188,9 +185,6 @@ const defaultSettings: Settings = {
     autoSave: true,
     releaseNotes: true,
     followup: "queue",
-    autoDrive: true,
-    autoDrivePrompt: "Please proceed with the next step.",
-    autoDriveMaxRuns: 5,
     showFileTree: false,
     showNavigation: false,
     showSearch: false,
@@ -373,18 +367,6 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         followup: withFallback(() => store.general?.followup, defaultSettings.general.followup),
         setFollowup(value: "queue" | "steer") {
           setStore("general", "followup", value)
-        },
-        autoDrive: withFallback(() => store.general?.autoDrive, defaultSettings.general.autoDrive),
-        setAutoDrive(value: boolean) {
-          setStore("general", "autoDrive", value)
-        },
-        autoDrivePrompt: withFallback(() => store.general?.autoDrivePrompt, defaultSettings.general.autoDrivePrompt),
-        setAutoDrivePrompt(value: string) {
-          setStore("general", "autoDrivePrompt", value)
-        },
-        autoDriveMaxRuns: withFallback(() => store.general?.autoDriveMaxRuns, defaultSettings.general.autoDriveMaxRuns),
-        setAutoDriveMaxRuns(value: number) {
-          setStore("general", "autoDriveMaxRuns", value)
         },
         showFileTree,
         setShowFileTree(value: boolean) {

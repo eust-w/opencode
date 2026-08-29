@@ -213,6 +213,37 @@ describe("server session", () => {
     expect(ctx.store.data.part.msg_2_assistant).toMatchObject([{ type: "text", text: "world" }])
   })
 
+  test("projects durable Auto-Drive decisions into cached Session state", () => {
+    const ctx = setup({ child: session("child") })
+    ctx.store.remember(session("child"))
+
+    ctx.store.applyV2({
+      id: "evt_auto_drive",
+      created: 2,
+      type: "session.next.auto-drive.decided",
+      durable: { aggregateID: "child", seq: 1, version: 1 },
+      location: { directory: "/repo" },
+      data: {
+        sessionID: "child",
+        timestamp: 2,
+        state: {
+          settings: {
+            enabled: true,
+            policy: "supervisor",
+            maxRuns: 5,
+            contextual: false,
+            memory: true,
+          },
+          status: { action: "continue", reason: "unfinished tests", continuationCount: 1 },
+        },
+      },
+    } as unknown as OpenCodeEvent)
+
+    expect((ctx.store.get("child") as Session & { autoDrive?: unknown }).autoDrive).toMatchObject({
+      status: { action: "continue", continuationCount: 1 },
+    })
+  })
+
   test("resolves lineage by session ID without directory", async () => {
     const ctx = setup({ child: session("child", "root"), root: session("root") })
 

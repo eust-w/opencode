@@ -24,9 +24,9 @@ import { type ImageAttachmentPart, usePrompt } from "@/context/prompt"
 import { usePlatform } from "@/context/platform"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
-import { useSettings } from "@/context/settings"
 import { createSessionTabs } from "@/pages/session/helpers"
 import { showToast } from "@/utils/toast"
+import { AutoDrivePromptControlV2 } from "@/components/auto-drive-control"
 import { PromptInputV2, type PromptInputV2Suggestion } from "@opencode-ai/session-ui/v2/prompt-input"
 import {
   createPromptInputV2Controller,
@@ -43,6 +43,7 @@ export type PromptInputV2ComposerProps = {
 export type PromptInputV2ControllerProps = Omit<PromptInputProps, "class" | "submission">
 export type PromptInputV2ComposerController = PromptInputV2Interaction & {
   readonly model: PromptInputProps["controls"]["model"]
+  readonly sessionID?: string
 }
 
 export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
@@ -59,7 +60,7 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
         variantControlVisible={!props.controller.model.loading}
         attachKeybind={command.keybindParts("file.attach")}
         attachShortcut={command.keybind("file.attach")}
-        extraControl={<PromptInputV2AutoDriveControl />}
+        extraControl={<AutoDrivePromptControlV2 sessionID={() => props.controller.sessionID} />}
         modelControl={
           <PromptInputV2ModelControl
             loading={props.controller.model.loading}
@@ -77,40 +78,6 @@ export function PromptInputV2Composer(props: PromptInputV2ComposerProps) {
         }
       />
     </div>
-  )
-}
-
-export function PromptInputV2AutoDriveControl() {
-  const settings = useSettings()
-  const enabled = () => settings.general.autoDrive()
-
-  return (
-    <TooltipV2
-      placement="top"
-      gutter={6}
-      value={
-        enabled()
-          ? "Auto-Drive: Enabled (automatically continues when next steps are detected)"
-          : "Auto-Drive: Disabled (click to enable)"
-      }
-    >
-      <ButtonV2
-        variant={enabled() ? "neutral" : "ghost-muted"}
-        size="normal"
-        style={{ height: "28px", padding: "0 8px" }}
-        class="min-w-0 justify-start gap-1.5 ![font-weight:440] group cursor-pointer"
-        data-action="prompt-auto-drive-toggle"
-        onClick={() => settings.general.setAutoDrive(!enabled())}
-      >
-        <span class="text-12-medium" classList={{ "text-text-primary": enabled(), "text-text-weak": !enabled() }}>
-          Auto-Drive
-        </span>
-        <span
-          class="h-1.5 w-1.5 rounded-full transition-colors"
-          classList={{ "bg-icon-success-base": enabled(), "bg-icon-subtle": !enabled() }}
-        />
-      </ButtonV2>
-    </TooltipV2>
   )
 }
 
@@ -501,6 +468,10 @@ export function usePromptInputV2Controller(props: PromptInputV2ControllerProps):
     ),
   )
 
+  Object.defineProperty(controller, "sessionID", {
+    enumerable: true,
+    get: () => props.controls.session.id,
+  })
   return controller as PromptInputV2ComposerController
 }
 
