@@ -1,5 +1,7 @@
 export * as AutoDrive from "./auto-drive"
 
+import { Option, Schema } from "effect"
+
 export const DEFAULT_MAX_RUNS = 5
 export const DEFAULT_PROMPT = "Please proceed with the next step."
 export const MEMORY_RELATIVE_PATH = ".opencode/auto-drive.md"
@@ -12,12 +14,23 @@ export interface Context {
   readonly contextual?: boolean
 }
 
+export const Action = Schema.Literals(["continue", "stop", "defer"])
+export type Action = typeof Action.Type
+
 export interface Decision {
-  readonly continue: boolean
+  readonly action: Action
   readonly reason?: string
-  readonly nextPrompt: string
+  readonly nextPrompt?: string
   readonly updateMemory?: string
 }
+
+const SupervisorOutput = Schema.Struct({
+  action: Action.pipe(Schema.optional),
+  continue: Schema.Boolean.pipe(Schema.optional),
+  reason: Schema.String.pipe(Schema.optional),
+  next_prompt: Schema.NullOr(Schema.String).pipe(Schema.optional),
+  update_memory: Schema.NullOr(Schema.String).pipe(Schema.optional),
+})
 
 // Continuation detection patterns (evaluated on the trailing chunk / concluding text of the assistant message)
 const CONTINUATION_PATTERNS = [
@@ -46,33 +59,60 @@ const CHOICE_PROMPT_PATTERNS = [
   /(?:请选择|你希望|你想要|哪种方案|哪个选项|请确认以下方案)/i,
 ]
 
+const MISSING_INFORMATION_PATTERNS = [
+  /(?:please provide|need|missing|require)(?:[^.\n]{0,80})(?:hostname|credential|token|secret|key|value|information|details|input)/i,
+  /(?:请提供|需要补充|缺少|还需要)(?:[^。\n]{0,80})(?:主机名|凭据|令牌|密钥|信息|详情|输入|参数)/i,
+]
+
+const PERMISSION_EXPANSION_PATTERNS = [
+  /(?:please |must |need to )?(?:grant|enable|provide)(?:[^.\n]{0,60})(?:admin|administrator|root|sudo|permission|access|credential)/i,
+  /(?:授予|开启|提供|需要)(?:[^。\n]{0,60})(?:管理员|根权限|sudo|权限|访问权|凭据)/i,
+]
+
+const DESTRUCTIVE_ACTION_PATTERNS = [
+  /(?:should I|may I|can I|do you want me to)(?:[^?\n]{0,100})(?:delete|drop|destroy|purge|overwrite|deploy|publish|push|send|purchase|trade)/i,
+  /(?:是否|要不要|可以|需要我)(?:[^？\n]{0,100})(?:删除|清空|销毁|覆盖|部署|发布|推送|发送|购买|交易)/i,
+]
+
 // Completion patterns that indicate everything is finished
 const COMPLETION_PATTERNS = [
   /(?:all tasks (?:are )?completed|everything is (?:done|complete)|all steps have been completed)/i,
   /(?:所有任务已全部完成|已完成全部工作|全部实施完毕|已顺利完成|任务全部完成)/i,
 ]
 
-export const detect = (text: string): boolean => {
-  if (!text || text.trim().length === 0) return false
+export const decideHeuristic = (context: Context): Decision => {
+  if (!context.lastText || context.lastText.trim().length === 0) {
+    return { action: "stop", reason: "No continuation cues found" }
+  }
 
-  const trimmed = text.trim()
+  const trimmed = context.lastText.trim()
   const tail = trimmed.length > 1500 ? trimmed.slice(-1500) : trimmed
 
-  // If asking user to choose between specific options, do not auto-drive
-  if (CHOICE_PROMPT_PATTERNS.some((pattern) => pattern.test(tail))) {
-    return false
+  if (COMPLETION_PATTERNS.some((pattern) => pattern.test(tail))) {
+    return { action: "stop", reason: "Verified completion detected" }
   }
 
-  // If explicitly stated that all tasks are finished and no continuation requested
   if (
-    COMPLETION_PATTERNS.some((pattern) => pattern.test(tail)) &&
-    !/(?:continue|proceed|继续|是否继续)/i.test(tail)
+    CHOICE_PROMPT_PATTERNS.some((pattern) => pattern.test(tail)) ||
+    MISSING_INFORMATION_PATTERNS.some((pattern) => pattern.test(tail)) ||
+    PERMISSION_EXPANSION_PATTERNS.some((pattern) => pattern.test(tail)) ||
+    DESTRUCTIVE_ACTION_PATTERNS.some((pattern) => pattern.test(tail))
   ) {
-    return false
+    return { action: "defer", reason: "Human input or authorization required" }
   }
 
-  return CONTINUATION_PATTERNS.some((pattern) => pattern.test(tail))
+  if (CONTINUATION_PATTERNS.some((pattern) => pattern.test(tail))) {
+    return {
+      action: "continue",
+      reason: "Heuristic continuation detected",
+      nextPrompt: promptFor(context),
+    }
+  }
+
+  return { action: "stop", reason: "No continuation cues found" }
 }
+
+export const detect = (text: string): boolean => decideHeuristic({ lastText: text }).action === "continue"
 
 export const promptFor = (input: Context | string): string => {
   if (typeof input === "string") return input.trim().length > 0 ? input : DEFAULT_PROMPT
@@ -106,50 +146,44 @@ ${lastExcerpt}
 </WorkerLastOutput>
 
 Decision Rules:
-1. "continue": true if the worker explicitly stated upcoming steps, requested confirmation to proceed, or has obvious unfinished milestones towards the initial goal.
-2. "continue": false if the entire user goal is completely achieved and verified, or if the worker requires a subjective decision/choice from the human user.
-3. "next_prompt": If continuing, provide a concise, actionable instruction directing the worker on what exact step to take next. If custom prompt is provided, incorporate it.
-4. "update_memory": Optional. If the worker achieved a milestone or clarified a new rule/checklist, return an updated summary section for the memory file. Otherwise omit or null.
+1. "action": "continue" only when the worker has an actionable, safe, in-scope next step towards the initial goal.
+2. "action": "stop" when the user goal is completely achieved and verified, or no useful continuation is warranted.
+3. "action": "defer" when continuing requires a subjective choice, missing information, expanded permissions, or a dangerous/external action.
+4. "next_prompt": If continuing, provide a concise instruction for the exact next step. Otherwise return null.
+5. "update_memory": Optional. Return a concise within-session progress or rule update; otherwise omit or return null.
 
 Respond ONLY with a valid JSON object matching this schema:
 {
-  "continue": boolean,
+  "action": "continue" | "stop" | "defer",
   "reason": string,
-  "next_prompt": string,
+  "next_prompt": string | null,
   "update_memory": string | null
 }`
 }
 
 export const parseSupervisorDecision = (raw: string, context: Context): Decision => {
-  try {
-    const jsonMatch = raw.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0])
-      if (typeof parsed.continue === "boolean") {
-        return {
-          continue: parsed.continue,
-          reason: typeof parsed.reason === "string" ? parsed.reason : undefined,
-          nextPrompt:
-            typeof parsed.next_prompt === "string" && parsed.next_prompt.trim().length > 0
-              ? parsed.next_prompt
-              : promptFor(context),
-          updateMemory:
-            typeof parsed.update_memory === "string" && parsed.update_memory.trim().length > 0
-              ? parsed.update_memory
-              : undefined,
-        }
-      }
+  const json = raw.match(/\{[\s\S]*\}/)?.[0]
+  const unknown = json
+    ? Option.getOrUndefined(Schema.decodeUnknownOption(Schema.UnknownFromJsonString)(json))
+    : undefined
+  const parsed = Option.getOrUndefined(Schema.decodeUnknownOption(SupervisorOutput)(unknown))
+  const action = parsed?.action ?? (parsed?.continue === undefined ? undefined : parsed.continue ? "continue" : "stop")
+
+  if (action) {
+    return {
+      action,
+      reason: parsed?.reason,
+      nextPrompt:
+        action === "continue" && parsed?.next_prompt && parsed.next_prompt.trim().length > 0
+          ? parsed.next_prompt
+          : action === "continue"
+            ? promptFor(context)
+            : undefined,
+      updateMemory: parsed?.update_memory && parsed.update_memory.trim().length > 0 ? parsed.update_memory : undefined,
     }
-  } catch {
-    // Fall back to heuristic detection
   }
 
-  const shouldContinue = detect(context.lastText)
-  return {
-    continue: shouldContinue,
-    reason: shouldContinue ? "Heuristic continuation detected" : "No continuation cues found",
-    nextPrompt: promptFor(context),
-  }
+  return decideHeuristic(context)
 }
 
 export const defaultPlaybookTemplate = (projectName?: string): string => {

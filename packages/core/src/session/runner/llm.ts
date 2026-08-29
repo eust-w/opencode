@@ -456,10 +456,7 @@ const layer = Layer.effect(
       })
     })
 
-    const runSupervisor = Effect.fnUntraced(function* (
-      session: SessionSchema.Info,
-      context: AutoDrive.Context,
-    ) {
+    const runSupervisor = Effect.fnUntraced(function* (session: SessionSchema.Info, context: AutoDrive.Context) {
       const resolvedModel = yield* models.resolve(session).pipe(Effect.catch(() => Effect.succeed(undefined)))
       if (!resolvedModel) return undefined
 
@@ -526,18 +523,14 @@ const layer = Layer.effect(
         const customAutoDrivePrompt = typeof autoDriveConfig === "object" ? autoDriveConfig.prompt : undefined
         const autoDriveSupervisorEnabled =
           typeof autoDriveConfig === "object" ? (autoDriveConfig.supervisor ?? false) : false
-        const autoDriveMemoryEnabled =
-          typeof autoDriveConfig === "object" ? (autoDriveConfig.memory ?? false) : false
-        const autoDriveContextual =
-          typeof autoDriveConfig === "object" ? (autoDriveConfig.contextual ?? false) : false
+        const autoDriveMemoryEnabled = typeof autoDriveConfig === "object" ? (autoDriveConfig.memory ?? false) : false
+        const autoDriveContextual = typeof autoDriveConfig === "object" ? (autoDriveConfig.contextual ?? false) : false
 
         if (autoDriveEnabled && autoDriveRuns < autoDriveMaxRuns) {
           const lastText = yield* getLastAssistantText(input.sessionID)
           if (lastText) {
             const initialGoal = yield* getInceptionUserPrompt(input.sessionID)
-            const playbook = autoDriveMemoryEnabled
-              ? yield* getPlaybook(location.project.directory)
-              : undefined
+            const playbook = autoDriveMemoryEnabled ? yield* getPlaybook(location.project.directory) : undefined
 
             const autoDriveContext: AutoDrive.Context = {
               initialGoal,
@@ -559,8 +552,8 @@ const layer = Layer.effect(
                   )
                 : undefined
               if (supervisorDecision) {
-                shouldContinue = supervisorDecision.continue
-                nextPromptText = supervisorDecision.nextPrompt
+                shouldContinue = supervisorDecision.action === "continue"
+                if (supervisorDecision.nextPrompt) nextPromptText = supervisorDecision.nextPrompt
                 if (autoDriveMemoryEnabled && supervisorDecision.updateMemory) {
                   yield* savePlaybook(location.project.directory, supervisorDecision.updateMemory)
                 }

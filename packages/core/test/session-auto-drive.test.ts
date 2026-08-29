@@ -51,6 +51,39 @@ describe("AutoDrive.detect", () => {
   })
 })
 
+describe("AutoDrive.decideHeuristic", () => {
+  test("continues actionable unfinished work", () => {
+    expect(AutoDrive.decideHeuristic({ lastText: "Next steps: add regression tests" }).action).toBe("continue")
+  })
+
+  test("stops verified completion even when optional follow-up is offered", () => {
+    expect(
+      AutoDrive.decideHeuristic({
+        lastText:
+          "All tasks are completed and verified. Let me know if you would like me to continue with anything else.",
+      }).action,
+    ).toBe("stop")
+  })
+
+  test("defers subjective choices and missing information", () => {
+    expect(AutoDrive.decideHeuristic({ lastText: "Which option do you prefer, SQLite or Postgres?" }).action).toBe(
+      "defer",
+    )
+    expect(AutoDrive.decideHeuristic({ lastText: "Please provide the missing production hostname." }).action).toBe(
+      "defer",
+    )
+  })
+
+  test("defers permission expansion and potentially destructive actions", () => {
+    expect(AutoDrive.decideHeuristic({ lastText: "Please grant administrator access so I can continue." }).action).toBe(
+      "defer",
+    )
+    expect(
+      AutoDrive.decideHeuristic({ lastText: "Should I delete the production database and recreate it?" }).action,
+    ).toBe("defer")
+  })
+})
+
 describe("AutoDrive.promptFor", () => {
   test("returns DEFAULT_PROMPT when input is empty string or empty context", () => {
     expect(AutoDrive.promptFor("")).toBe(AutoDrive.DEFAULT_PROMPT)
@@ -89,7 +122,7 @@ describe("AutoDrive.buildSupervisorPrompt", () => {
     expect(prompt).toContain("Build high-performance cache module")
     expect(prompt).toContain("Coverage must exceed 90%")
     expect(prompt).toContain("Core implementation completed. Next I will write test cases.")
-    expect(prompt).toContain('"continue": boolean')
+    expect(prompt).toContain('"action": "continue" | "stop" | "defer"')
   })
 })
 
@@ -110,7 +143,7 @@ describe("AutoDrive.parseSupervisorDecision", () => {
       initialGoal: "Build cache module",
     }
     const decision = AutoDrive.parseSupervisorDecision(raw, context)
-    expect(decision.continue).toBe(true)
+    expect(decision.action).toBe("continue")
     expect(decision.reason).toBe("The worker has remaining tests to write")
     expect(decision.nextPrompt).toBe("Please complete the LRU eviction test cases.")
     expect(decision.updateMemory).toContain("## Progress Update")
@@ -128,8 +161,23 @@ describe("AutoDrive.parseSupervisorDecision", () => {
       initialGoal: "Build a utility",
     }
     const decision = AutoDrive.parseSupervisorDecision(raw, context)
-    expect(decision.continue).toBe(false)
+    expect(decision.action).toBe("stop")
     expect(decision.reason).toBe("All requested features are verified and done")
+  })
+
+  test("parses a tri-state defer decision", () => {
+    const decision = AutoDrive.parseSupervisorDecision(
+      JSON.stringify({
+        action: "defer",
+        reason: "Production deployment requires explicit authorization",
+        next_prompt: null,
+        update_memory: null,
+      }),
+      { lastText: "Should I deploy this to production?" },
+    )
+
+    expect(decision.action).toBe("defer")
+    expect(decision.nextPrompt).toBeUndefined()
   })
 
   test("gracefully falls back to heuristic detection on malformed JSON", () => {
@@ -140,7 +188,7 @@ describe("AutoDrive.parseSupervisorDecision", () => {
       contextual: true,
     }
     const decision = AutoDrive.parseSupervisorDecision(raw, context)
-    expect(decision.continue).toBe(true)
+    expect(decision.action).toBe("continue")
     expect(decision.nextPrompt).toContain("[Auto-Drive Directive]")
   })
 })

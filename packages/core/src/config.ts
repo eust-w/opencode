@@ -12,6 +12,7 @@ import { Policy } from "./policy"
 import { AbsolutePath } from "./schema"
 import { ConfigAgent } from "./config/agent"
 import { ConfigAttachments } from "./config/attachments"
+import { ConfigAutoDrive } from "./config/auto-drive"
 import { ConfigCompaction } from "./config/compaction"
 import { ConfigCommand } from "./config/command"
 import { ConfigExperimental } from "./config/experimental"
@@ -102,21 +103,9 @@ export class Info extends Schema.Class<Info>("Config.Info")({
   plugins: ConfigPlugin.Plugins.pipe(Schema.optional).annotate({
     description: "Ordered external plugin packages to load",
   }),
-  auto_drive: Schema.Union([
-    Schema.Boolean,
-    Schema.Struct({
-      enabled: Schema.Boolean.pipe(Schema.optional),
-      prompt: Schema.String.pipe(Schema.optional),
-      max_runs: Schema.Number.pipe(Schema.optional),
-      supervisor: Schema.Boolean.pipe(Schema.optional),
-      memory: Schema.Boolean.pipe(Schema.optional),
-      contextual: Schema.Boolean.pipe(Schema.optional),
-    }),
-  ])
-    .pipe(Schema.optional)
-    .annotate({
-      description: "Auto-Drive automatic continuation configuration",
-    }),
+  auto_drive: ConfigAutoDrive.Value.pipe(Schema.optional).annotate({
+    description: "Auto-Drive automatic continuation configuration",
+  }),
   experimental: ConfigExperimental.Experimental.pipe(Schema.optional),
   providers: Schema.Record(Schema.String, ConfigProvider.Info).pipe(Schema.optional),
 }) {}
