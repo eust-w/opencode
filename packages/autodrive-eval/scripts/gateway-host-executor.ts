@@ -44,6 +44,7 @@ const proxyName = `autodrive-proxy-${suffix}`
 const taskName = `autodrive-task-${suffix}`
 const runtimeRoot = path.join(artifactRoot, "runtime", input.run.id, `attempt-${input.attempt}`)
 const configRoot = path.join(runtimeRoot, "config")
+const opencodeConfigRoot = path.join(configRoot, "opencode")
 const stateRoot = path.join(runtimeRoot, "state")
 const tracePath = path.join(artifactRoot, "raw", `${input.run.id}.jsonl`)
 const patchRoot = path.join(artifactRoot, "patches", input.run.id)
@@ -55,6 +56,7 @@ const startedAt = new Date()
 
 await Promise.all([
   mkdir(configRoot, { recursive: true }),
+  mkdir(opencodeConfigRoot, { recursive: true }),
   mkdir(stateRoot, { recursive: true }),
   mkdir(path.dirname(tracePath), { recursive: true }),
   mkdir(patchRoot, { recursive: true }),
@@ -67,7 +69,7 @@ let taskStarted = false
 let networkCreated = false
 
 try {
-  await Bun.write(path.join(configRoot, "opencode.json"), JSON.stringify(createConfig(), null, 2) + "\n")
+  await Bun.write(path.join(opencodeConfigRoot, "opencode.json"), JSON.stringify(createConfig(), null, 2) + "\n")
   await Bun.write(path.join(configRoot, "models.json"), await Bun.file(modelMetadataPath).text())
   await command(["docker", "pull", task.image], { timeoutMS: 20 * 60_000 })
   const imageDigest = await inspectImageDigest()
@@ -149,7 +151,7 @@ try {
     "--mount",
     `type=bind,src=${stateRoot},dst=/autodrive-state`,
     "--env",
-    "OPENCODE_CONFIG_DIR=/autodrive-config",
+    "OPENCODE_CONFIG_DIR=/autodrive-config/opencode",
     "--env",
     "OPENCODE_MODELS_PATH=/autodrive-config/models.json",
     "--env",
@@ -163,7 +165,7 @@ try {
     "--env",
     "XDG_CACHE_HOME=/autodrive-state/cache",
     "--env",
-    "XDG_CONFIG_HOME=/autodrive-state/config",
+    "XDG_CONFIG_HOME=/autodrive-config",
     "--env",
     "XDG_STATE_HOME=/autodrive-state/state",
     "--workdir",
@@ -183,6 +185,13 @@ try {
   taskStarted = true
   const address = await waitForServer()
   const headers = { "content-type": "application/json", "x-opencode-directory": "/testbed" }
+  const availableModels = await api<{ providerID: string; id: string }[]>(address, "/api/model", { headers })
+  if (
+    !availableModels.some((model) => model.providerID === "autodrive-worker" && model.id === workerModel) ||
+    !availableModels.some((model) => model.providerID === "autodrive-controller" && model.id === controllerModel)
+  )
+    throw new Error("Frozen worker or controller model is unavailable in the task server")
+  await trace({ type: "models-validated", workerModel, controllerModel })
   const session = await api<{ id: string }>(address, "/api/session", {
     method: "POST",
     headers,
