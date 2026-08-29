@@ -10,6 +10,7 @@ describe("frozen AutoDrive protocol", () => {
     expect(protocol.models.controller).toBe("d-robotics/qwen3.8-max")
     expect(protocol.workerMaxOutputTokens).toBe(32_000)
     expect(protocol.controllerMaxOutputTokens).toBe(1_024)
+    expect(protocol.gateway.canaryMaxSpendUSD).toBe(5)
     expect(
       await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
     ).toContain("Gateway model-matrix amendment")

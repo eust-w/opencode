@@ -230,7 +230,7 @@ async function canary() {
   if (existing.length) fail("A paid canary result already exists for this artifact root")
   const ledger = await readJSONL(ledgerPath, parseLedger)
   const spent = summarizeBudget(ledger).categories.pilot
-  const maxCostUSD = 50 - spent
+  const maxCostUSD = Math.min(protocol.gateway.canaryMaxSpendUSD, 50 - spent)
   if (maxCostUSD <= 0) fail("Pilot budget is exhausted")
   await Promise.all([
     mkdir(path.dirname(resultsPath), { recursive: true }),

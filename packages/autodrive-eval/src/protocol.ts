@@ -58,6 +58,7 @@ export const protocol = {
     logicalProvider: "d-robotics",
     requestProvider: "d-robotics-gateway",
     software: "LiteLLM 1.90.0",
+    canaryMaxSpendUSD: 5,
   },
   replicationTaskIDs: [
     "conan-io__conan_2.0.2_2.0.3",
