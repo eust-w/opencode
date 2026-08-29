@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "protocol": "auto-drive-swe-evo-v1.11",
+  "scope": "canary",
+  "capturedAt": "2026-08-29T23:46:12.100Z",
+  "expiresAt": "2026-08-30T11:46:12.100Z",
+  "models": [
+    {
+      "model": "d-robotics/deepseek-v4-pro",
+      "catalogModelID": "deepseek-v4-pro",
+      "modelVersion": "deepseek-v4-pro",
+      "credentialPresent": true,
+      "billing": "sponsored",
+      "trajectoryCapacity": 1,
+      "probe": {
+        "path": "probes/deepseek-v4-pro.json",
+        "sha256": "7582f0ce5aa2989b70fde2eebffac3eca87b9b218c590f95e4199abe0cd5eee7"
+      }
+    },
+    {
+      "model": "d-robotics/qwen3.8-max",
+      "catalogModelID": "qwen3.8-max",
+      "modelVersion": "qwen3.8-max",
+      "credentialPresent": true,
+      "billing": "sponsored",
+      "trajectoryCapacity": 1,
+      "probe": {
+        "path": "probes/qwen3.8-max-controller.json",
+        "sha256": "cd502c9d0f035b1bec020136dc24b517de7dd94188f3ff9acb02cd5eb20978cd"
+      }
+    }
+  ],
+  "modelMetadata": {
+    "path": "metadata/models.json",
+    "sha256": "fc7cb9aecabeee2af6e5f6735a36ed29dd9fb73f11770018d728e8ea5b991193"
+  },
+  "runtime": {
+    "disableExternalSkills": true,
+    "disableClaudeCodeSkills": true,
+    "disableModelsFetch": true
+  }
+}
