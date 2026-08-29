@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "protocol": "auto-drive-swe-evo-v1.2",
-  "capturedAt": "2026-08-29T19:22:47Z",
+  "capturedAt": "2026-08-29T20:03:20Z",
   "status": "blocked",
   "credentials": {
     "environment": {
@@ -40,15 +40,58 @@
     "formalResultCreated": false,
     "formalLedgerCreated": false
   },
+  "remoteExecutor": {
+    "status": "infrastructure-passed-provider-blocked",
+    "node": "root-2",
+    "endpointStored": false,
+    "openCodeCommit": "68639e024d7af3ed3d0353ebccfba662030c9540",
+    "hardware": {
+      "vcpus": 180,
+      "memoryTiB": 1.8,
+      "gpuCount": 8,
+      "gpuMemoryMiBEach": 97887,
+      "driver": "610.43.02"
+    },
+    "runtime": {
+      "docker": "29.1.3",
+      "nvidiaContainerToolkit": "1.20.0",
+      "bun": "1.4.0"
+    },
+    "snapshotSHA256": {
+      "evaluator": "963ecff8162007ac4df9904df17338d485e55469ed2966572322e182934d2569",
+      "workspaces": "a8256f3287aafa6ef3a8f0d8e657b28d3a44e30fed15f43e62362db836b3207e",
+      "patches": "3b16edefec264b0099cf51c81bbca22aac181375b992183e6bfaebd2a7dd46ea"
+    },
+    "images": {
+      "gpuRuntime": "ubuntu@sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517",
+      "evaluator": "oven/bun@sha256:5ff609364c049b54eb0ff560ec96319729a972078ef2c755d758f0c6ef89c2d6",
+      "sweEvo": "xingyaoww/sweb.eval.x86_64.conan-io_s_conan-15109@sha256:7f6bbb676a0ee2ed040dea51fed25f6848ab4534263f78d3d377d61bf47339d0"
+    },
+    "sweEvoCanary": {
+      "instanceID": "conan-io__conan_2.0.14_2.0.15",
+      "baseCommit": "4614b3abbff15627b3fabdd98bee419721f423ce",
+      "containerCommit": "4614b3abbff15627b3fabdd98bee419721f423ce",
+      "worktreeChanges": 0,
+      "hardenedContainerPassed": true
+    },
+    "credentials": "absent",
+    "openaiEgress": "timeout",
+    "runningContainersAtHandoff": 0,
+    "gpuMemoryMiBAtHandoff": 0
+  },
   "gates": {
     "normalizedRequestManifest": "implemented",
     "artifactHashRecomputation": "implemented",
     "externalSkillDiscoveryDisabled": "implemented",
     "modelsFetchDisabled": "implemented",
     "hostExecutorDryRun": "passed",
+    "remoteEvaluatorValidation": "passed",
+    "gpuContainerCanary": "passed",
+    "sweEvoContainerCanary": "passed",
     "paidGoogleProbe": "blocked",
     "anthropicProbe": "blocked",
     "openaiProbe": "blocked",
+    "openaiRemoteEgress": "blocked",
     "sixStepCanary": "not-run"
   }
 }

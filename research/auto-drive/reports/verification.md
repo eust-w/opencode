@@ -12,6 +12,8 @@ Branch: `auto-drive-engine`
 - Chromium regression: current layout, legacy layout, and `/autodrive <task>` all passed (3/3).
 - Evaluation package: 32 tests and 153 assertions passed; `bun typecheck` passed and targeted Oxlint completed with 0 errors and 18 pre-existing warnings.
 - Host-executor dry-run: one frozen run envelope was accepted at USD 0, four content-addressed artifacts were re-hashed, provider credentials were stripped from the child process, and neither the formal trajectory index nor formal ledger was created.
+- Remote GPU executor: `root-2` passed an eight-device CUDA smoke test, hardened NVIDIA container enumeration, the evaluator's 32 tests and typecheck, and the zero-cost executor dry-run. The node retained zero running containers and zero GPU use at handoff.
+- SWE-EVO container compatibility: the immutable `conan-io__conan_2.0.14_2.0.15` image resolved to `sha256:7f6bbb676a0ee2ed040dea51fed25f6848ab4534263f78d3d377d61bf47339d0`; its clean `/testbed` checkout matched frozen base commit `4614b3abbff15627b3fabdd98bee419721f423ce` under no-network, read-only, capability-dropped isolation.
 - Protocol validation: 48 pinned SWE-EVO tasks, 384 planned trajectories, 0 completed, USD 0 spent, USD 800 remaining, and no indexed secret.
 - Paper: two 11-page PDFs passed text, font, metadata, and page-by-page visual inspection. The deterministic arXiv source archive compiled after clean extraction in a network-disabled, digest-locked TeX image.
 - `git diff --check` and a branch-diff secret-pattern scan passed. Client generation and all builds left the worktree clean.
@@ -26,4 +28,4 @@ The new `@opencode-ai/autodrive-eval` package references only existing catalog d
 
 ## Empirical and publication gates
 
-The 384 paid trajectories, 180 two-person labels, kappa freeze, derived statistics, result tables, real author metadata, license choice, and final upload approval remain incomplete. The PDFs intentionally retain visible `PENDING` result macros. No arXiv upload, push, or pull request was performed.
+The remote nodes contained no provider credentials, and both timed out reaching the OpenAI API. The 384 paid trajectories, 180 two-person labels, kappa freeze, derived statistics, result tables, real author metadata, license choice, and final upload approval remain incomplete. The PDFs intentionally retain visible `PENDING` result macros. No arXiv upload, push, or pull request was performed.
