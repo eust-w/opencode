@@ -1,0 +1,373 @@
+\ifdefined\AutoDriveAnonymous
+  \documentclass[sigconf,review,anonymous,nonacm]{acmart}
+\else
+  \documentclass[sigconf,review,nonacm]{acmart}
+\fi
+
+\setcopyright{none}
+\settopmatter{printacmref=false,printfolios=true}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\acmConference[Preprint]{Preprint}{2026}{arXiv}
+\acmBooktitle{Preprint}
+\acmDOI{}
+\acmISBN{}
+
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{amsmath}
+
+\input{generated/results}
+
+\newcommand{\system}{\textsc{AutoDrive}}
+\newcommand{\continueaction}{\textsc{Continue}}
+\newcommand{\stopaction}{\textsc{Stop}}
+\newcommand{\deferaction}{\textsc{Defer}}
+\newcommand{\pending}{\textcolor{red!70!black}{\ResultStatus}}
+
+\title{AutoDrive: Turn-Boundary Continuation Control for Long-Horizon Coding Agents}
+
+\ifdefined\AutoDriveAnonymous
+  \author{Anonymous Author(s)}
+  \affiliation{\institution{Anonymous Institution}}
+\else
+  \author{Author Name Placeholder}
+  \affiliation{%
+    \institution{Affiliation Placeholder}
+    \city{City Placeholder}
+    \country{Country Placeholder}}
+  \email{author@example.invalid}
+\fi
+
+\begin{document}
+\raggedbottom
+
+\begin{abstract}
+Coding agents often end a conversational turn before the admitted software task is complete. Users then re-enter short prompts such as ``continue,'' even when the next action is safe, in scope, and inferable from the existing trace. We call this failure \emph{premature session handoff}. We present \system, a session-scoped controller that evaluates terminal worker turns at safe boundaries, chooses among \continueaction, \stopaction, and \deferaction, and durably admits bounded follow-up work. The design separates model execution from continuation admission, preserves user queue and steering priority, and uses event-sourced state plus deterministic input identifiers to recover exactly once across a decision-to-admission crash window. We define a preregistered evaluation on all 48 SWE-EVO long-horizon tasks, a 384-trajectory model and policy matrix, a balanced 180-boundary human-labeled corpus, component ablations, and fault injection. Primary outcomes cover task success, partial Fix Rate, manual continuation demand, unsafe continuation, redundant work, cost, latency, and recovery. This manuscript is an artifact-complete study draft: system and protocol claims are test-backed, while empirical outcome fields remain \ResultStatus{} until the frozen runs and independent annotations are complete.
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+ <concept>
+  <concept_id>10011007.10011074.10011075</concept_id>
+  <concept_desc>Software and its engineering~Software creation and management</concept_desc>
+  <concept_significance>500</concept_significance>
+ </concept>
+ <concept>
+  <concept_id>10010147.10010257</concept_id>
+  <concept_desc>Computing methodologies~Machine learning</concept_desc>
+  <concept_significance>300</concept_significance>
+ </concept>
+</ccs2012>
+\end{CCSXML}
+\ccsdesc[500]{Software and its engineering~Software creation and management}
+\ccsdesc[300]{Computing methodologies~Machine learning}
+
+\keywords{coding agents, autonomous agents, continuation, termination, abstention, long-horizon software engineering, fault tolerance}
+
+\maketitle
+
+\begin{center}
+\fbox{\parbox{0.94\columnwidth}{\small\textbf{Draft status.} The implementation and frozen protocol are available, but paid trajectories and two-person boundary annotations are not complete. Every red \ResultStatus{} field is generated from an explicit result macro and is not an empirical claim.}}
+\end{center}
+
+\section{Introduction}
+
+Interactive coding agents combine a language model, repository tools, execution feedback, and a conversational interface. Their provider turns are necessarily finite, but the user's software task may span many such turns. A useful distinction follows: a \emph{worker turn} may end because the model emitted a terminal response, while the \emph{admitted task} remains incomplete. In practice, a worker may summarize partial progress, list unexecuted next steps, or ask whether it should continue. The human then sends a semantically thin message---often only ``continue''---that restores execution without adding requirements, authority, or information.
+
+This interaction is not merely inconvenient. It fragments long-horizon execution, makes completion dependent on user vigilance, and confounds evaluation: a capable worker can receive a failing score because its interface yielded control at an arbitrary turn boundary. At the same time, automatically resuming every terminal response is unsafe. A worker may be waiting for a product choice, credentials, permission expansion, destructive confirmation, or missing acceptance criteria. Blind continuation can also create redundant model calls, unbounded loops, cost exhaustion, or repeated external effects.
+
+Prior systems establish important neighboring ideas. ReAct interleaves reasoning and action~\cite{yao2023react}; coding scaffolds such as SWE-agent and OpenHands provide interfaces and execution environments~\cite{yang2024sweagent,wang2024openhands}; and Magentic-One uses an orchestrator to plan, track progress, and recover from errors across specialized agents~\cite{fourney2024magenticone}. Recent work studies sequential abstention~\cite{luo2026abstention}, evidence-linked completion~\cite{liu2026ect}, and infinite agentic loops~\cite{hou2026loops}. These works motivate careful control but do not make a narrower question disappear: at the boundary of a single coding worker's terminal turn, should the same admitted session continue, stop, or return control to the user?
+
+We study that question through \system. The controller is scoped to the worker's repository location and the durable Session. It evaluates only safe turn boundaries and returns one of three actions. \continueaction{} admits one bounded queued input; \stopaction{} closes the automatic chain; and \deferaction{} returns control when the next action depends on human authority or information. A continuation decision is persisted before queue admission with a deterministic input identifier. Recovery can therefore reconcile a recorded decision with an existing or missing input without duplicating it.
+
+This paper makes four bounded contributions:
+
+\begin{enumerate}[leftmargin=*]
+  \item It formulates \emph{premature session handoff} separately from model stopping, task completion, abstention, and infinite loops.
+  \item It describes a three-state, safety-first continuation controller integrated with durable Session admission, user-priority scheduling, bounded retries, and exactly-once crash recovery.
+  \item It provides a preregistered evaluation: 48 SWE-EVO tasks, four policies, three worker models, 384 paid trajectories, a 180-boundary labeled set, cumulative ablations, and nine fault scenarios.
+  \item It releases an evaluation harness that rejects incomplete provenance, enforces a USD 800 budget, derives off-policy prefixes without extra runs, and computes exact McNemar, task-paired bootstrap, Holm-adjusted, kappa, and macro-F1 statistics.
+\end{enumerate}
+
+We do not claim that supervisors, memory, termination critics, abstention, or loop bounds are new. The empirical contribution is conditional on the frozen study and will be reported even if \system{} produces null or negative utility.
+
+\section{Problem Formulation}
+
+\subsection{Sessions, turns, and boundaries}
+
+Let a Session be an admitted goal $g$, a durable history $H_t$, a repository location $\ell$, a worker policy $\pi_w$, and a set of permissions $P$. A provider turn transforms history and environment state until it emits a terminal finish reason. We call that point a \emph{turn boundary} $b_t$. Tool-internal continuations needed to settle already emitted calls are part of the same worker turn and are not AutoDrive decisions.
+
+The latent task state at a boundary is one of three operational classes:
+
+\begin{align*}
+y_t \in \{C,S,D\},
+\end{align*}
+
+where $C$ means that a safe, concrete, in-scope action remains; $S$ means that the goal is complete or no useful continuation is warranted; and $D$ means that continuing requires a subjective choice, missing information, expanded authority, or a dangerous/external action. A boundary controller $\pi_c$ predicts
+
+\begin{align*}
+\hat{y}_t = \pi_c(g,H_t,\ell,P,m_t),
+\end{align*}
+
+where $m_t$ is optional within-session controller memory. We call a boundary a \emph{premature session handoff} when $y_t=C$ but the interface yields to the user rather than admitting an equivalent safe continuation.
+
+\subsection{Safety asymmetry}
+
+The error costs are asymmetric. Predicting $C$ for $S$ wastes work and can cause repeated effects; predicting $C$ for $D$ can bypass human control. Predicting $S$ or $D$ for $C$ preserves safety but forfeits autonomy. Therefore, \system{} gives \deferaction{} precedence whenever authority or information is uncertain, and bounds each automatic chain even when all decisions are \continueaction.
+
+We measure task utility and boundary classification separately. A controller can classify boundaries accurately yet fail to improve task resolution because the worker cannot solve the remaining problem. Conversely, blind continuation can improve resolution while producing unacceptable unsafe or redundant turns. No single success rate captures both dimensions.
+
+\subsection{Research questions}
+
+The study asks:
+
+\begin{description}[leftmargin=2.8em,style=nextline]
+  \item[RQ1] How often do long-horizon coding trajectories contain premature handoff boundaries?
+  \item[RQ2] How does continuation control affect resolution, partial progress, and manual continuation demand?
+  \item[RQ3] Which controller inputs---supervision, initial goal, trajectory summary, and within-session memory---contribute to boundary decisions?
+  \item[RQ4] What safety, redundancy, token, cost, latency, and recovery trade-offs follow?
+\end{description}
+
+\section{System Design}
+
+\subsection{Design overview}
+
+Figure~\ref{fig:architecture} shows the control path. The worker owns model/tool execution. The controller runs only after the worker and pending user work reach a safe boundary. Its decision is not an in-memory loop flag; it becomes durable Session state. A \continueaction{} decision carries a chain identifier, continuation number, deterministic input identifier, reason, and next prompt. The input is then admitted using the same queue abstraction as human follow-ups.
+
+\begin{figure*}[t]
+  \centering
+  \fbox{\begin{minipage}{0.94\textwidth}
+  \centering\small
+  \textbf{Admitted user goal} $\rightarrow$ \textbf{serialized worker turn} $\rightarrow$ \textbf{safe terminal boundary}\\[3pt]
+  $\downarrow$ reload durable history \hfill $\downarrow$ goal, last output, optional summary/memory\\[3pt]
+  \textbf{User steer/queue priority} $\leftarrow$ \textbf{Session scheduler} $\leftarrow$
+  \boxed{\textbf{AutoDrive controller: Continue $\mid$ Stop $\mid$ Defer}}\\[3pt]
+  \hfill $\downarrow$ persist decision before admission\\[3pt]
+  \hfill \textbf{deterministic queued SessionInput} $\rightarrow$ next worker turn\\[3pt]
+  \textit{Crash recovery reconciles the recorded input ID; maxRuns bounds the chain.}
+  \end{minipage}}
+  \caption{AutoDrive controls Session continuation at worker turn boundaries. Durable admission remains separate from model execution.}
+  \Description{A flow diagram in which an admitted user goal reaches a serialized worker turn and a safe terminal boundary. A three-state AutoDrive controller persists a decision before admitting a deterministic queued Session input, while the Session scheduler gives user steering and queued input priority.}
+  \label{fig:architecture}
+\end{figure*}
+
+\subsection{Location and Session scope}
+
+Repository tools, permissions, model resolution, and filesystem context are location-scoped. Accordingly, the controller is resolved from the same Location service graph as the Session runner rather than from a process-global policy singleton. Its settings are Session state with the following precedence: Session override, project configuration, then built-in defaults. The built-in state is disabled, supervisor policy, at most five continuations, contextual prompting off, and within-session database memory on. A legacy boolean supervisor setting maps to the new policy without silently changing existing configurations.
+
+The public V2 endpoint updates the Session state used by the UI, settings dialog, and slash command. A legacy V1 server rejects the operation rather than presenting a local toggle that did not change runtime behavior.
+
+\subsection{Three-state decision}
+
+The deterministic policy examines the trailing worker response for completion, continuation, choice, missing-information, permission-expansion, and destructive-action cues. Safety cues produce \deferaction{} before continuation patterns are considered. The supervisor policy receives the admitted initial goal, last worker output, optional trajectory context, and optional within-session memory. It must return strict JSON with an action, reason, optional next prompt, and optional memory update. Its tool set is empty, temperature is zero, output is capped at 1,024 tokens, and the call has a 15-second timeout.
+
+Malformed output, provider failure, or timeout falls back to the deterministic policy. This fallback preserves availability but is not treated as equivalent evidence: traces record the policy path, and the boundary study reports fallback cases separately. Project playbooks are read only when explicitly configured. The default memory lives in the Session database and never writes \path{.opencode/auto-drive.md} into the worktree.
+
+\subsection{Safety policy and action semantics}
+
+The controller does not grant authority. It evaluates whether another worker turn may proceed under the authority already attached to the Session. Table~\ref{tab:semantics} makes this distinction operational. A next step can be technically feasible yet still require \deferaction{} because it changes product behavior, spends money, publishes data, messages a person, deploys to a shared environment, or crosses a destructive boundary. Conversely, a read-only diagnostic can remain \continueaction{} when it is a routine way to resolve uncertainty inside the admitted scope.
+
+\begin{table}[t]
+  \caption{Decision semantics. Defer takes precedence on uncertainty about authority or information.}
+  \label{tab:semantics}
+  \centering
+  \begin{tabular}{p{0.18\columnwidth}p{0.72\columnwidth}}
+    \toprule
+    Action & Necessary conditions and effect \\
+    \midrule
+    Continue & Goal incomplete; concrete, in-scope, safe next step; admit one bounded queued input. \\
+    Stop & Completion is supported or no useful in-scope action remains; close the chain. \\
+    Defer & Choice, information, permission, or safety is unresolved; return control without admission. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Let $A(b)$ denote the set of concrete next actions visible at boundary $b$, $\operatorname{scope}(a,P)$ whether action $a$ is within the current permission set, and $\operatorname{safe}(a)$ whether it avoids a destructive or externally consequential transition. The deterministic admissibility condition is
+
+\begin{align*}
+\operatorname{admit}(b) = {} & \neg\operatorname{complete}(b) \land \exists a \in A(b):\\
+& \operatorname{scope}(a,P) \land \operatorname{safe}(a) \land \neg\operatorname{choice}(a).
+\end{align*}
+
+This predicate is not presented as a complete semantic model of software work. It documents the asymmetry implemented by the fallback and the human rubric: evidence of missing authority dominates evidence that work remains. The supervisor can supply a better interpretation of the trace, but cannot weaken this interface contract.
+
+\subsection{Durable exactly-once admission}
+
+The critical crash window lies between deciding to continue and admitting its follow-up. \system{} closes it with the sequence below:
+
+\begin{enumerate}[leftmargin=*]
+  \item Choose a deterministic input ID and persist an \path{auto-drive.decided} event containing the chain and continuation number.
+  \item Admit a queued SessionInput with that exact ID and source metadata.
+  \item On every drain start, reconcile any persisted \continueaction{} decision with the input store.
+  \item If the input is absent, admit it. If an equivalent input exists, reuse it. If the same ID conflicts in Session, prompt, delivery, or source, fail closed.
+\end{enumerate}
+
+This is exactly-once admission, not exactly-once provider execution. Provider work after a crash has no durable run identity in the current process-local scheduler; the paper does not claim clustered execution recovery. Duplicate advisory wakes coalesce at the Session coordinator, and durable inputs remain the source of truth.
+
+Recovery is a reconciliation operation rather than a retry loop. For a persisted continuation decision $d=(s,c,n,i,p)$ with Session $s$, chain $c$, sequence number $n$, input ID $i$, and prompt $p$, the reconciler performs one of three transitions. If $i$ is absent, it admits $(i,p)$ and records the source metadata. If $i$ names an equivalent pending input, it returns that row without mutation. If $i$ names a non-equivalent input, it raises a conflict and admits nothing. Thus a crash can delay admission, but it cannot select a second ID or increment the chain twice.
+
+The two persistence records serve different audit purposes. The updated event records settings changes and their effective source. The decided event records the controller action, reason, chain, count, prompt identity, policy path, and optional memory transition. The queued input repeats the chain and decision metadata so that transcript consumers can attribute an automatic user-like message without changing the schema of genuine user input.
+
+\subsection{Scheduling and bounds}
+
+Real user steering inputs are promoted before queued inputs. A user message begins a new automatic chain rather than inheriting a previous continuation count. Automatic follow-ups use queue delivery, so they do not interrupt an unsafe active point. Once the current drain would otherwise become idle, one queued input is promoted and the continuation condition is reevaluated.
+
+The persisted counter prevents a restart from resetting the limit. A request for continuation number $k+1$ becomes \stopaction{} when $k$ already equals \texttt{maxRuns}. Provider retry uses a finite policy; indefinite waiting is prohibited. Permission denial or user rejection interrupts the active ownership chain and leaves unrelated durable inputs intact.
+
+\section{Evaluation Methodology}
+
+\subsection{Primary benchmark}
+
+SWE-bench established repository-level issue resolution as an agent benchmark~\cite{jimenez2024swebench}. SWE-EVO extends the setting to release-level software evolution. Its current public version contains 48 tasks from seven Python repositories, with an average patch spanning 21 files and validation averaging 874 tests~\cite{le2025sweevo}. We pin all 48 tasks to upstream commit \texttt{9b83d5af} and Arrow SHA-256 prefix \texttt{74e7c631}; the artifact records both full digests.
+
+We do not use SWE-Bench Pro for the primary conclusion. An official audit estimated that roughly 30\% of its public tasks are broken and identified overly strict tests, underspecified prompts, low coverage, and misleading prompts~\cite{openai2026signal}. This choice does not imply that SWE-EVO is flawless; Section~\ref{sec:threats} treats benchmark validity as a separate threat.
+
+\subsection{Policies and run matrix}
+
+Table~\ref{tab:matrix} freezes the paid trajectory count. The four policies are: an oracle that uses an external task verifier to inject a static continuation only while incomplete; blind continuation to the bound; the deterministic regex policy; and the full supervisor policy. The off condition is extracted from the first-boundary prefix of every paid trace and never triggers another model call.
+
+\begin{table}[t]
+  \caption{Frozen end-to-end trajectory matrix.}
+  \label{tab:matrix}
+  \centering
+  \begin{tabular}{lrrr}
+    \toprule
+    Worker setting & Tasks & Repeats & Trajectories \\
+    \midrule
+    Gemini primary & 48 & 1 & 192 \\
+    Gemini replicated subset & 12 & 2 extra & 96 \\
+    Claude Sonnet replication & 12 & 1 & 48 \\
+    GPT replication & 12 & 1 & 48 \\
+    \midrule
+    Total & & & 384 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The primary worker is Gemini 3.7 Flash. The twelve-task subset is repeated twice with the primary worker and once each with Claude Sonnet 4.6 and GPT-5.4. Every supervisor is Gemini 3.7 Flash, isolating worker-model variation. The subset covers every repository and samples low/high upstream PR and \texttt{FAIL\_TO\_PASS} proxies. Cross-model results are replication evidence rather than the primary estimate.
+
+Each run uses a pinned image digest and base commit, temperature zero, six worker steps per segment, five automatic continuations, 45 minutes, and at most two concurrent tasks. Exact provider model versions and normalized request hashes are mandatory trajectory fields. The host executor holds provider credentials; task containers do not receive them.
+
+\subsection{Execution and isolation}
+
+The harness treats the host executor as a narrow trust boundary. Before dispatch it reserves the run's maximum category charge and passes a frozen run object containing the task, worker, controller, strategy, repeat, timeout, and expected repository provenance. The executor creates the pinned task container without provider credentials. Model requests leave through the host; repository commands run inside the task container. The returned record is accepted only when its run and attempt identities match the reservation and all mandatory provenance fields parse.
+
+A trace preserves every provider request and response, tool invocation, boundary snapshot, controller decision, queue admission, promotion, verifier call, and cost event. Raw traces are content-addressed, while the public index contains only their paths and hashes. This separation supports independent integrity checks without placing credentials or unrelated host state into the artifact. Secret-shaped strings cause rejection before append. The task container is discarded after grading, so memory and filesystem changes cannot cross task identities.
+
+The oracle policy does not inspect a hidden reference patch. It invokes the same external task verifier used for final grading at a worker boundary and injects the frozen continuation string only when that verifier reports incomplete. Oracle therefore estimates the opportunity created by better boundary timing under an expensive verifier; it is not an upper bound on worker capability. Blind, regex, and supervisor policies do not receive intermediate test labels from this verifier.
+
+\subsection{Boundary corpus}
+
+We sample 180 real worker boundaries, balanced as 60 per class. Base trajectories are grouped into 54 development and 126 frozen test items. Two independent annotators receive the admitted goal, boundary trace, repository summary, and permission state. They provide a class, evidence sentence, and next action or missing input. The corpus freezes only after Cohen's $\kappa \geq 0.75$~\cite{cohen1960kappa}. Prompt or regex tuning on frozen test labels is prohibited.
+
+The cumulative ablation sequence is: regex; supervisor with last output only; plus initial goal; plus trajectory summary; plus within-session memory. This order separates model supervision from progressively richer state. The primary boundary metric is macro-F1, with classwise F1 and STOP/DEFER unsafe-continuation rates.
+
+Boundary sampling occurs after base trajectories are collected and before controller evaluation. A boundary may enter the pool only when it has a complete admitted goal, the terminal worker response, a repository-state summary, permission state, and a stable base-trajectory identifier. Sampling is stratified iteratively until each target class contains 60 independently agreed examples; class balancing is reported and is not used to estimate population frequency. RQ1 therefore uses the unbalanced first-boundary sample from the base trajectories, whereas RQ3 uses the balanced classification set. Conflating these two estimands would bias the reported handoff frequency toward one third.
+
+\subsection{Fault injection}
+
+Nine scenarios target both correctness and safety: crash after decision/before admission; crash after admission/before promotion; duplicate wake; user input preemption; supervisor timeout; invalid supervisor JSON; retryable provider error; non-retryable provider error; and maximum continuation count. An accepted recovery must preserve input identity, queue priority, chain counter, and trace classification. Infrastructure failures alone may be rerun once with identical parameters, and only when no provider charge occurred.
+
+\subsection{Measures and analysis}
+
+Resolved rate is the official binary task outcome. Fix Rate follows SWE-EVO's partial metric over \texttt{FAIL\_TO\_PASS} and \texttt{PASS\_TO\_PASS} tests~\cite{le2025sweevo}. We additionally measure manual continuations, redundant turns, prompt/completion tokens, cost, wall latency, and recovery. A model timeout, loop, or exhausted budget counts as failure rather than missing data.
+
+A manual continuation is a user-originated input whose normalized content requests progress without adding requirements, permission, or information. Automatic inputs never increment this count. A redundant turn is one in which the worker neither changes the repository, increases Fix Rate, produces new diagnostic evidence, nor resolves a previously documented uncertainty. Two reviewers inspect ambiguous redundancy cases after quantitative outcomes are frozen. Unsafe continuation is counted whenever the controller admits after a frozen STOP or DEFER label; the two source labels remain separate in reporting.
+
+Paired binary outcomes use a two-sided exact McNemar test~\cite{mcnemar1947}. If $b$ tasks resolve only under the baseline and $c$ only under treatment, the two-sided exact value is $2\Pr[X\leq\min(b,c)]$ for $X\sim\operatorname{Binomial}(b+c,0.5)$, capped at one. Concordant tasks do not enter this test.
+
+Task-level differences use 10,000 paired bootstrap resamples with percentile 95\% intervals~\cite{efron1993bootstrap}. The resampling unit is the benchmark task, preserving within-task policy pairing and combining repeats inside the task before resampling. A fixed analysis seed is part of the environment record. Preregistered policy families use Holm correction~\cite{holm1979}; raw and adjusted values are both released. The analysis harness tests these implementations against known cases and derives every numerical manuscript macro from validated JSONL. No failed trajectory is converted to missing, and no post-hoc exclusion changes the primary frozen table.
+
+For RQ2, the primary estimand is the task-averaged supervisor-minus-off difference on the 48-task primary run. Regex, blind, and oracle contrasts are secondary members of the corrected family. For RQ3, the estimand is macro-F1 on the 126 frozen boundary items, accompanied by classwise confusion counts. For RQ4, safety rates use label-conditioned denominators, while cost and latency use all dispatched runs. Cross-model estimates retain the same definitions but are explicitly descriptive because the twelve-task subset is not powered as a replacement primary sample.
+
+\subsection{Budget and artifact gates}
+
+The hard cap is USD 800: 50 pilot, 360 primary, 288 cross-model, and 102 boundary/recovery. Before dispatch, the runner reserves no more than USD 1.25 per primary trace or USD 3.00 per cross-model trace. It stops before a reservation could exceed a category or total cap. Each accepted trajectory includes the resolved model, request hash, image digest, code commit, trace hash, tokens, and cost. Secret-shaped material fails validation.
+
+\section{RQ1: Premature Handoff Frequency}
+
+The primary estimate is the fraction of first boundaries whose frozen human label is \continueaction. We also report boundaries per trajectory, task-level clustering, and frequency by repository and worker. The preregistered answer is \PrematureFrequency{}. No frequency is inferred from regex matches or from the existence of a ``next steps'' phrase; only frozen labels count.
+
+We will examine whether handoffs concentrate near agent step limits, after summaries, after partial test execution, or after provider stop reasons. This analysis distinguishes interface termination from substantive inability. It is descriptive and does not reclassify benchmark outcomes.
+
+\section{RQ2: Task Utility}
+
+Table~\ref{tab:results} is generated from the frozen trajectory index. The main paired contrast is full supervisor versus each trace's first-boundary prefix, followed by supervisor versus regex and blind policies. Oracle estimates the continuation opportunity under the same cap, not an achievable autonomous controller.
+
+\begin{table}[t]
+  \caption{Primary SWE-EVO outcomes. Values remain pending until all accepted traces pass provenance checks.}
+  \label{tab:results}
+  \centering
+  \begin{tabular}{lccc}
+    \toprule
+    Policy & Resolved & Fix Rate & Manual prompts \\
+    \midrule
+    Off prefix & \pending & \pending & \pending \\
+    Oracle & \OracleResolved & \pending & \pending \\
+    Blind & \BlindResolved & \pending & \pending \\
+    Regex & \RegexResolved & \pending & \pending \\
+    Supervisor & \SupervisorResolved & \SupervisorFixRate & \ManualReduction \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The supervisor's resolved-rate difference is \SupervisorDelta{}. We will not interpret a non-significant result as equivalence. A controller may reduce manual prompts without changing resolution, or raise Fix Rate without reaching full resolution. These outcomes are reported independently.
+
+\section{RQ3: Component Contributions}
+
+The frozen boundary macro-F1 for the complete system is \BoundaryMacroFOne{}. The cumulative ablation table will show whether the initial goal resolves ambiguous ``done'' statements, whether a trajectory summary improves recognition of remaining work, and whether memory prevents repeated failed strategies. We also report per-class confusion matrices because macro-F1 can hide unsafe directionality.
+
+Memory is evaluated within Session only. No default worktree file is written, and no information transfers across benchmark tasks. Thus an observed memory effect represents continuity inside an admitted task, not cross-task training or retrieval.
+
+\section{RQ4: Safety, Cost, and Recovery}
+
+The STOP unsafe-continuation rate is \StopUnsafeRate{} and the DEFER unsafe-continuation rate is \DeferUnsafeRate{}. We report them separately because redundant work after STOP and autonomy violations after DEFER have different operational costs. Blind continuation is expected to define a high-autonomy reference, not a safe deployment policy.
+
+The supervisor's token/cost difference is \CostDelta{} and latency difference is \LatencyDelta{}. Recovery succeeds in \RecoveryRate{} of injected cases under the preregistered invariant. These placeholders will be populated only by the analysis pipeline; fault unit tests establish mechanism correctness but do not substitute for end-to-end recovery measurements.
+
+\section{Error Analysis}
+
+After the frozen run, two reviewers will assign one primary failure category and optional secondary categories to unresolved or unsafe cases. Planned categories are: worker capability failure; wrong continuation decision; correct continuation with ineffective next prompt; repeated strategy; stale or misleading summary; memory contamination within a Session; verifier mismatch; permission/defer error; provider/runtime failure; and benchmark defect.
+
+We will sample both false continuations and missed continuations, preserving task and worker strata. Error categories are descriptive and cannot remove a failure from quantitative analysis. Suspected benchmark defects are reported with evidence and sensitivity analyses, but the primary frozen result remains intact.
+
+\section{Threats to Validity}\label{sec:threats}
+
+\textbf{Construct validity.} A static ``continue'' input is only an approximation to human follow-up. Manual continuation count measures interaction demand, not user satisfaction. The three labels compress nuanced states; the guide and dual annotation mitigate but do not eliminate disagreement.
+
+\textbf{Internal validity.} Provider services may be nondeterministic at temperature zero, and model aliases may move. We therefore record resolved model versions and request hashes, repeat the primary worker on a stratified subset, and pair each off prefix with its own trace. The same Gemini controller across workers isolates one source of variation but may favor outputs it understands better.
+
+\textbf{Benchmark validity.} SWE-EVO is public, Python-only, and uneven across repositories; DVC contributes many tasks. Public histories may be contaminated in model training. The benchmark's tests can still be incomplete or implementation-specific. We publish task-level results and do not generalize to all software development.
+
+\textbf{External validity.} The system is integrated into one agent runtime with durable Sessions. Agents without equivalent queue, event, or location abstractions may require different recovery mechanisms. The study covers coding tasks, not web purchase, messaging, trading, deployment, or other high-impact domains where \deferaction{} policies should be stricter.
+
+\textbf{Statistical conclusion validity.} Forty-eight tasks limit power, and the twelve-task cross-model set is descriptive. We report intervals and corrected tests rather than using thresholded significance as the only evidence. Results are completed and released even if effects are null or negative.
+
+\section{Related Work}
+
+\textbf{Coding agents and benchmarks.} SWE-bench evaluates issue resolution in real repositories~\cite{jimenez2024swebench}. SWE-agent shows that the agent-computer interface materially affects coding performance~\cite{yang2024sweagent}, while OpenHands provides a general platform with sandboxed execution and benchmark integration~\cite{wang2024openhands}. SWE-EVO expands the horizon from single issues to release-level changes and introduces partial Fix Rate~\cite{le2025sweevo}. \system{} changes neither worker capability nor task tests; it controls whether an admitted Session gets another bounded worker turn.
+
+\textbf{Orchestration and reflection.} ReAct alternates reasoning with environment action~\cite{yao2023react}. Magentic-One's lead orchestrator plans and re-plans across a multi-agent team~\cite{fourney2024magenticone}. \system{} is narrower: a Location-scoped controller observes a single worker only at terminal turn boundaries and emits a durable Session scheduling decision. We therefore do not claim the first supervisor or progress tracker.
+
+\textbf{Stopping and abstention.} Agentic Abstention frames stopping under uncertainty as a sequential decision and shows that timing matters~\cite{luo2026abstention}. Evidence-Carrying Termination gates COMPLETE on typed, replayable evidence~\cite{liu2026ect}. These works emphasize avoiding unsupported action or completion. AutoDrive's three states incorporate both concerns, but its central target is the complementary failure: returning control while safe work remains. It does not certify external truth or completion evidence.
+
+\textbf{Loop safety.} Infinite Agentic Loops arise from unbounded feedback paths across model, tool, framework, and runtime behavior~\cite{hou2026loops}. AutoDrive uses a persisted continuation limit, finite provider retries, and a \deferaction{} state. These are runtime bounds, not a static detector and not a proof that all loops are absent.
+
+\section{Conclusion}
+
+Provider turn completion and software task completion are different events. \system{} makes that distinction explicit with a three-state boundary controller and durable, bounded, exactly-once follow-up admission. The implementation unifies API, UI, and slash-command control; preserves human priority; avoids implicit worktree memory; and fails closed on conflicting recovery state. A frozen evaluation will determine whether these mechanisms improve long-horizon coding outcomes at acceptable safety and cost. Until those runs and independent annotations complete, this paper claims a tested system and a reproducible protocol---not an empirical gain.
+
+\begin{acks}
+Acknowledgements are intentionally withheld until author and disclosure metadata are approved.
+\end{acks}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\appendix
+\input{appendix}
+
+\end{document}

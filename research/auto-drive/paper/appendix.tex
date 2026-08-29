@@ -1,0 +1,201 @@
+\section{Frozen Protocol Details}
+
+\subsection{Twelve-task replication subset}
+
+The subset is fixed before outcomes are observed:
+
+\begin{itemize}[leftmargin=*]
+  \item Conan: \texttt{2.0.2--2.0.3}, \texttt{2.0.14--2.0.15};
+  \item Dask: \texttt{2023.9.2--2023.9.3}, \texttt{2024.1.0--2024.1.1};
+  \item DVC: \texttt{0.30.0--0.30.1}, \texttt{3.13.3--3.14.0}, \texttt{2.8.1--2.8.2};
+  \item Modin: \texttt{0.24.0--0.24.1}, \texttt{0.25.0--0.25.1};
+  \item Requests: \texttt{v2.4.0--v2.4.1};
+  \item Pydantic: \texttt{v2.7.0--v2.7.1};
+  \item scikit-learn: \texttt{0.21.1--0.21.2}.
+\end{itemize}
+
+The selection covers all seven repositories and intentionally includes contrasting upstream PR and \texttt{FAIL\_TO\_PASS} counts. It is not optimized against AutoDrive outcomes.
+
+\subsection{Dataset composition}
+
+Table~\ref{tab:dataset-composition} summarizes the frozen manifest before any outcome is observed. Counts are descriptive properties copied from the pinned SWE-EVO Arrow artifact. They are included to expose the concentration of tasks: DVC supplies more than half of the instances, whereas Conan and scikit-learn supply two each. Primary estimates therefore report both micro averages and task-paired uncertainty rather than treating repository breadth as uniform.
+
+\begin{table*}[t]
+  \caption{Frozen SWE-EVO task composition. FTP and PTP denote total failing-to-passing and passing-to-passing test counts in the manifest.}
+  \label{tab:dataset-composition}
+  \centering
+  \begin{tabular}{lrrrr}
+    \toprule
+    Repository & Tasks & FTP & PTP & Upstream PRs \\
+    \midrule
+    conan-io/conan & 2 & 80 & 966 & 62 \\
+    dask/dask & 8 & 3,004 & 26,179 & 9 \\
+    iterative/dvc & 26 & 502 & 2,039 & 172 \\
+    modin-project/modin & 3 & 73 & 1,501 & 12 \\
+    psf/requests & 4 & 9 & 515 & 23 \\
+    pydantic/pydantic & 3 & 238 & 6,112 & 109 \\
+    scikit-learn/scikit-learn & 2 & 2 & 731 & 2 \\
+    \midrule
+    Total & 48 & 3,908 & 38,043 & 389 \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+Every task record additionally pins the start and end version, base commit, environment-setup commit, and container image name. Before dispatch, the executor resolves the image to a digest and records that digest in the trajectory. A mutable image name alone is insufficient provenance. The manifest is accepted only when it contains 48 unique instance identifiers, its repository distribution matches the source artifact, and the Arrow file's SHA-256 matches the frozen value.
+
+\subsection{Boundary decision rubric}
+
+\continueaction{} requires an incomplete admitted goal, a concrete next action, existing scope and permission, no material missing preference, and a routine or reversible engineering action. \stopaction{} requires proportionate completion evidence or absence of useful in-scope work. \deferaction{} applies to subjective choices, credentials or missing requirements, expanded permission, destructive/external/monetary action, or uncertainty only the user can resolve. \deferaction{} takes precedence over \continueaction.
+
+The final corpus has 60 items per label. Independent label files include a confidence level, evidence sentence, and next action or missing information. No supervisor prediction is visible to annotators. Base trajectories cannot cross development and test sets.
+
+\subsection{Annotation instrument and freeze}
+
+Annotators receive a rendered packet, not the raw result index. The packet contains the admitted goal verbatim, worker/model identity hidden behind a neutral code, the terminal provider response, the preceding tool/test evidence needed to interpret it, a repository-state summary, current permission constraints, and the boundary identifier. Costs, downstream outcomes, supervisor outputs, other labels, and reference patches are withheld.
+
+For every item, the annotator records: label; high, medium, or low confidence; one evidence sentence; a concrete next action for \continueaction{}; or the missing decision/information for \deferaction{}. A \stopaction{} label must point to completion evidence or explain why no useful in-scope action remains. Blank rationales fail schema validation.
+
+Two label files are sealed by hash before agreement is calculated. Cohen's kappa is computed over the three nominal labels, without confidence weighting. If $\kappa<0.75$, reviewers may clarify the written rubric using development cases, then independently re-label affected material once. They may not inspect frozen test predictions while revising the rubric. The released artifact preserves pre-adjudication files, their hashes, the agreement report, the adjudicated labels, and a machine-readable change log.
+
+The exact 54/126 split is group-constrained by base trajectory. The split routine uses a frozen seed and rejects any assignment that misses a class target or places one base trajectory in both pools. Development labels can be used for prompt and regex iteration. Test labels are opened only after controller prompts, parsing, fallback, and ablation ordering are frozen.
+
+\subsection{Fault invariants}
+
+\begin{table*}[t]
+  \caption{Frozen failure injection and required invariant.}
+  \centering
+  \begin{tabular}{p{0.24\textwidth}p{0.69\textwidth}}
+    \toprule
+    Scenario & Required invariant \\
+    \midrule
+    Decision before admission & Recovery admits the deterministic input exactly once. \\
+    Admission before promotion & The pending input survives restart and promotes once. \\
+    Duplicate wake & No duplicate provider execution or SessionInput row. \\
+    User preemption & Real steer/queue input takes priority and begins a new chain. \\
+    Supervisor timeout & The call terminates at 15 seconds and uses the recorded fallback. \\
+    Invalid JSON & Parsing falls back without an implicit unsafe continuation. \\
+    Retryable provider failure & Retries are finite and visible in the trace. \\
+    Non-retryable provider failure & Execution stops immediately and counts as failure. \\
+    Maximum count & No input numbered \texttt{maxRuns + 1} is admitted. \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\subsection{Recovery procedure}
+
+Fault injection operates at named storage boundaries rather than arbitrary wall-clock delays. For the first crash window, a failpoint terminates the process after the decided event commits and before input admission begins. The restarted drain reloads the event, recomputes no decision, and reconciles the stored input ID. For the second window, termination occurs after admission commits but before the scheduler can promote the input. Restart must discover the pending row; creating a replacement is a failure even if the transcript text would match.
+
+Duplicate wake testing issues multiple advisory wakes for the same Session while one drain is active. The process-local coordinator must join or coalesce them, while different Session IDs remain eligible for concurrent drains. User-preemption testing inserts both steering and queued user input around an automatic pending row and verifies real-user priority plus a fresh automatic chain. Timeout and invalid-JSON tests record the supervisor failure mode and selected deterministic fallback. Provider-error tests distinguish retryable from non-retryable errors and assert the five-attempt bound. The maximum-count scenario restarts between continuations to ensure the durable count, rather than process memory, enforces the limit.
+
+Recovery success requires all invariants simultaneously: one source input ID, correct delivery mode, unchanged prompt, correct chain and sequence metadata, no skipped user input, no extra provider turn, and a traceable terminal classification. Merely reaching an idle Session is not recovery evidence.
+
+\subsection{Artifact schema}
+
+Each trajectory index row contains four groups of fields:
+
+\begin{itemize}[leftmargin=*]
+  \item \emph{identity}: run, task, policy, worker/controller model, repeat, and attempt;
+  \item \emph{outcome}: timestamps, status, failure class, resolution, Fix Rate, and first-boundary prefix outcome;
+  \item \emph{operation}: continuation, manual, redundancy, token, cost, latency, safety, and recovery measures; and
+  \item \emph{provenance}: resolved model version, normalized request SHA-256, image digest, task base and implementation commits, and content-addressed trace path.
+\end{itemize}
+
+A successful record cannot carry a failure class, and a failed record must carry one. A run ID must belong to the frozen matrix and match its task, worker, controller, strategy, and repeat. The request hash is computed after defaults are normalized but before credentials are attached. Trace hashes are checked before analysis so that replacing a raw trace invalidates the index.
+
+The cost ledger is append-only. The validator rejects unknown run IDs, duplicate task matrix identities, category or total overrun, missing provenance, secret-shaped content, and analysis over an empty result set.
+
+\subsection{Budget reservation and failure accounting}
+
+The USD 800 cap is enforced before dispatch, not audited only after completion. The harness calculates current committed spend plus outstanding reservations. A primary run reserves at most USD 1.25 and a cross-model run at most USD 3.00; dispatch is denied if either the category or total cap would be crossed. Actual provider usage replaces the reservation when the record is appended. A mismatch between result index and ledger pauses subsequent execution for reconciliation.
+
+Only a predefined, zero-charge infrastructure exit can consume the single rerun allowance. Examples include container creation failure before a request, corrupted task-image transfer before startup, or host interruption before provider dispatch. Model timeout, context exhaustion, controller loop, rate-limited provider attempts that incurred usage, verifier failure after execution, and budget exhaustion remain failed outcomes. This rule prevents selectively rerunning difficult or unfavorable trajectories.
+
+The USD 50 pilot pool is gated separately. Its purpose is to validate container isolation, trace completeness, model identity capture, grader invocation, secret rejection, and cost reconciliation on a non-primary task set. Pilot outcomes never enter RQ estimates. Main dispatch stays disabled until the pilot report is accepted and the executor's normalized request matches the frozen request contract.
+
+\subsection{Model and continuation request contract}
+
+Table~\ref{tab:request-contract} lists the provider-independent request fields. Model aliases are planning identifiers only. At runtime the executor must capture the provider's resolved version and a SHA-256 over the normalized outbound request. A completed record with an unresolved version, missing request hash, nonzero temperature, or unrecognized default is rejected rather than treated as comparable.
+
+\begin{table*}[t]
+  \caption{Frozen request envelope. Provider-specific defaults must be resolved and hashed by the executor.}
+  \label{tab:request-contract}
+  \centering
+  \begin{tabular}{p{0.18\textwidth}p{0.24\textwidth}p{0.48\textwidth}}
+    \toprule
+    Component & Field & Frozen value \\
+    \midrule
+    Worker & Models & Gemini 3.7 Flash; Claude Sonnet 4.6; GPT-5.4 \\
+    Worker & Sampling & Temperature 0; tool choice auto \\
+    Worker & Horizon & Six steps per segment; five continuations; 2,700 seconds \\
+    Supervisor & Model and sampling & Gemini 3.7 Flash; temperature 0; no tools \\
+    Supervisor & Bound & 1,024 output tokens; 15 seconds; regex fallback \\
+    Continuation & Delivery & Queue; ``Please proceed with the next step.'' \\
+    Off policy & Derivation & First-boundary prefix of the same paid trajectory \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+All policies share the same worker system prompt, repository tool registry, permission set, per-segment step budget, context construction, and final verifier. Strategy-specific text appears only in the controller decision path and the common static continuation input. The supervisor has no repository tools and cannot mutate the task container directly. This prevents controller capability from becoming an unreported second coding agent.
+
+The normalized request removes credentials and transport-only headers but retains provider, endpoint family, resolved model, messages, tools and schemas, sampling settings, token bounds, stop conditions, and provider feature flags. Array ordering is preserved. JSON object keys are canonicalized before hashing. If a provider rejects a frozen field or silently substitutes a model, execution pauses and the protocol records a deviation; the harness does not rewrite earlier hashes.
+
+Automatic continuation uses queue delivery because a terminal worker response is not itself permission to interrupt an active tool boundary. The next prompt is deterministic for oracle and blind policies. Regex and supervisor may provide a concrete safe next prompt, but the stored decision and Session input must contain the same text. A genuine user steer or queue input wins scheduling priority and resets the automatic chain, even when it is semantically equivalent to the pending automatic prompt.
+
+\subsection{System acceptance beyond model outcomes}
+
+The implementation has three independent acceptance layers. First, unit and integration tests establish controller parsing, safety precedence, configuration precedence, persistence, reconciliation, scheduling, retry limits, and V1 rejection. Second, browser tests establish that new and adopted Sessions load their server-backed state, the status indicator follows decided events, settings and slash command update the same endpoint, and a legacy server cannot display a false success. Third, fault runs validate behavior across real process restarts and failpoints.
+
+These layers must not be substituted for one another. A passing unit test does not estimate SWE-EVO utility; a successful task trajectory does not prove crash recovery; and a rendered UI toggle does not prove runtime state changed. The artifact checklist therefore keeps system, boundary, end-to-end, visual, and publication gates separate. The paper marks mechanism claims as test-backed only when the corresponding repository evidence exists, and leaves empirical result macros pending until the appropriate frozen data gate closes.
+
+The public API is also versioned behavior. V2 accepts a Session-level update and returns effective state; Session information projects that state to clients. V1 returns an explicit unsupported response. Configuration resolution is Session override, project configuration, then built-in default. The legacy boolean supervisor option maps into the new policy vocabulary, while invalid continuation limits outside 1--20 fail validation. None of these compatibility paths may silently enable AutoDrive for an existing Session.
+
+\section{Implementation Verification Map}
+
+\begin{table*}[t]
+  \caption{Mechanism-to-evidence mapping in the repository.}
+  \centering
+  \begin{tabular}{p{0.28\textwidth}p{0.63\textwidth}}
+    \toprule
+    Mechanism & Test evidence \\
+    \midrule
+    Three-state parse and safety priority & Core AutoDrive decision tests \\
+    Config precedence and legacy mapping & Core AutoDrive state/config tests \\
+    Event persistence and exact admission & Controller and projector integration tests \\
+    Queue source metadata & Input admission/promotion tests \\
+    User priority and concurrent resume & Session runner integration tests \\
+    V2 endpoint and V1 rejection & Server HTTP API/OpenAPI tests \\
+    New and legacy Session controls & Chromium end-to-end regression tests \\
+    Matrix, statistics, budget, provenance & Independent AutoDrive evaluation package tests \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\section{Analysis and Release Procedure}
+
+\subsection{Frozen snapshot construction}
+
+Analysis begins only when the validator sees exactly 384 unique accepted run IDs, no unknown matrix identity, all trace hashes present, and category spend within the cap. The run index, ledger, trace-hash list, label files, adjudication log, environment lock, model request manifest, and analysis commit are hashed into one snapshot manifest. Derived files are written into a new directory named by that snapshot hash; analysis never updates raw JSONL in place.
+
+The pipeline emits a run-level CSV, task-level paired CSV, policy summary JSON, boundary confusion matrices, bootstrap draws, raw and Holm-adjusted tests, cost ledger summary, failure taxonomy, and LaTeX result macros. Manuscript tables reference those macros or generated table fragments. A visible pending macro is retained unless every dependency for that result passes its gate. Thus a complete trajectory matrix cannot accidentally populate boundary metrics when labels remain unfrozen, and fault unit tests cannot populate the end-to-end recovery estimate.
+
+\subsection{Numerical audit}
+
+An independent audit recomputes counts and means from the raw index, verifies that all rates have the documented denominator, and checks that off results are prefixes of their own paid trajectories. It compares each manuscript number with the generated source, recomputes exact tests using a second implementation, and spot-checks bootstrap pairing by task ID. Values are rounded only for presentation; statistical procedures consume unrounded data.
+
+The audit also checks direction labels. A positive supervisor delta always means supervisor minus comparator; a manual-prompt reduction is reported with an explicit sign and unit; latency uses wall-clock milliseconds; and cost uses recorded USD rather than token-derived estimates when provider invoices disagree. Null, negative, and inconclusive results remain in the main table.
+
+\subsection{Anonymization and source packaging}
+
+The anonymous and signed manuscripts share the same body, bibliography, generated result files, and appendix. A single wrapper controls author metadata. Before public release, trace sanitization removes host paths, account identifiers, and unrelated repository secrets while retaining commands, outputs, model content, and hashes needed for scientific review. Redaction locations are logged; redaction does not change numerical inputs.
+
+The arXiv source archive contains the signed wrapper, shared source, bibliography, appendix, and generated result fragments. It excludes raw traces, credentials, build caches, PDFs, and local absolute paths. The archive is unpacked into a clean directory and compiled with the same digest-locked, network-disabled TeX image. Author names, affiliations, email, order, license, disclosure text, and final PDF require separate user approval before any upload.
+
+\section{Result Publication Rules}
+
+All outcome macros are generated after the trajectory index contains 384 accepted run IDs and boundary labels pass the freeze gate. Tables and figures are regenerated from that snapshot. Hand-edited numerical results are prohibited. The final manuscript records the analysis commit, result snapshot hash, container digest, complete model identifiers, actual spend, and all deviations. The anonymous and signed PDFs are compiled from the same source with only author metadata changed.
+
+\section{Full Frozen Task Manifest}
+
+Table~\ref{tab:task-manifest} is generated directly from the digest-pinned protocol manifest. It makes the exact benchmark scope auditable without relying on a mutable dataset viewer.
+
+\input{generated/task-manifest}

@@ -1,0 +1,32 @@
+FROM texlive/texlive@sha256:38264b1965ee35d4080013256358d174cdf40e1570ba3a4c24f8e450d5fe1f7a
+
+RUN tlmgr repository remove tlcontrib \
+    && tlmgr option repository https://mirrors.mit.edu/CTAN/systems/texlive/tlnet \
+    && tlmgr install \
+      acmart \
+      babel \
+      caption \
+      cmap \
+      comment \
+      environ \
+      fancyhdr \
+      float \
+      framed \
+      geometry \
+      graphics \
+      hyperref \
+      hyperxmp \
+      inconsolata \
+      libertine \
+      ncctools \
+      natbib \
+      newtx \
+      pbalance \
+      preprint \
+      psnfss \
+      setspace \
+      totpages \
+      xcolor \
+      zref
+
+WORKDIR /work

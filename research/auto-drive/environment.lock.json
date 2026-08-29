@@ -16,7 +16,7 @@
   "repository": {
     "remote": "https://github.com/anomalyco/opencode",
     "branch": "auto-drive-engine",
-    "implementationCommit": null,
+    "implementationCommit": "4df3520f763bdb211d627df1473a06129f4070ef",
     "freezeRule": "Set only after the implementation and evaluation harness commits are clean and verified."
   },
   "dataset": {
@@ -25,8 +25,28 @@
     "arrowSHA256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
   },
   "latex": {
-    "image": null,
-    "digest": null,
-    "freezeRule": "Record an immutable TeX Live image digest before the first PDF build."
+    "baseImage": "texlive/texlive@sha256:38264b1965ee35d4080013256358d174cdf40e1570ba3a4c24f8e450d5fe1f7a",
+    "image": "opencode-autodrive-texlive@sha256:9d0f4661034103159dd1a82dfc9818ebbb83ced84a4bfc4378dbe681df1c75f8",
+    "digest": "sha256:9d0f4661034103159dd1a82dfc9818ebbb83ced84a4bfc4378dbe681df1c75f8",
+    "dockerfileSHA256": "85ce7482a38291ad9590a7f564d291b20c8218f48eef6369f637144134f688dd",
+    "texLive": "2026",
+    "pdfTeX": "3.141592653-2.6-1.40.29",
+    "latexmk": "4.88",
+    "installedPackages": [
+      "acmart",
+      "comment",
+      "environ",
+      "framed",
+      "hyperxmp",
+      "inconsolata",
+      "libertine",
+      "ncctools",
+      "newtx",
+      "pbalance",
+      "preprint",
+      "totpages",
+      "zref"
+    ],
+    "freezeRule": "Build from Dockerfile.texlive and verify the resulting image ID before compiling."
   }
 }
