@@ -1,6 +1,7 @@
 export * from "./annotation"
 export * from "./artifact"
 export * from "./budget"
+export * from "./paper"
 export * from "./protocol"
 export * from "./runner"
 export * from "./statistics"

@@ -8,6 +8,7 @@
     "test": "bun test --timeout 30000 --only-failures",
     "typecheck": "tsgo --noEmit",
     "plan": "bun src/cli.ts plan",
+    "paper:protocol": "bun src/cli.ts paper-protocol",
     "validate": "bun src/cli.ts validate",
     "analyze": "bun src/cli.ts analyze",
     "run-eval": "bun src/cli.ts run"

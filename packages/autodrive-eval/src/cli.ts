@@ -3,6 +3,7 @@ import path from "node:path"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
 import { analyzeTrajectories, assertSecretFree, parseTrajectory, type Trajectory } from "./artifact"
 import { summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
+import { renderTaskManifest } from "./paper"
 import { createRunPlan, parseManifest, protocol, type Run } from "./protocol"
 import { executeRuns, InfrastructureFailure, type ExecutionContext } from "./runner"
 
@@ -13,10 +14,11 @@ const command = Bun.argv[2] ?? "validate"
 const args = Bun.argv.slice(3)
 
 if (command === "plan") await printPlan()
+if (command === "paper-protocol") await paperProtocol()
 if (command === "validate") await validate()
 if (command === "analyze") await analyze()
 if (command === "run") await run()
-if (!new Set(["plan", "validate", "analyze", "run"]).has(command)) fail(`Unknown command: ${command}`)
+if (!new Set(["plan", "paper-protocol", "validate", "analyze", "run"]).has(command)) fail(`Unknown command: ${command}`)
 
 async function printPlan() {
   const content = plan.map((run) => JSON.stringify(run)).join("\n") + "\n"
@@ -25,6 +27,15 @@ async function printPlan() {
   await mkdir(path.dirname(path.resolve(output)), { recursive: true })
   await Bun.write(path.resolve(output), content)
   console.log(JSON.stringify({ output: path.resolve(output), trajectories: plan.length }))
+}
+
+async function paperProtocol() {
+  const output = path.resolve(
+    option("output") ?? path.join(root, "research/auto-drive/paper/generated/task-manifest.tex"),
+  )
+  await mkdir(path.dirname(output), { recursive: true })
+  await Bun.write(output, renderTaskManifest(manifest.tasks))
+  console.log(JSON.stringify({ output, tasks: manifest.tasks.length }))
 }
 
 async function validate() {
