@@ -1,0 +1,116 @@
+{
+  "model": "openai/qwen3.8-max",
+  "default_agent": "experiment",
+  "permissions": [
+    {
+      "action": "*",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "question",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "external_directory",
+      "resource": "*",
+      "effect": "deny"
+    }
+  ],
+  "agents": {
+    "experiment": {
+      "mode": "primary",
+      "steps": 6,
+      "request": {
+        "body": {
+          "temperature": 0,
+          "reasoningEffort": "low"
+        }
+      },
+      "permissions": [
+        {
+          "action": "*",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "question",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "external_directory",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
+    }
+  },
+  "providers": {
+    "openai": {
+      "api": {
+        "type": "aisdk",
+        "package": "@ai-sdk/openai",
+        "url": "http://autodrive-proxy:8080/worker/v1"
+      },
+      "request": {
+        "body": {
+          "apiKey": "proxy-only-no-secret"
+        }
+      },
+      "models": {
+        "qwen3.8-max": {
+          "api": {
+            "id": "qwen3.8-max"
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 32000
+          }
+        }
+      }
+    },
+    "autodrive-controller": {
+      "api": {
+        "type": "aisdk",
+        "package": "@ai-sdk/openai-compatible",
+        "url": "http://autodrive-proxy:8080/controller/v1"
+      },
+      "request": {
+        "body": {
+          "apiKey": "proxy-only-no-secret"
+        }
+      },
+      "models": {
+        "qwen3.8-max": {
+          "api": {
+            "id": "qwen3.8-max"
+          },
+          "capabilities": {
+            "tools": false,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 1024
+          }
+        }
+      }
+    }
+  }
+}
