@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "protocol": "auto-drive-swe-evo-v1.4",
+  "classification": "excluded_usage_accounting_canary",
+  "taskID": "iterative__dvc_2.21.1_2.21.2",
+  "runID": "adr_c29c17757086c4d7b772",
+  "workerRequests": 8,
+  "completeUsageResponses": 5,
+  "completeUsage": {
+    "promptTokens": 19083,
+    "completionTokens": 578
+  },
+  "usageParseFailures": 3,
+  "controllerRequests": 0,
+  "accountSpendObservationUSD": {
+    "before": 2.6865133,
+    "after": 2.8478437,
+    "delta": 0.1613304,
+    "attribution": "unconfirmed_due_to_possible_billing_lag"
+  },
+  "acceptedTrajectory": false,
+  "acceptedLedgerEntry": false,
+  "cleanup": {
+    "taskContainers": 0,
+    "proxyContainers": 0,
+    "experimentNetworks": 0
+  }
+}

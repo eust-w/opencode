@@ -6,6 +6,7 @@ import {
   parseGatewayCatalog,
   parseGatewayUsage,
   proxyGatewayRequest,
+  requireCompleteGatewayUsage,
   requireGatewayBudget,
 } from "../src/gateway"
 
@@ -192,6 +193,21 @@ describe("gateway experiment transport", () => {
     )
   })
 
+  test("rejects accepted trajectories with incomplete successful-response usage", () => {
+    expect(() =>
+      requireCompleteGatewayUsage([
+        { type: "provider-response", status: 200, usageComplete: true },
+        { type: "provider-response", status: 200, usageComplete: false },
+      ]),
+    ).toThrow("incomplete usage accounting")
+    expect(() =>
+      requireCompleteGatewayUsage([
+        { type: "provider-response", status: 200, usageComplete: true },
+        { type: "provider-response", status: 429, usageComplete: false },
+      ]),
+    ).not.toThrow()
+  })
+
   test("proxies a real HTTP request while recording the exact outbound body", async () => {
     let receivedAuthorization = ""
     let receivedBody = ""
@@ -245,11 +261,60 @@ describe("gateway experiment transport", () => {
         {
           sequence: 0,
           status: 200,
+          usageComplete: true,
           modelVersion: "qwen3.8-max",
           promptTokens: 4,
           completionTokens: 1,
         },
       ])
+    } finally {
+      await upstream.stop(true)
+    }
+  })
+
+  test("forwards a successful Responses stream when usage accounting is incomplete", async () => {
+    const content = [
+      'event: response.created\ndata: {"type":"response.created","response":{"model":"qwen3.8-max"}}',
+      'event: response.completed\ndata: {"type":"response.completed","response":{"model":"qwen3.8-max","status":"completed"}}',
+    ].join("\n\n")
+    const upstream = Bun.serve({
+      port: 0,
+      fetch: () => new Response(content, { headers: { "content-type": "text/event-stream" } }),
+    })
+    const raw: unknown[] = []
+    const responses: unknown[] = []
+    try {
+      const response = await proxyGatewayRequest(
+        new Request("http://proxy/worker/v1/responses", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ input: [], model: "qwen3.8-max" }),
+        }),
+        {
+          key: "host-key",
+          upstream: `http://127.0.0.1:${upstream.port}`,
+          sequence: 5,
+          onRequest: () => {},
+          onRawResponse: (value) => {
+            raw.push(value)
+          },
+          onResponse: (value) => {
+            responses.push(value)
+          },
+        },
+      )
+
+      expect(response.status).toBe(200)
+      expect(await response.text()).toBe(content)
+      expect(raw).toEqual([
+        {
+          sequence: 5,
+          status: 200,
+          content,
+          sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        },
+      ])
+      expect(responses).toEqual([{ sequence: 5, status: 200, usageComplete: false }])
     } finally {
       await upstream.stop(true)
     }

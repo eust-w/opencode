@@ -4,6 +4,7 @@ import { appendFile, chmod, mkdir } from "node:fs/promises"
 import path from "node:path"
 import { z } from "zod"
 import { assertSecretFree, parseTrajectory } from "../src/artifact"
+import { requireCompleteGatewayUsage } from "../src/gateway"
 import { buildExperimentConfig, buildTaskPrompt, gradePytest, parsePytestLog, parseTaskInput } from "../src/host-executor"
 import { protocol, Run } from "../src/protocol"
 
@@ -246,6 +247,7 @@ try {
 
   const requests = await readJSONL(requestManifest)
   const proxyEvents = await readJSONL(proxyTrace)
+  requireCompleteGatewayUsage(proxyEvents)
   const usage = proxyEvents.filter((event) => event.type === "provider-response" && event.status === 200)
   const costUSD = Math.max(0, (await readSettledSpend()) - baselineSpend)
   const serverLog = await command(["docker", "logs", taskName], { allowFailure: true })

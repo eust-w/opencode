@@ -21,9 +21,10 @@ if (!key) fail("Gateway key file is empty")
 
 const runRoot = path.join(artifactRoot, "gateway", runID)
 const requestRoot = path.join(runRoot, "requests")
+const responseRoot = path.join(runRoot, "responses")
 const manifestPath = path.join(runRoot, "requests.jsonl")
 const tracePath = path.join(runRoot, "proxy.jsonl")
-await mkdir(requestRoot, { recursive: true })
+await Promise.all([mkdir(requestRoot, { recursive: true }), mkdir(responseRoot, { recursive: true })])
 
 let sequence = 0
 
@@ -72,6 +73,23 @@ Bun.serve({
             await Bun.sleep(100)
           }
           await writeTrace({ type: "controller-released", sequence: request.sequence })
+        },
+        onRawResponse: async (response) => {
+          assertSecretFree(response.content)
+          const relative = path.join(
+            "gateway",
+            runID,
+            "responses",
+            `${String(response.sequence).padStart(4, "0")}.txt`,
+          )
+          await Bun.write(path.join(artifactRoot, relative), response.content)
+          await writeTrace({
+            type: "provider-raw-response",
+            sequence: response.sequence,
+            status: response.status,
+            response: { path: relative, sha256: response.sha256 },
+            bytes: response.content.length,
+          })
         },
         onResponse: async (response) => writeTrace({ type: "provider-response", ...response }),
       })

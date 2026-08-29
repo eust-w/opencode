@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.4
+# AutoDrive Preregistration v1.5
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -21,6 +21,12 @@ The gateway key is classified as sponsored and metered because `/key/info` expos
 The first v1.3 end-to-end gateway canary received HTTP 200 for one charged worker request but the gateway's streamed Chat Completions tool-call delta omitted the tool-call ID or name required by the worker runtime. The runtime rejected the stream before executing a tool or modifying the checkout. No v1.3 trajectory, task outcome, boundary decision, or ledger row was accepted. The request manifest and raw proxy trace are retained as an excluded transport-qualification artifact; the same v1.3 configuration is not retried.
 
 Before any experimental trajectory was accepted, a direct gateway probe established that the OpenAI Responses endpoint returns a complete structured function call with a call ID, function name, and arguments. Version 1.4 therefore sends worker traffic through OpenAI Responses while leaving the tool-free supervisor on Chat Completions. The proxy freezes endpoint-specific fields as `temperature=0,max_output_tokens=32000` for Responses workers and `temperature=0,max_tokens=1024` for Chat supervisors, and parses both Responses `input_tokens/output_tokens` and Chat `prompt_tokens/completion_tokens` usage. The models, prompts, policies, dataset, task selection, sampling, limits, statistics, and budget are unchanged. All 384 deterministic run IDs are regenerated because transport is part of the frozen executable protocol.
+
+## Response-accounting amendment (v1.5)
+
+The first v1.4 end-to-end canary completed five Responses tool turns, then received a successful upstream response whose terminal usage fields did not satisfy the proxy's strict accounting parser. The proxy converted this accounting defect to HTTP 502, which triggered two bounded session retries before the run was interrupted. No controller request, boundary, grade, accepted trajectory, or ledger row was produced. The request and proxy manifests, complete usage for the first five responses, observed account-spend delta, and exact cleanup are retained as an excluded canary; its v1.4 run ID is not retried.
+
+Before any experimental trajectory was accepted, version 1.5 separated provider transport from accounting validation. Every upstream body is now saved with its SHA-256 before parsing. A successful upstream body is forwarded unchanged even when usage extraction is incomplete, and the proxy records `usageComplete=false` rather than manufacturing a retryable HTTP error. Acceptance still requires complete usage for every successful worker and controller response; missing usage cannot be replaced by zero. Models, requests, prompts, policies, dataset, sampling, step limits, statistics, and budget are unchanged. All 384 deterministic run IDs are regenerated.
 
 ## Claim boundary
 

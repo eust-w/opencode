@@ -151,6 +151,26 @@ export function requireGatewayBudget(input: {
   return remaining
 }
 
+export function requireCompleteGatewayUsage(events: readonly unknown[]) {
+  const incomplete = events.some((event) => {
+    const parsed = z
+      .object({
+        type: z.string().optional(),
+        status: z.number().optional(),
+        usageComplete: z.boolean().optional(),
+      })
+      .loose()
+      .safeParse(event)
+    return (
+      parsed.success &&
+      parsed.data.type === "provider-response" &&
+      parsed.data.status === 200 &&
+      parsed.data.usageComplete !== true
+    )
+  })
+  if (incomplete) throw new Error("Successful provider response has incomplete usage accounting")
+}
+
 export async function proxyGatewayRequest(
   input: Request,
   options: {
@@ -159,9 +179,16 @@ export async function proxyGatewayRequest(
     sequence: number
     onRequest: (request: ReturnType<typeof createGatewayRequest>) => void | Promise<void>
     beforeUpstream?: (request: ReturnType<typeof createGatewayRequest>) => void | Promise<void>
+    onRawResponse?: (response: {
+      sequence: number
+      status: number
+      content: string
+      sha256: string
+    }) => void | Promise<void>
     onResponse: (response: {
       sequence: number
       status: number
+      usageComplete: boolean
       modelVersion?: string
       promptTokens?: number
       completionTokens?: number
@@ -184,10 +211,17 @@ export async function proxyGatewayRequest(
     body: request.normalized,
   })
   const content = await upstream.text()
-  const usage = upstream.ok ? parseGatewayUsage(content) : undefined
+  await options.onRawResponse?.({
+    sequence: request.sequence,
+    status: upstream.status,
+    content,
+    sha256: createHash("sha256").update(content).digest("hex"),
+  })
+  const usage = upstream.ok ? tryParseGatewayUsage(content) : undefined
   await options.onResponse({
     sequence: request.sequence,
     status: upstream.status,
+    usageComplete: !!usage,
     ...usage,
   })
   const headers = new Headers(upstream.headers)
@@ -197,4 +231,12 @@ export async function proxyGatewayRequest(
     statusText: upstream.statusText,
     headers,
   })
+}
+
+function tryParseGatewayUsage(content: string) {
+  try {
+    return parseGatewayUsage(content)
+  } catch {
+    return undefined
+  }
 }
