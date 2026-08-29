@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "protocol": "auto-drive-swe-evo-v1.6",
+  "classification": "accepted_paid_canary_provider_failure",
+  "runID": "adr_e70cd0fbb67c31ceaa7c",
+  "taskID": "iterative__dvc_2.21.1_2.21.2",
+  "status": "failed",
+  "failure": "retryable-provider",
+  "resolved": false,
+  "fixRate": 0,
+  "firstBoundaryFixRate": 0,
+  "continuationCount": 0,
+  "workerRequests": 6,
+  "controllerRequests": 0,
+  "promptTokensObserved": 27788,
+  "completionTokensObserved": 897,
+  "usageComplete": false,
+  "costUSD": 0.59344,
+  "latencyMS": 509541,
+  "artifactVerification": "passed",
+  "secretScan": "passed",
+  "cleanup": {
+    "containers": 0,
+    "experimentNetworks": 0
+  },
+  "sha256": {
+    "remoteExportArchive": "3041af3249fb8c7b10b792b840d98f4f362aa5771aa00d10ffbff8b7df728121",
+    "trajectory": "1b21e8abb9390a9ce34f25e26679f03a9e686165a06dfc1b00c5f8e19a21b824",
+    "ledger": "5d13a0c15566ec7082b4c6674f2fac2c9ae5848cc31eb14bd26fe56edfa2be85",
+    "grader": "fd4c796380af6ee854eb377587e3cc60d0fc9de2e4a718fd709037d283dad579",
+    "incompleteResponse": "06913c7f1e064c54d36362a9f636d183f9dff7ac5f97e4ec0a0303842af16f90",
+    "trace": "6884692c7161401431c33f1f9a4098c02a15da020beb64d06a62241a994bb48f"
+  }
+}
