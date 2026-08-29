@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "protocol": "auto-drive-swe-evo-v1.6",
+  "scope": "canary",
+  "capturedAt": "2026-08-29T22:02:03Z",
+  "expiresAt": "2026-08-30T10:02:03Z",
+  "models": [
+    {
+      "model": "d-robotics/qwen3.8-max",
+      "catalogModelID": "qwen3.8-max",
+      "modelVersion": "qwen3.8-max",
+      "credentialPresent": true,
+      "billing": "sponsored",
+      "trajectoryCapacity": 1,
+      "probe": {
+        "path": "probes/qwen3.8-max.json",
+        "sha256": "bfae595c5fe08c622b24102d46f5f2802a8cd06fe8c99f9126c478939088c74a"
+      }
+    }
+  ],
+  "modelMetadata": {
+    "path": "metadata/models.json",
+    "sha256": "5ff0af264899cce4fbabc21cadd9a20366fae9f07b7d472a31774d2e96e37e59"
+  },
+  "runtime": {
+    "disableExternalSkills": true,
+    "disableClaudeCodeSkills": true,
+    "disableModelsFetch": true
+  }
+}

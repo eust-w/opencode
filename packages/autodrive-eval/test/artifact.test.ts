@@ -11,7 +11,7 @@ import {
 } from "../src/artifact"
 
 const base = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   runID: "adr_0123456789abcdefabcd",
   taskID: "task-1",
   model: "opencode/gemini-3.7-flash",
@@ -31,6 +31,7 @@ const base = {
   redundantTurns: 0,
   promptTokens: 100,
   completionTokens: 25,
+  usageComplete: true,
   costUSD: 0.1,
   latencyMS: 60_000,
   recoverySucceeded: true,
@@ -107,6 +108,17 @@ describe("trajectory artifact contract", () => {
     expect(() => parseTrajectory({ ...base, environment: { ...base.environment, modelMetadata: undefined } })).toThrow()
     expect(() => parseTrajectory({ ...base, preflight: undefined })).toThrow()
     expect(() => parseTrajectory({ ...base, trace: { ...base.trace, path: "../../outside.jsonl" } })).toThrow()
+  })
+
+  test("retains observed usage bounds for failed provider trajectories", () => {
+    expect(
+      parseTrajectory({
+        ...base,
+        status: "failed",
+        failure: "retryable-provider",
+        usageComplete: false,
+      }),
+    ).toMatchObject({ status: "failed", usageComplete: false, promptTokens: 100, completionTokens: 25 })
   })
 
   test("blocks common provider secrets from artifact output", () => {

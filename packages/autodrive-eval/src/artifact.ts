@@ -29,7 +29,7 @@ export const ModelRequest = z.object({
 })
 
 export const Trajectory = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
   runID: z.string().regex(/^adr_[a-f0-9]{20}$/),
   taskID: z.string().min(1),
   model: z.string().min(1),
@@ -60,6 +60,7 @@ export const Trajectory = z.object({
   redundantTurns: z.number().int().nonnegative(),
   promptTokens: z.number().int().nonnegative(),
   completionTokens: z.number().int().nonnegative(),
+  usageComplete: z.boolean(),
   costUSD: z.number().nonnegative(),
   latencyMS: z.number().int().nonnegative(),
   recoverySucceeded: z.boolean(),

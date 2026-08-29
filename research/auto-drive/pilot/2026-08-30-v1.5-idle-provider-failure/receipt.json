@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "protocol": "auto-drive-swe-evo-v1.5",
+  "classification": "excluded_idle_provider_failure_canary",
+  "taskID": "iterative__dvc_2.21.1_2.21.2",
+  "runID": "adr_ae1cbd3af1e31796b8c7",
+  "workerRequests": 6,
+  "completeUsageResponses": 5,
+  "completeUsage": {
+    "promptTokens": 24794,
+    "completionTokens": 935
+  },
+  "incompleteResponseBytes": 157530,
+  "patchBytes": 0,
+  "controllerRequests": 0,
+  "accountSpendObservationUSD": {
+    "before": 2.8478437,
+    "after": 2.9993197,
+    "delta": 0.151476,
+    "attribution": "unconfirmed_due_to_possible_billing_lag"
+  },
+  "acceptedTrajectory": false,
+  "acceptedLedgerEntry": false,
+  "cleanup": {
+    "taskContainers": 0,
+    "proxyContainers": 0,
+    "experimentNetworks": 0
+  }
+}

@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test"
-import { buildExperimentConfig, buildTaskPrompt, gradePytest, parsePytestLog, parseTaskInput } from "../src/host-executor"
+import {
+  buildExperimentConfig,
+  buildTaskPrompt,
+  classifyIdleSession,
+  gradePytest,
+  parsePytestLog,
+  parseTaskInput,
+} from "../src/host-executor"
 
 const task = {
   schemaVersion: 1,
@@ -30,6 +37,37 @@ describe("SWE-EVO host executor", () => {
     expect(config.providers.openai.api.package).toBe("@ai-sdk/openai")
     expect(config.providers.openai.api.url).toBe("http://autodrive-proxy:8080/worker/v1")
     expect(config.providers["autodrive-controller"].api.package).toBe("@ai-sdk/openai-compatible")
+  })
+
+  test("bounds idle sessions and classifies incomplete provider streams", () => {
+    expect(
+      classifyIdleSession({
+        active: false,
+        pendingController: false,
+        idleMS: 4_999,
+        successfulResponses: 6,
+        usageComplete: false,
+      }),
+    ).toBeUndefined()
+    expect(
+      classifyIdleSession({
+        active: false,
+        pendingController: false,
+        idleMS: 5_000,
+        successfulResponses: 6,
+        usageComplete: false,
+      }),
+    ).toBe("retryable-provider")
+    expect(
+      classifyIdleSession({
+        active: false,
+        pendingController: false,
+        action: "stop",
+        idleMS: 5_000,
+        successfulResponses: 6,
+        usageComplete: true,
+      }),
+    ).toBe("complete")
   })
 
   test("keeps the hidden test patch out of the worker prompt", () => {

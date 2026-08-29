@@ -47,7 +47,7 @@ export const Run = z.object({
 export type Run = z.infer<typeof Run>
 
 export const protocol = {
-  version: "auto-drive-swe-evo-v1.5",
+  version: "auto-drive-swe-evo-v1.6",
   strategies: Strategy.options,
   models: {
     primary: "d-robotics/qwen3.8-max",

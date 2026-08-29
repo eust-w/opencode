@@ -72,7 +72,7 @@ await Promise.all([
 const startedAt = new Date().toISOString()
 const modelSeparator = input.run.model.indexOf("/")
 const record = parseTrajectory({
-  schemaVersion: 2,
+  schemaVersion: 3,
   runID: input.run.id,
   taskID: input.run.taskID,
   model: input.run.model,
@@ -93,6 +93,7 @@ const record = parseTrajectory({
   redundantTurns: 0,
   promptTokens: 0,
   completionTokens: 0,
+  usageComplete: true,
   costUSD: 0,
   latencyMS: 0,
   recoverySucceeded: false,

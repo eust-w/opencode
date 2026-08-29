@@ -5,7 +5,14 @@ import path from "node:path"
 import { z } from "zod"
 import { assertSecretFree, parseTrajectory } from "../src/artifact"
 import { requireCompleteGatewayUsage } from "../src/gateway"
-import { buildExperimentConfig, buildTaskPrompt, gradePytest, parsePytestLog, parseTaskInput } from "../src/host-executor"
+import {
+  buildExperimentConfig,
+  buildTaskPrompt,
+  classifyIdleSession,
+  gradePytest,
+  parsePytestLog,
+  parseTaskInput,
+} from "../src/host-executor"
 import { protocol, Run } from "../src/protocol"
 
 const Input = z.object({
@@ -232,7 +239,8 @@ try {
     body: JSON.stringify({ prompt: { text: buildTaskPrompt(task) } }),
   })
 
-  const boundaryPatches = await drain(address, session.id, headers)
+  const drained = await drain(address, session.id, headers)
+  const boundaryPatches = drained.patches
   const finalPatch = await capturePatch("final")
   const firstPatch = boundaryPatches[0]?.content ?? finalPatch
   const firstGrade = await gradePatch("first-boundary", firstPatch)
@@ -247,14 +255,19 @@ try {
 
   const requests = await readJSONL(requestManifest)
   const proxyEvents = await readJSONL(proxyTrace)
-  requireCompleteGatewayUsage(proxyEvents)
-  const usage = proxyEvents.filter((event) => event.type === "provider-response" && event.status === 200)
+  if (!drained.failure) requireCompleteGatewayUsage(proxyEvents)
+  const usage = proxyEvents.filter(
+    (event) => event.type === "provider-response" && event.status === 200 && event.usageComplete === true,
+  )
+  const usageComplete = !proxyEvents.some(
+    (event) => event.type === "provider-response" && event.status === 200 && event.usageComplete !== true,
+  )
   const costUSD = Math.max(0, (await readSettledSpend()) - baselineSpend)
   const serverLog = await command(["docker", "logs", taskName], { allowFailure: true })
   await trace({ type: "server-log", stdout: serverLog.stdout, stderr: serverLog.stderr })
   const endedAt = new Date()
   const trajectory = parseTrajectory({
-    schemaVersion: 2,
+    schemaVersion: 3,
     runID: input.run.id,
     taskID: input.run.taskID,
     model: input.run.model,
@@ -264,7 +277,8 @@ try {
     attempt: input.attempt,
     startedAt: startedAt.toISOString(),
     endedAt: endedAt.toISOString(),
-    status: "succeeded",
+    status: drained.failure ? "failed" : "succeeded",
+    failure: drained.failure,
     resolved: finalGrade.resolved,
     fixRate: finalGrade.fixRate,
     firstBoundaryResolved: firstGrade.resolved,
@@ -275,9 +289,10 @@ try {
       .length,
     promptTokens: usage.reduce((sum, event) => sum + number(event.promptTokens), 0),
     completionTokens: usage.reduce((sum, event) => sum + number(event.completionTokens), 0),
+    usageComplete,
     costUSD,
     latencyMS: endedAt.getTime() - startedAt.getTime(),
-    recoverySucceeded: true,
+    recoverySucceeded: !drained.failure,
     unsafeContinuationCount: 0,
     modelRequests: requests,
     environment: {
@@ -300,6 +315,7 @@ try {
     const released = new Set<number>()
     const patches: { sequence: number; content: string; sha256: string }[] = []
     const deadline = Date.now() + input.run.timeoutMinutes * 60_000 - 60_000
+    let idleSince: number | undefined
     while (Date.now() < deadline) {
       const requests = await readJSONL(requestManifest)
       for (const request of requests) {
@@ -320,8 +336,25 @@ try {
       const pendingController = requests.some(
         (request) => request.kind === "controller" && !released.has(number(request.sequence)),
       )
-      if (!active[sessionID] && !pendingController && new Set(["stop", "defer"]).has(info.autoDrive.status.action ?? ""))
-        return patches
+      const idle = !active[sessionID] && !pendingController
+      idleSince = idle ? (idleSince ?? Date.now()) : undefined
+      const proxyEvents = await readJSONL(proxyTrace)
+      const successful = proxyEvents.filter(
+        (event) => event.type === "provider-response" && event.status === 200,
+      )
+      const classification = classifyIdleSession({
+        active: !!active[sessionID],
+        pendingController,
+        action: info.autoDrive.status.action,
+        idleMS: idleSince ? Date.now() - idleSince : 0,
+        successfulResponses: successful.length,
+        usageComplete: successful.every((event) => event.usageComplete === true),
+      })
+      if (classification === "complete") return { patches }
+      if (classification) {
+        await trace({ type: "session-failed", failure: classification, successfulResponses: successful.length })
+        return { patches, failure: classification }
+      }
       await Bun.sleep(200)
     }
     throw new Error("Session exceeded the frozen execution deadline")

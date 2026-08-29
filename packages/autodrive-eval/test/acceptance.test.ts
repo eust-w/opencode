@@ -13,7 +13,7 @@ const preflight = {
   receipt: parsePreflight(
     {
       schemaVersion: 1,
-      protocol: "auto-drive-swe-evo-v1.5",
+      protocol: "auto-drive-swe-evo-v1.6",
       scope: "canary",
       capturedAt: "2026-08-30T02:00:00.000Z",
       expiresAt: "2026-08-30T14:00:00.000Z",
@@ -40,7 +40,7 @@ const preflight = {
   sha256: "0".repeat(64),
 }
 const trajectory = parseTrajectory({
-  schemaVersion: 2,
+  schemaVersion: 3,
   runID: run.id,
   taskID: run.taskID,
   model: run.model,
@@ -60,6 +60,7 @@ const trajectory = parseTrajectory({
   redundantTurns: 0,
   promptTokens: 100,
   completionTokens: 25,
+  usageComplete: true,
   costUSD: 0.1,
   latencyMS: 60_000,
   recoverySucceeded: true,

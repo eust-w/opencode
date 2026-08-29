@@ -68,6 +68,20 @@ export function buildExperimentConfig(input: {
   }
 }
 
+export function classifyIdleSession(input: {
+  active: boolean
+  pendingController: boolean
+  action?: string
+  idleMS: number
+  successfulResponses: number
+  usageComplete: boolean
+}) {
+  if (input.active || input.pendingController) return
+  if (input.action === "stop" || input.action === "defer") return "complete" as const
+  if (input.idleMS < 5_000 || input.successfulResponses === 0) return
+  return input.usageComplete ? ("non-retryable-provider" as const) : ("retryable-provider" as const)
+}
+
 function permissions() {
   return [
     { action: "*", resource: "*", effect: "allow" },

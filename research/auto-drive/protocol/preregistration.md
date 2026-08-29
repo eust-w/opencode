@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.5
+# AutoDrive Preregistration v1.6
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -27,6 +27,12 @@ Before any experimental trajectory was accepted, a direct gateway probe establis
 The first v1.4 end-to-end canary completed five Responses tool turns, then received a successful upstream response whose terminal usage fields did not satisfy the proxy's strict accounting parser. The proxy converted this accounting defect to HTTP 502, which triggered two bounded session retries before the run was interrupted. No controller request, boundary, grade, accepted trajectory, or ledger row was produced. The request and proxy manifests, complete usage for the first five responses, observed account-spend delta, and exact cleanup are retained as an excluded canary; its v1.4 run ID is not retried.
 
 Before any experimental trajectory was accepted, version 1.5 separated provider transport from accounting validation. Every upstream body is now saved with its SHA-256 before parsing. A successful upstream body is forwarded unchanged even when usage extraction is incomplete, and the proxy records `usageComplete=false` rather than manufacturing a retryable HTTP error. Acceptance still requires complete usage for every successful worker and controller response; missing usage cannot be replaced by zero. Models, requests, prompts, policies, dataset, sampling, step limits, statistics, and budget are unchanged. All 384 deterministic run IDs are regenerated.
+
+## Bounded provider-failure amendment (v1.6)
+
+The first v1.5 canary confirmed that response preservation prevents proxy-induced retries. Its sixth worker response ended after 157,530 bytes of reasoning deltas without `response.completed` or usage. The Session became idle with no AutoDrive decision, exposing that the host executor waited only for explicit `stop | defer`. The task checkout was preserved before interruption; its patch was empty. No controller, boundary grade, accepted trajectory, or ledger row existed, and the v1.5 run ID is not retried.
+
+Version 1.6 implements the preregistered rule that provider errors count as task failures. If a Session remains idle for five seconds after at least one successful provider response, has no pending controller, and has no terminal AutoDrive action, the executor emits a finite provider-failure outcome. A truncated or usage-incomplete stream is `retryable-provider`; other terminal provider defects are `non-retryable-provider`. Trajectory schema v3 adds `usageComplete`; failed trajectories retain observed-token lower bounds and settled account cost instead of inventing missing tokens, and the verifier still grades the captured partial patch. This does not grant a rerun. Models, requests, prompts, policies, dataset, sampling, limits, statistics, and budget are unchanged. All 384 run IDs are regenerated.
 
 ## Claim boundary
 
