@@ -3,6 +3,12 @@ import manifest from "../../../research/auto-drive/protocol/swe-evo-48.json"
 import { createRunPlan, parseManifest, protocol } from "../src/protocol"
 
 describe("frozen AutoDrive protocol", () => {
+  test("records the pre-execution provider resolution amendment", () => {
+    expect(protocol.version).toBe("auto-drive-swe-evo-v1.1")
+    expect(protocol.models.primary).toBe("google/gemini-3.7-flash")
+    expect(protocol.models.controller).toBe("google/gemini-3.7-flash")
+  })
+
   test("pins all 48 unique SWE-EVO tasks from seven repositories", () => {
     const parsed = parseManifest(manifest)
     expect(parsed.tasks).toHaveLength(48)

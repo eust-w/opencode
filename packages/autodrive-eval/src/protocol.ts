@@ -47,12 +47,12 @@ export const Run = z.object({
 export type Run = z.infer<typeof Run>
 
 export const protocol = {
-  version: "auto-drive-swe-evo-v1",
+  version: "auto-drive-swe-evo-v1.1",
   strategies: Strategy.options,
   models: {
-    primary: "opencode/gemini-3.7-flash",
+    primary: "google/gemini-3.7-flash",
     replication: ["anthropic/claude-sonnet-4.6", "openai/gpt-5.4"],
-    controller: "opencode/gemini-3.7-flash",
+    controller: "google/gemini-3.7-flash",
   },
   replicationTaskIDs: [
     "conan-io__conan_2.0.2_2.0.3",

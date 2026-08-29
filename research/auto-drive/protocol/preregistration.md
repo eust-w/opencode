@@ -1,6 +1,10 @@
-# AutoDrive Preregistration v1
+# AutoDrive Preregistration v1.1
 
 Frozen: 2026-08-30 (Asia/Shanghai)
+
+## Pre-execution amendment
+
+Before any paid trajectory was accepted, the executable model inventory showed that Gemini 3.7 Flash is exposed as `google/gemini-3.7-flash`; the v1 identifier `opencode/gemini-3.7-flash` did not resolve to that model. Version 1.1 changes only the provider prefix for the primary worker and controller, and consequently regenerates deterministic run IDs. The dataset, task selection, policies, prompts, sampling parameters, run count, metrics, statistics, and budget remain unchanged. No result was observed before this amendment.
 
 ## Claim boundary
 
@@ -37,7 +41,7 @@ The off result is the first-boundary prefix of each paid trajectory. It is never
 - Cross-model: 12 tasks × 4 policies × 2 models × one run = 96 trajectories.
 - Total: 384 paid end-to-end trajectories.
 
-The primary worker is `opencode/gemini-3.7-flash`. Replication workers are `anthropic/claude-sonnet-4.6` and `openai/gpt-5.4`. Every supervisor call uses `opencode/gemini-3.7-flash`. Cross-model results are a generalization replication and not the primary estimate.
+The primary worker is `google/gemini-3.7-flash`. Replication workers are `anthropic/claude-sonnet-4.6` and `openai/gpt-5.4`. Every supervisor call uses `google/gemini-3.7-flash`. Cross-model results are a generalization replication and not the primary estimate.
 
 Every run uses the pinned task image and base commit, temperature zero, the exact request record in `model-requests.json`, six worker steps per segment, at most five automatic continuations, at most 45 minutes, and no more than two concurrent tasks. The resolved provider/model version and normalized request body must be saved before a record is accepted.
 
