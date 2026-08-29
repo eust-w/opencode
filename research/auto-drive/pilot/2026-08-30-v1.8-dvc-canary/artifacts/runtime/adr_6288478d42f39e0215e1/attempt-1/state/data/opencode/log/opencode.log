@@ -1,0 +1,7 @@
+timestamp=2026-08-29T22:41:38.721Z level=INFO run=f066728c message=loading path=/autodrive-config/opencode/config.json
+timestamp=2026-08-29T22:41:38.724Z level=INFO run=f066728c message=loading path=/autodrive-config/opencode/opencode.json
+timestamp=2026-08-29T22:41:38.736Z level=INFO run=f066728c message=loading path=/autodrive-config/opencode/opencode.jsonc
+timestamp=2026-08-29T22:41:39.171Z level=INFO run=f066728c message="watcher backend" directory=/testbed platform=linux backend=inotify
+timestamp=2026-08-29T22:41:39.177Z level=INFO run=f066728c message="project copy refresh started" projectID=595ac51b5af753aad17b71bcbd7cd8277d3c2c56
+timestamp=2026-08-29T22:41:39.179Z level=INFO run=f066728c message="project copy refresh done" projectID=595ac51b5af753aad17b71bcbd7cd8277d3c2c56 updated=[] removed=[]
+timestamp=2026-08-29T22:41:39.240Z level=INFO run=f066728c message="booting location services" directory=/testbed workspaceID=undefined
