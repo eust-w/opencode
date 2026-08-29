@@ -20,7 +20,7 @@
   ],
   "modelMetadata": {
     "path": "metadata/models.json",
-    "sha256": "4909cf6416c3020a6c48af19c073edc9b1562549840e6ba2fbd4dd907070a121"
+    "sha256": "5ff0af264899cce4fbabc21cadd9a20366fae9f07b7d472a31774d2e96e37e59"
   },
   "runtime": {
     "disableExternalSkills": true,

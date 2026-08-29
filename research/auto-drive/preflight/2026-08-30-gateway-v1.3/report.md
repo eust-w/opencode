@@ -11,6 +11,8 @@ The D-Robotics gateway is accepted for exactly one primary-model canary or pilot
 
 The catalog resolves `d-robotics/qwen3.8-max`, `d-robotics/deepseek-v4-pro`, and `d-robotics/glm-5.3`. The primary canary receipt seals only `d-robotics/qwen3.8-max`; replication models require their own live probes before dispatch.
 
+The sealed model cache uses the complete OpenCode `models.dev` runtime schema. Its context and output fields encode the frozen experiment allowances used for offline startup; they are not claims about undocumented gateway capacity. The custom worker and controller routes remain defined by the per-run configuration and guarded proxy.
+
 ## Full-system gate
 
 The V2 engineering canary used one real worker request and one real controller request. Both returned HTTP 200. The host proxy fixed worker generation at `temperature=0,max_tokens=32000`, fixed controller generation at `temperature=0,max_tokens=1024`, verified both normalized request hashes, observed 3,555 total tokens, and measured a spend delta of USD 0.048564. The Session persisted `auto-drive.decided=STOP` with no continuation. Secret scans passed.
