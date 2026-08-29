@@ -473,7 +473,7 @@ const layer = Layer.effect(
             model: resolvedModel,
             messages: [Message.user(supervisorPrompt)],
             tools: [],
-            generation: { maxTokens: 1024 },
+            generation: { maxTokens: 1024, temperature: 0 },
           }),
         )
         .pipe(

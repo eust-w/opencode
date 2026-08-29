@@ -155,6 +155,7 @@ const echo = Layer.effectDiscard(
 const echoNode = makeLocationNode({ name: "test/session-runner-tools", layer: echo, deps: [ToolRegistry.node] })
 let modelResolveHook = Effect.void
 let currentModel = model
+let autoDrivePolicy: "heuristic" | "supervisor" = "heuristic"
 const models = SessionRunnerModel.layerWith((session) =>
   modelResolveHook.pipe(Effect.as(session.model?.id === "replacement" ? replacementModel : currentModel)),
 )
@@ -217,7 +218,7 @@ const config = Layer.succeed(
         new Config.Document({
           type: "document",
           info: new Config.Info({
-            auto_drive: new ConfigAutoDrive.Info({ enabled: true, policy: "heuristic", memory: true }),
+            auto_drive: new ConfigAutoDrive.Info({ enabled: true, policy: autoDrivePolicy, memory: true }),
             compaction: new ConfigCompaction.Info({
               buffer: 3_000,
               keep: new ConfigCompaction.Keep({ tokens: 1_000 }),
@@ -320,6 +321,7 @@ const setup = Effect.gen(function* () {
   systemLoadHook = Effect.void
   modelResolveHook = Effect.void
   currentModel = model
+  autoDrivePolicy = "heuristic"
   skillBaselines.clear()
   responses = undefined
   streamFailure = undefined
@@ -3497,6 +3499,55 @@ describe("SessionRunnerLLM", () => {
       expect(requests).toHaveLength(2)
       expect(userTexts(requests[0]!)).toEqual(["Build the feature"])
       expect(userTexts(requests[1]!)).toEqual(["Build the feature", "Please proceed with the next step."])
+    }),
+  )
+
+  it.effect("freezes supervisor generation at temperature zero", () =>
+    Effect.gen(function* () {
+      yield* setup
+      autoDrivePolicy = "supervisor"
+      const session = yield* SessionV2.Service
+      yield* session.prompt({ sessionID, prompt: Prompt.make({ text: "Build the feature" }), resume: false })
+
+      requests.length = 0
+      responses = [
+        [
+          LLMEvent.textStart({ id: "worker-1" }),
+          LLMEvent.textDelta({ id: "worker-1", text: "Part 1 completed. Next steps: write tests." }),
+          LLMEvent.textEnd({ id: "worker-1" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+        [
+          LLMEvent.textStart({ id: "supervisor-1" }),
+          LLMEvent.textDelta({
+            id: "supervisor-1",
+            text: '{"action":"continue","reason":"Tests remain","next_prompt":"Write tests"}',
+          }),
+          LLMEvent.textEnd({ id: "supervisor-1" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+        [
+          LLMEvent.textStart({ id: "worker-2" }),
+          LLMEvent.textDelta({ id: "worker-2", text: "All tasks completed and verified." }),
+          LLMEvent.textEnd({ id: "worker-2" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+        [
+          LLMEvent.textStart({ id: "supervisor-2" }),
+          LLMEvent.textDelta({
+            id: "supervisor-2",
+            text: '{"action":"stop","reason":"Goal verified","next_prompt":null}',
+          }),
+          LLMEvent.textEnd({ id: "supervisor-2" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+      ]
+
+      yield* session.resume(sessionID)
+
+      expect(requests).toHaveLength(4)
+      expect(requests[1]!.generation).toMatchObject({ maxTokens: 1_024, temperature: 0 })
+      expect(requests[3]!.generation).toMatchObject({ maxTokens: 1_024, temperature: 0 })
     }),
   )
 })
