@@ -1,7 +1,8 @@
 # AutoDrive v1.3 Gateway Canary Preflight
 
-Captured: 2026-08-30 04:50:01 Asia/Shanghai  
-Scope: canary only  
+Captured: 2026-08-30 04:50:01 Asia/Shanghai
+
+Scope: canary only
 Protocol: `auto-drive-swe-evo-v1.3`
 
 ## Decision
