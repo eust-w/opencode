@@ -47,7 +47,7 @@ export const Run = z.object({
 export type Run = z.infer<typeof Run>
 
 export const protocol = {
-  version: "auto-drive-swe-evo-v1.6",
+  version: "auto-drive-swe-evo-v1.7",
   strategies: Strategy.options,
   models: {
     primary: "d-robotics/qwen3.8-max",
@@ -77,6 +77,7 @@ export const protocol = {
   offPolicy: "first-boundary-prefix",
   temperature: 0,
   workerMaxOutputTokens: 32_000,
+  workerReasoningEffort: "low",
   controllerMaxOutputTokens: 1_024,
   segmentSteps: 6,
   maxContinuations: 5,

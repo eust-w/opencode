@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.6
+# AutoDrive Preregistration v1.7
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -33,6 +33,12 @@ Before any experimental trajectory was accepted, version 1.5 separated provider 
 The first v1.5 canary confirmed that response preservation prevents proxy-induced retries. Its sixth worker response ended after 157,530 bytes of reasoning deltas without `response.completed` or usage. The Session became idle with no AutoDrive decision, exposing that the host executor waited only for explicit `stop | defer`. The task checkout was preserved before interruption; its patch was empty. No controller, boundary grade, accepted trajectory, or ledger row existed, and the v1.5 run ID is not retried.
 
 Version 1.6 implements the preregistered rule that provider errors count as task failures. If a Session remains idle for five seconds after at least one successful provider response, has no pending controller, and has no terminal AutoDrive action, the executor emits a finite provider-failure outcome. A truncated or usage-incomplete stream is `retryable-provider`; other terminal provider defects are `non-retryable-provider`. Trajectory schema v3 adds `usageComplete`; failed trajectories retain observed-token lower bounds and settled account cost instead of inventing missing tokens, and the verifier still grades the captured partial patch. This does not grant a rerun. Models, requests, prompts, policies, dataset, sampling, limits, statistics, and budget are unchanged. All 384 run IDs are regenerated.
+
+## Worker reasoning amendment (v1.7)
+
+The accepted v1.6 DVC canary is retained as a negative pilot trajectory. Five tool-bearing worker responses completed, but the sixth forced tool-free response exhausted the gateway stream in reasoning deltas without a terminal response or usage. The executor correctly recorded a `retryable-provider` task failure, an empty patch, zero Fix Rate, observed-token lower bounds, and settled cost. It never reached an AutoDrive controller boundary, so it is not evidence for or against a continuation policy and is excluded from treatment-effect estimates.
+
+Before launching the main matrix, bounded direct Responses probes showed that the same gateway model completed the tool-free request when the standard OpenAI reasoning effort was explicitly set to `low`. Version 1.7 therefore pins `reasoningEffort=low` on every worker request while leaving the controller request unchanged. The normalized gateway body must contain `reasoning: {"effort":"low"}` before a v1.7 paid canary may continue. This is a new protocol and not a same-configuration rerun of the v1.6 failure. Dataset, prompts, four policies, task selection, sampling temperature, output limits, statistics, and budget are unchanged; all 384 run IDs are regenerated.
 
 ## Claim boundary
 
@@ -71,7 +77,7 @@ The off result is the first-boundary prefix of each paid trajectory. It is never
 
 The primary worker is `d-robotics/qwen3.8-max`. Replication workers are `d-robotics/deepseek-v4-pro` and `d-robotics/glm-5.3`. Every supervisor call uses `d-robotics/qwen3.8-max`. Cross-model results are a generalization replication and not the primary estimate.
 
-Every run uses the pinned task image and base commit, temperature zero, the endpoint-specific request record in `model-requests.json`, six worker steps per segment, at most five automatic continuations, at most 45 minutes, and no more than two concurrent tasks. The resolved provider/model version and normalized request body must be saved before a record is accepted.
+Every run uses the pinned task image and base commit, temperature zero, worker reasoning effort `low`, the endpoint-specific request record in `model-requests.json`, six worker steps per segment, at most five automatic continuations, at most 45 minutes, and no more than two concurrent tasks. The resolved provider/model version and normalized request body must be saved before a record is accepted.
 
 ## Boundary corpus and ablations
 

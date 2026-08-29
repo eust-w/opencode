@@ -51,7 +51,7 @@ export function buildExperimentConfig(input: {
       experiment: {
         mode: "primary",
         steps: input.segmentSteps,
-        request: { body: { temperature: input.temperature } },
+        request: { body: { temperature: input.temperature, reasoningEffort: "low" } },
         permissions: permissions(),
       },
     },
