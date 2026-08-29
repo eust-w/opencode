@@ -378,8 +378,21 @@ try {
     while (Date.now() < deadline) {
       const port = await command(["docker", "port", taskName, "4096/tcp"], { allowFailure: true })
       const match = port.stdout.match(/127\.0\.0\.1:(\d+)/)
-      if (match) {
-        const address = `http://127.0.0.1:${match[1]}`
+      const containerIP = await command(
+        [
+          "docker",
+          "inspect",
+          "--format",
+          `{{with index .NetworkSettings.Networks ${JSON.stringify(networkName)}}}{{.IPAddress}}{{end}}`,
+          taskName,
+        ],
+        { allowFailure: true },
+      )
+      const addresses = [
+        match ? `http://127.0.0.1:${match[1]}` : undefined,
+        containerIP.stdout.trim() ? `http://${containerIP.stdout.trim()}:4096` : undefined,
+      ].filter((item): item is string => !!item)
+      for (const address of addresses) {
         const response = await fetch(new URL("/api/health", address)).catch(() => undefined)
         if (response?.ok) return address
       }
