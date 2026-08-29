@@ -23,6 +23,7 @@ import { SessionInputTable, SessionMessageTable, SessionTable } from "@opencode-
 import { testEffect } from "./lib/effect"
 import { Snapshot } from "@opencode-ai/core/snapshot"
 import { Location } from "@opencode-ai/core/location"
+import { SessionAutoDrive } from "@opencode-ai/core/session/auto-drive-state"
 
 const it = testEffect(AppNodeBuilder.build(LayerNode.group([Database.node, EventV2.node, SessionProjector.node])))
 const sessionsLayer = AppNodeBuilder.build(SessionV2.node, [[SessionExecution.node, SessionExecution.noopLayer]])
@@ -45,6 +46,64 @@ const assistantRow = (
 }
 
 describe("SessionProjector", () => {
+  it.effect("projects durable auto-drive updates and decisions into Session state", () =>
+    Effect.gen(function* () {
+      const { db } = yield* Database.Service
+      const events = yield* EventV2.Service
+      yield* db
+        .insert(ProjectTable)
+        .values({ id: Project.ID.global, worktree: AbsolutePath.make("/project"), sandboxes: [] })
+        .run()
+      yield* db
+        .insert(SessionTable)
+        .values({
+          id: sessionID,
+          project_id: Project.ID.global,
+          slug: "test",
+          directory: "/project",
+          title: "test",
+          version: "test",
+        })
+        .run()
+      const updated = SessionAutoDrive.State.make({
+        settings: { ...SessionAutoDrive.defaultSettings, enabled: true, maxRuns: 3 },
+        status: { continuationCount: 0 },
+      })
+      yield* events.publish(SessionEvent.AutoDrive.Updated, {
+        sessionID,
+        timestamp: created,
+        state: updated,
+      })
+      const decided = SessionAutoDrive.State.make({
+        ...updated,
+        status: {
+          action: "continue",
+          reason: "Unverified tests remain",
+          chainID: "chain-1",
+          continuationCount: 1,
+          inputID: SessionMessage.ID.make("msg_auto_drive_decision"),
+          nextPrompt: "Run the remaining tests.",
+        },
+      })
+      yield* events.publish(SessionEvent.AutoDrive.Decided, {
+        sessionID,
+        timestamp: DateTime.makeUnsafe(1),
+        state: decided,
+      })
+
+      expect((yield* db.select({ state: SessionTable.auto_drive }).from(SessionTable).get())?.state).toEqual(decided)
+      expect((yield* (yield* SessionV2.Service).get(sessionID)).autoDrive).toEqual(decided)
+      expect(
+        (yield* db.select({ type: EventTable.type }).from(EventTable).orderBy(asc(EventTable.seq)).all()).map(
+          (row) => row.type,
+        ),
+      ).toEqual([
+        EventV2.versionedType(SessionEvent.AutoDrive.Updated.type, 1),
+        EventV2.versionedType(SessionEvent.AutoDrive.Decided.type, 1),
+      ])
+    }).pipe(Effect.provide(sessionsLayer)),
+  )
+
   it.effect("projects moved sessions without the transitional context epoch table", () =>
     Effect.gen(function* () {
       const { db } = yield* Database.Service
@@ -241,6 +300,50 @@ describe("SessionProjector", () => {
         yield* db.select().from(SessionInputTable).where(eq(SessionInputTable.id, id)).get().pipe(Effect.orDie),
       ).toMatchObject({ promoted_seq: event.durable?.seq })
     }),
+  )
+
+  it.effect("preserves auto-drive source metadata through admission and promotion", () =>
+    Effect.gen(function* () {
+      const { db } = yield* Database.Service
+      yield* db
+        .insert(ProjectTable)
+        .values({ id: Project.ID.global, worktree: AbsolutePath.make("/project"), sandboxes: [] })
+        .run()
+        .pipe(Effect.orDie)
+      yield* db
+        .insert(SessionTable)
+        .values({
+          id: sessionID,
+          project_id: Project.ID.global,
+          slug: "test",
+          directory: "/project",
+          title: "test",
+          version: "test",
+        })
+        .run()
+        .pipe(Effect.orDie)
+      const events = yield* EventV2.Service
+      const id = SessionMessage.ID.make("msg_auto_drive")
+      const source = { type: "auto-drive", chainID: "chain-1", decision: "continue", continuation: 1 } as const
+
+      yield* SessionInput.admit(db, events, {
+        id,
+        sessionID,
+        prompt: Prompt.make({ text: "Continue the verified next step." }),
+        delivery: "queue",
+        source,
+      })
+      yield* SessionInput.promoteNextQueued(db, events, sessionID)
+
+      expect(yield* SessionInput.find(db, id)).toMatchObject({ source })
+      expect(yield* db.select().from(SessionInputTable).where(eq(SessionInputTable.id, id)).get()).toMatchObject({
+        source,
+      })
+      expect(yield* (yield* SessionV2.Service).message({ sessionID, messageID: id })).toMatchObject({
+        type: "user",
+        metadata: { autoDrive: source },
+      })
+    }).pipe(Effect.provide(sessionsLayer)),
   )
 
   it.effect("projects durable context messages supported by the updater", () =>

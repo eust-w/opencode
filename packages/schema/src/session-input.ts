@@ -7,6 +7,7 @@ import { DateTimeUtcFromMillis, NonNegativeInt } from "./schema"
 import { SessionDelivery } from "./session-delivery"
 import { SessionID } from "./session-id"
 import { SessionMessage } from "./session-message"
+import { SessionAutoDrive } from "./session-auto-drive"
 
 export const Delivery = SessionDelivery.Delivery
 export type Delivery = SessionDelivery.Delivery
@@ -20,4 +21,5 @@ export const Admitted = Schema.Struct({
   delivery: Delivery,
   timeCreated: DateTimeUtcFromMillis,
   promotedSeq: NonNegativeInt.pipe(optional),
+  source: SessionAutoDrive.Source.pipe(optional),
 }).annotate({ identifier: "SessionInput.Admitted" })

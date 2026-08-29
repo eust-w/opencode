@@ -37,6 +37,8 @@ import { SessionRevert } from "./session/revert"
 import { Revert } from "@opencode-ai/schema/revert"
 import { FSUtil } from "./fs-util"
 import { SessionDurable } from "@opencode-ai/schema/durable-event-manifest"
+import { SessionAutoDrive } from "./session/auto-drive-state"
+import { SessionAutoDriveController } from "./session/auto-drive-controller"
 
 export const RevertState = Revert.State
 export type RevertState = Revert.State
@@ -144,6 +146,10 @@ export interface Interface {
     sessionID: SessionSchema.ID
     model: ModelV2.Ref
   }) => Effect.Effect<void, NotFoundError>
+  readonly autoDrive: (input: {
+    sessionID: SessionSchema.ID
+    settings: SessionAutoDrive.Update
+  }) => Effect.Effect<SessionAutoDrive.State, NotFoundError>
   readonly prompt: (input: {
     id?: SessionMessage.ID
     sessionID: SessionSchema.ID
@@ -413,6 +419,13 @@ const layer = Layer.effect(
           timestamp: yield* DateTime.now,
           model: input.model,
         })
+      }),
+      autoDrive: Effect.fn("V2Session.autoDrive")(function* (input) {
+        const session = yield* result.get(input.sessionID)
+        return yield* SessionAutoDriveController.Service.pipe(
+          Effect.flatMap((controller) => controller.update(input.sessionID, input.settings)),
+          Effect.provide(locations.get(session.location)),
+        )
       }),
       compact: Effect.fn("V2Session.compact")(function* (input) {
         yield* result.get(input.sessionID)

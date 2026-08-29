@@ -128,7 +128,7 @@ export function update(adapter: Adapter, event: SessionEvent.Event) {
           SessionMessage.User.make({
             id: event.data.messageID,
             type: "user",
-            metadata: event.metadata,
+            metadata: event.metadata ?? (event.data.source ? { autoDrive: event.data.source } : undefined),
             text: event.data.prompt.text,
             files: event.data.prompt.files,
             agents: event.data.prompt.agents,
@@ -137,6 +137,8 @@ export function update(adapter: Adapter, event: SessionEvent.Event) {
         )
       },
       "session.next.prompt.admitted": () => Effect.void,
+      "session.next.auto-drive.updated": () => Effect.void,
+      "session.next.auto-drive.decided": () => Effect.void,
       "session.next.context.updated": (event) =>
         adapter.appendMessage(
           SessionMessage.System.make({

@@ -12,6 +12,7 @@ import { SessionID } from "./session-id"
 import { Location } from "./location"
 import { SessionMessage } from "./session-message"
 import { Revert } from "./revert"
+import { SessionAutoDrive } from "./session-auto-drive"
 
 export { FileAttachment }
 
@@ -33,6 +34,7 @@ const PromptFields = {
   messageID: SessionMessage.ID,
   prompt: Prompt,
   delivery: Delivery,
+  source: SessionAutoDrive.Source.pipe(optional),
 }
 
 const options = {
@@ -97,6 +99,28 @@ export const PromptAdmitted = Event.define({
   schema: PromptFields,
 })
 export type PromptAdmitted = typeof PromptAdmitted.Type
+
+export namespace AutoDrive {
+  export const Updated = Event.define({
+    type: "session.next.auto-drive.updated",
+    ...options,
+    schema: {
+      ...Base,
+      state: SessionAutoDrive.State,
+    },
+  })
+  export type Updated = typeof Updated.Type
+
+  export const Decided = Event.define({
+    type: "session.next.auto-drive.decided",
+    ...options,
+    schema: {
+      ...Base,
+      state: SessionAutoDrive.State,
+    },
+  })
+  export type Decided = typeof Decided.Type
+}
 
 export const ContextUpdated = Event.define({
   type: "session.next.context.updated",
@@ -451,6 +475,8 @@ export const DurableDefinitions = Event.inventory(
   Moved,
   Prompted,
   PromptAdmitted,
+  AutoDrive.Updated,
+  AutoDrive.Decided,
   ContextUpdated,
   Synthetic,
   Shell.Started,
@@ -482,6 +508,8 @@ export const Definitions = Event.inventory(
   Moved,
   Prompted,
   PromptAdmitted,
+  AutoDrive.Updated,
+  AutoDrive.Decided,
   ContextUpdated,
   Synthetic,
   Shell.Started,

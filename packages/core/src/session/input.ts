@@ -10,10 +10,13 @@ import { SessionMessage } from "./message"
 import { Prompt } from "./prompt"
 import { SessionSchema } from "./schema"
 import { SessionInputTable, SessionMessageTable } from "./sql"
+import { SessionAutoDrive } from "./auto-drive-state"
 
 type DatabaseService = Database.Interface["db"]
 
 export { Admitted, Delivery }
+export const Source = SessionAutoDrive.Source
+export type Source = SessionAutoDrive.Source
 
 const decodePrompt = Schema.decodeUnknownSync(Prompt)
 const encodePrompt = Schema.encodeSync(Prompt)
@@ -27,6 +30,7 @@ const fromRow = (row: typeof SessionInputTable.$inferSelect): Admitted =>
     delivery: row.delivery,
     timeCreated: DateTime.makeUnsafe(row.time_created),
     ...(row.promoted_seq === null ? {} : { promotedSeq: row.promoted_seq }),
+    ...(row.source === null ? {} : { source: row.source }),
   })
 
 export const find = Effect.fn("SessionInput.find")(function* (db: DatabaseService, id: SessionMessage.ID) {
@@ -46,6 +50,7 @@ export const admit = Effect.fn("SessionInput.admit")(function* (
     readonly sessionID: SessionSchema.ID
     readonly prompt: Prompt
     readonly delivery: Delivery
+    readonly source?: Source
   },
 ) {
   const existing = yield* find(db, input.id)
@@ -58,6 +63,7 @@ export const admit = Effect.fn("SessionInput.admit")(function* (
       timestamp,
       prompt: input.prompt,
       delivery: input.delivery,
+      source: input.source,
     })
     .pipe(
       Effect.flatMap((event) =>
@@ -70,6 +76,7 @@ export const admit = Effect.fn("SessionInput.admit")(function* (
                 sessionID: input.sessionID,
                 prompt: input.prompt,
                 delivery: input.delivery,
+                source: input.source,
                 timeCreated: timestamp,
               }),
             ),
@@ -88,6 +95,7 @@ export const projectAdmitted = Effect.fn("SessionInput.projectAdmitted")(functio
     readonly sessionID: SessionSchema.ID
     readonly prompt: Prompt
     readonly delivery: Delivery
+    readonly source?: Source
     readonly timeCreated: DateTime.Utc
   },
 ) {
@@ -106,6 +114,7 @@ export const projectAdmitted = Effect.fn("SessionInput.projectAdmitted")(functio
       admitted_seq: input.admittedSeq,
       prompt: encodePrompt(input.prompt),
       delivery: input.delivery,
+      source: input.source,
       time_created: DateTime.toEpochMillis(input.timeCreated),
     })
     .onConflictDoNothing()
@@ -124,6 +133,7 @@ export const projectPrompted = Effect.fn("SessionInput.projectPrompted")(functio
     readonly delivery: Delivery
     readonly timeCreated: DateTime.Utc
     readonly promotedSeq: number
+    readonly source?: Source
   },
 ) {
   const updated = yield* db
@@ -159,6 +169,7 @@ export const projectPrompted = Effect.fn("SessionInput.projectPrompted")(functio
       session_id: input.sessionID,
       prompt: encodePrompt(input.prompt),
       delivery: input.delivery,
+      source: input.source,
       admitted_seq: input.promotedSeq,
       promoted_seq: input.promotedSeq,
       time_created: DateTime.toEpochMillis(input.timeCreated),
@@ -194,8 +205,12 @@ export const equivalent = (
     readonly sessionID: SessionSchema.ID
     readonly prompt: Prompt
     readonly delivery: Delivery
+    readonly source?: Source
   },
-) => input.delivery === expected.delivery && matchesPrompt(input, expected)
+) =>
+  input.delivery === expected.delivery &&
+  JSON.stringify(input.source) === JSON.stringify(expected.source) &&
+  matchesPrompt(input, expected)
 
 const matchesPrompt = (input: Admitted, expected: { readonly sessionID: SessionSchema.ID; readonly prompt: Prompt }) =>
   input.sessionID === expected.sessionID &&
@@ -208,6 +223,7 @@ const matchesProjection = (
     readonly prompt: Prompt
     readonly delivery: Delivery
     readonly timeCreated: DateTime.Utc
+    readonly source?: Source
   },
 ) =>
   equivalent(input, expected) &&
@@ -222,13 +238,18 @@ const publish = Effect.fn("SessionInput.publish")(function* (
   for (const row of rows) {
     const id = SessionMessage.ID.make(row.id)
     yield* events
-      .publish(SessionEvent.Prompted, {
-        sessionID,
-        timestamp: DateTime.makeUnsafe(row.time_created),
-        messageID: id,
-        prompt: decodePrompt(row.prompt),
-        delivery: row.delivery,
-      })
+      .publish(
+        SessionEvent.Prompted,
+        {
+          sessionID,
+          timestamp: DateTime.makeUnsafe(row.time_created),
+          messageID: id,
+          prompt: decodePrompt(row.prompt),
+          delivery: row.delivery,
+          source: row.source ?? undefined,
+        },
+        row.source ? { metadata: { autoDrive: row.source } } : undefined,
+      )
       .pipe(
         Effect.catchDefect((defect) =>
           defect instanceof LifecycleConflict

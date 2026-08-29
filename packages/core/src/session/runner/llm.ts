@@ -8,7 +8,7 @@ import {
   isContextOverflowFailure,
   type ProviderErrorEvent,
 } from "@opencode-ai/llm"
-import { Cause, DateTime, Effect, FiberSet, Layer, Option, Semaphore, Stream } from "effect"
+import { Cause, DateTime, Effect, FiberSet, Layer, Option, Schema, Semaphore, Stream } from "effect"
 import { AgentV2 } from "../../agent"
 import { Config } from "../../config"
 import { Database } from "../../database/database"
@@ -38,6 +38,8 @@ import { createLLMEventPublisher } from "./publish-llm-event"
 import { toLLMMessages } from "./to-llm-message"
 import { MAX_STEPS_PROMPT } from "./max-steps"
 import { AutoDrive } from "../auto-drive"
+import { SessionAutoDrive } from "../auto-drive-state"
+import { SessionAutoDriveController } from "../auto-drive-controller"
 import { Prompt } from "../prompt"
 import { SessionMessageTable } from "../sql"
 import { and, asc, desc, eq } from "drizzle-orm"
@@ -45,7 +47,6 @@ import { Snapshot } from "../../snapshot"
 import { makeLocationNode } from "../../effect/app-node"
 import { llmClient } from "../../effect/app-node-platform"
 import path from "path"
-import fs from "fs/promises"
 
 /**
  * Runs one durable coding-agent Session until it settles.
@@ -112,6 +113,7 @@ const layer = Layer.effect(
     const referenceGuidance = yield* ReferenceGuidance.Service
     const config = yield* Config.Service
     const snapshots = yield* Snapshot.Service
+    const autoDrive = yield* SessionAutoDriveController.Service
     const db = (yield* Database.Service).db
     const compaction = SessionCompaction.make({ events, llm, config: yield* config.entries() })
     const getSession = Effect.fn("SessionRunner.getSession")(function* (sessionID: SessionSchema.ID) {
@@ -430,34 +432,35 @@ const layer = Layer.effect(
         .join("\n")
     })
 
-    const getPlaybook = Effect.fnUntraced(function* (projectDir: string) {
-      const memoryPath = path.join(projectDir, AutoDrive.MEMORY_RELATIVE_PATH)
-      const content = yield* Effect.promise(async () => {
-        try {
-          const file = Bun.file(memoryPath)
-          if (!(await file.exists())) return undefined
-          return await file.text()
-        } catch {
-          return undefined
-        }
-      })
-      return content
+    const getPlaybook = Effect.fnUntraced(function* (projectDir: string, configuredPath?: string) {
+      if (!configuredPath) return
+      const file = Bun.file(path.isAbsolute(configuredPath) ? configuredPath : path.join(projectDir, configuredPath))
+      return yield* Effect.promise(async () => ((await file.exists()) ? await file.text() : undefined)).pipe(
+        Effect.catch(() => Effect.succeed(undefined)),
+      )
     })
 
-    const savePlaybook = Effect.fnUntraced(function* (projectDir: string, content: string) {
-      const memoryPath = path.join(projectDir, AutoDrive.MEMORY_RELATIVE_PATH)
-      yield* Effect.promise(async () => {
-        try {
-          await fs.mkdir(path.dirname(memoryPath), { recursive: true })
-          await Bun.write(memoryPath, content)
-        } catch {
-          // ignore
-        }
-      })
+    const getLastUserSource = Effect.fnUntraced(function* (sessionID: SessionSchema.ID) {
+      const row = yield* db
+        .select({ data: SessionMessageTable.data })
+        .from(SessionMessageTable)
+        .where(and(eq(SessionMessageTable.session_id, sessionID), eq(SessionMessageTable.type, "user")))
+        .orderBy(desc(SessionMessageTable.seq))
+        .limit(1)
+        .get()
+        .pipe(Effect.orDie)
+      const source = row?.data.metadata?.autoDrive
+      return Schema.is(SessionAutoDrive.Source)(source) ? source : undefined
     })
 
-    const runSupervisor = Effect.fnUntraced(function* (session: SessionSchema.Info, context: AutoDrive.Context) {
-      const resolvedModel = yield* models.resolve(session).pipe(Effect.catch(() => Effect.succeed(undefined)))
+    const runSupervisor = Effect.fnUntraced(function* (
+      session: SessionSchema.Info,
+      context: AutoDrive.Context,
+      supervisorModel?: SessionAutoDrive.Settings["supervisorModel"],
+    ) {
+      const resolvedModel = yield* models
+        .resolve(supervisorModel ? { ...session, model: supervisorModel } : session)
+        .pipe(Effect.catch(() => Effect.succeed(undefined)))
       if (!resolvedModel) return undefined
 
       const supervisorPrompt = AutoDrive.buildSupervisorPrompt(context)
@@ -490,13 +493,13 @@ const layer = Layer.effect(
       readonly sessionID: SessionSchema.ID
       readonly force: boolean
     }) {
+      yield* autoDrive.reconcile(input.sessionID)
       const hasSteer = yield* SessionInput.hasPending(db, input.sessionID, "steer")
       const hasQueue = hasSteer ? false : yield* SessionInput.hasPending(db, input.sessionID, "queue")
       if (!input.force && !hasSteer && !hasQueue) return
       yield* failInterruptedTools(input.sessionID)
       let promotion: SessionInput.Delivery | undefined = hasSteer ? "steer" : hasQueue ? "queue" : undefined
       let shouldRun = input.force || hasSteer || hasQueue
-      let autoDriveRuns = 0
       while (shouldRun) {
         let needsContinuation = true
         let step = 1
@@ -509,71 +512,57 @@ const layer = Layer.effect(
         }
         const hasNextQueue = yield* SessionInput.hasPending(db, input.sessionID, "queue")
         if (hasNextQueue) {
-          autoDriveRuns = 0
           shouldRun = true
           promotion = "queue"
           continue
         }
-        const configEntries = yield* config.entries()
-        const autoDriveConfig = Config.latest(configEntries, "auto_drive")
-        const autoDriveEnabled =
-          typeof autoDriveConfig === "boolean" ? autoDriveConfig : (autoDriveConfig?.enabled ?? true)
-        const autoDriveMaxRuns =
-          (typeof autoDriveConfig === "object" ? autoDriveConfig.max_runs : undefined) ?? AutoDrive.DEFAULT_MAX_RUNS
-        const customAutoDrivePrompt = typeof autoDriveConfig === "object" ? autoDriveConfig.prompt : undefined
-        const autoDriveSupervisorEnabled =
-          typeof autoDriveConfig === "object" ? (autoDriveConfig.supervisor ?? false) : false
-        const autoDriveMemoryEnabled = typeof autoDriveConfig === "object" ? (autoDriveConfig.memory ?? false) : false
-        const autoDriveContextual = typeof autoDriveConfig === "object" ? (autoDriveConfig.contextual ?? false) : false
-
-        if (autoDriveEnabled && autoDriveRuns < autoDriveMaxRuns) {
+        const autoDriveState = yield* autoDrive.get(input.sessionID)
+        if (autoDriveState.settings.enabled) {
           const lastText = yield* getLastAssistantText(input.sessionID)
           if (lastText) {
             const initialGoal = yield* getInceptionUserPrompt(input.sessionID)
-            const playbook = autoDriveMemoryEnabled ? yield* getPlaybook(location.project.directory) : undefined
+            const projectPlaybook = yield* getPlaybook(
+              location.project.directory,
+              autoDriveState.settings.projectPlaybook,
+            )
+            const playbook = [autoDriveState.memory, projectPlaybook].filter((item) => item).join("\n\n") || undefined
 
             const autoDriveContext: AutoDrive.Context = {
               initialGoal,
               lastText,
               playbookMarkdown: playbook,
-              customPrompt: customAutoDrivePrompt,
-              contextual: autoDriveContextual,
+              customPrompt: autoDriveState.settings.prompt,
+              contextual: autoDriveState.settings.contextual,
             }
-
-            let shouldContinue = false
-            let nextPromptText = AutoDrive.promptFor(autoDriveContext)
-
-            if (autoDriveSupervisorEnabled) {
+            const decision = yield* Effect.gen(function* () {
+              if (autoDriveState.settings.policy !== "supervisor") return AutoDrive.decideHeuristic(autoDriveContext)
               const session = yield* getSession(input.sessionID).pipe(Effect.catch(() => Effect.succeed(undefined)))
-              const supervisorDecision = session
-                ? yield* runSupervisor(session, autoDriveContext).pipe(
+              return session
+                ? yield* runSupervisor(session, autoDriveContext, autoDriveState.settings.supervisorModel).pipe(
                     Effect.timeout("15 seconds"),
                     Effect.catch(() => Effect.succeed(undefined)),
                   )
-                : undefined
-              if (supervisorDecision) {
-                shouldContinue = supervisorDecision.action === "continue"
-                if (supervisorDecision.nextPrompt) nextPromptText = supervisorDecision.nextPrompt
-                if (autoDriveMemoryEnabled && supervisorDecision.updateMemory) {
-                  yield* savePlaybook(location.project.directory, supervisorDecision.updateMemory)
-                }
-              } else {
-                shouldContinue = AutoDrive.detect(lastText)
-              }
-            } else {
-              shouldContinue = AutoDrive.detect(lastText)
-            }
+                : AutoDrive.decideHeuristic(autoDriveContext)
+            }).pipe(Effect.map((value) => value ?? AutoDrive.decideHeuristic(autoDriveContext)))
+            const source = yield* getLastUserSource(input.sessionID)
+            const state = yield* autoDrive.decide({
+              sessionID: input.sessionID,
+              action: decision.action,
+              reason: decision.reason,
+              nextPrompt: decision.nextPrompt,
+              updateMemory: decision.updateMemory,
+              chainID: source?.chainID ?? SessionMessage.ID.create(),
+              inputID: decision.action === "continue" ? SessionMessage.ID.create() : undefined,
+            })
 
-            if (shouldContinue) {
-              autoDriveRuns++
-              yield* SessionInput.admit(db, events, {
-                id: SessionMessage.ID.create(),
-                sessionID: input.sessionID,
-                prompt: Prompt.make({ text: nextPromptText }),
-                delivery: "queue",
-              })
+            if (state.status.action === "continue") {
               shouldRun = true
               promotion = "queue"
+              continue
+            }
+            if (state.status.action === "defer") {
+              shouldRun = false
+              promotion = undefined
               continue
             }
           }
@@ -604,6 +593,7 @@ export const node = makeLocationNode({
     SkillGuidance.node,
     ReferenceGuidance.node,
     Config.node,
+    SessionAutoDriveController.node,
     Snapshot.node,
     Database.node,
   ],
