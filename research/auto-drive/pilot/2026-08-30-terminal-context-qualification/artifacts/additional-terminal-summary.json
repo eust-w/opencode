@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "sourceRunID": "adr_6288478d42f39e0215e1",
+  "capturedAt": "2026-08-29T22:58:27.361Z",
+  "spendBeforeUSD": 3.940524500000001,
+  "spendAfterUSD": 3.940524500000001,
+  "summaries": [
+    {
+      "model": "kimi-k3",
+      "httpStatus": 400,
+      "error": null,
+      "latencyMS": 214,
+      "bytes": 516,
+      "responseSHA256": "61effa318b185aad5bfa62f4268bf6d89bd9ebcbb5d49af57466b9ead521e573",
+      "terminalEvent": null,
+      "responseStatus": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoning": {
+        "effort": "low"
+      },
+      "maxOutputTokens": 4096
+    },
+    {
+      "model": "qwen3.7-max",
+      "httpStatus": 200,
+      "error": null,
+      "latencyMS": 21432,
+      "bytes": 121814,
+      "responseSHA256": "ab2adea468f71aadce3acc3def091d0f131fd50177ab2cba8e4b83837640f2c5",
+      "terminalEvent": "response.completed",
+      "responseStatus": "completed",
+      "inputTokens": 5185,
+      "outputTokens": 1585,
+      "reasoning": {
+        "effort": "low"
+      },
+      "maxOutputTokens": 4096
+    },
+    {
+      "model": "glm-5.2",
+      "httpStatus": 200,
+      "error": null,
+      "latencyMS": 145,
+      "bytes": 2998,
+      "responseSHA256": "6a55aea7d700804eaa1a48b8947f97decb354ff378d11e9b8f6ced82d2c0b8bf",
+      "terminalEvent": "response.failed",
+      "responseStatus": "failed",
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoning": {
+        "effort": "low"
+      },
+      "maxOutputTokens": 4096
+    }
+  ]
+}

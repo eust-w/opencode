@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "classification": "paid-model-compatibility-ablation",
+  "sourceProtocol": "auto-drive-swe-evo-v1.8",
+  "sourceRunID": "adr_6288478d42f39e0215e1",
+  "sourceTaskID": "iterative__dvc_2.21.1_2.21.2",
+  "fixedContext": "normalized sixth worker request",
+  "temperature": 0,
+  "reasoningEffort": "low",
+  "maxOutputTokens": 4096,
+  "toolsAtTerminalBoundary": 0,
+  "spendBeforeUSD": 3.894696500000001,
+  "spendAfterSettlementUSD": 4.112565500000001,
+  "observedSpendDeltaUSD": 0.217869,
+  "archiveSHA256": "2af01a02628b116d220b1b6f76c2fa0b38b19c4afefdc89ee2b2f4de04f3acee",
+  "checksumsSHA256": "82ae74c200acf73fa4a13b1122c8c0001c61b54042a40b9ceb20ad53ba7dd17e",
+  "terminalResults": [
+    {
+      "model": "qwen3.8-max",
+      "httpStatus": 200,
+      "terminal": false,
+      "latencyMS": 62113,
+      "bytes": 159189
+    },
+    {
+      "model": "deepseek-v4-pro",
+      "httpStatus": 200,
+      "terminal": true,
+      "latencyMS": 9002,
+      "inputTokens": 5269,
+      "outputTokens": 602
+    },
+    {
+      "model": "qwen3.7-max",
+      "httpStatus": 200,
+      "terminal": true,
+      "latencyMS": 21432,
+      "inputTokens": 5185,
+      "outputTokens": 1585
+    },
+    {
+      "model": "deepseek-v4-flash",
+      "httpStatus": 200,
+      "terminal": true,
+      "latencyMS": 5695,
+      "inputTokens": 5269,
+      "outputTokens": 658
+    },
+    { "model": "glm-5.3", "httpStatus": 400, "terminal": false },
+    { "model": "glm-5.2", "httpStatus": 200, "terminal": false, "responseStatus": "failed" },
+    { "model": "kimi-k3", "httpStatus": 400, "terminal": false }
+  ],
+  "toolResults": [
+    { "model": "deepseek-v4-pro", "completed": true, "function": "bash", "validCall": true },
+    { "model": "qwen3.7-max", "completed": true, "function": "bash", "validCall": true },
+    { "model": "deepseek-v4-flash", "completed": true, "function": "bash", "validCall": true }
+  ],
+  "secretScan": "clean"
+}

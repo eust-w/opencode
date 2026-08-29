@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "sourceRunID": "adr_6288478d42f39e0215e1",
+  "sourceRequestSHA256": "ebf4774ff45e3413fb06ab93564e701ab472e4b9d38fdb1d0c99c26a867f5083",
+  "capturedAt": "2026-08-29T22:54:34.854Z",
+  "spendBeforeUSD": 3.894696500000001,
+  "spendAfterUSD": 3.894696500000001,
+  "summaries": [
+    {
+      "model": "qwen3.8-max",
+      "httpStatus": 200,
+      "error": null,
+      "latencyMS": 62113,
+      "bytes": 159189,
+      "responseSHA256": "da25ec5d7d6202ed23735216d88cf76302342c7659391d7345a33c5311e987d7",
+      "terminalEvent": null,
+      "responseStatus": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoning": {
+        "effort": "low"
+      },
+      "maxOutputTokens": 4096
+    },
+    {
+      "model": "deepseek-v4-pro",
+      "httpStatus": 200,
+      "error": null,
+      "latencyMS": 9002,
+      "bytes": 138316,
+      "responseSHA256": "f0b1b66f7c0faa71df3a699f9d0bdf57d4e26fe6fb218c92d5a87da877c0cc21",
+      "terminalEvent": "response.completed",
+      "responseStatus": "completed",
+      "inputTokens": 5269,
+      "outputTokens": 602,
+      "reasoning": {
+        "effort": "low"
+      },
+      "maxOutputTokens": 4096
+    },
+    {
+      "model": "glm-5.3",
+      "httpStatus": 400,
+      "error": null,
+      "latencyMS": 626,
+      "bytes": 745,
+      "responseSHA256": "dfdcfd9b70102a21cddae8cfd82a2d65f7d69d11e5d841092ab0ade2079c887b",
+      "terminalEvent": null,
+      "responseStatus": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoning": {
+        "effort": "low"
+      },
+      "maxOutputTokens": 4096
+    }
+  ]
+}

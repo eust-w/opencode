@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "model": "deepseek-v4-pro",
+  "httpStatus": 200,
+  "latencyMS": 2720,
+  "bytes": 49217,
+  "responseSHA256": "cb0d6aa3e866c9bec9e1cb86f28ab572fa1cdc2b55ec984470054310fe4dee36",
+  "terminalEvent": "response.completed",
+  "responseStatus": "completed",
+  "outputTypes": [
+    "reasoning",
+    "function_call"
+  ],
+  "functionCalls": [
+    {
+      "name": "bash",
+      "hasCallID": true,
+      "hasArguments": true
+    }
+  ],
+  "inputTokens": 2779,
+  "outputTokens": 110,
+  "spendBeforeUSD": 3.926534000000001,
+  "spendAfterUSD": 3.926534000000001
+}

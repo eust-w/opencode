@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-29T22:59:29.255Z",
+  "spendBeforeUSD": 4.059804500000001,
+  "spendAfterUSD": 4.059804500000001,
+  "results": [
+    {
+      "name": "qwen3.7-max-tool",
+      "model": "qwen3.7-max",
+      "httpStatus": 200,
+      "latencyMS": 2121,
+      "bytes": 41246,
+      "responseSHA256": "209820fe80c2d681229ccc2ef8d43217952c0a3b005ac79ca6e1cadccaa3261a",
+      "terminalEvent": "response.completed",
+      "responseStatus": "completed",
+      "outputTypes": [
+        "reasoning",
+        "function_call"
+      ],
+      "functionCalls": [
+        {
+          "name": "bash",
+          "hasCallID": true,
+          "hasArguments": true
+        }
+      ],
+      "inputTokens": 2718,
+      "outputTokens": 131
+    },
+    {
+      "name": "deepseek-v4-flash-terminal",
+      "model": "deepseek-v4-flash",
+      "httpStatus": 200,
+      "latencyMS": 5695,
+      "bytes": 151556,
+      "responseSHA256": "d0e4350120003c9562d7379f3d3b882c8dddd5fe7ea5a282a66adf53b9f5490f",
+      "terminalEvent": "response.completed",
+      "responseStatus": "completed",
+      "outputTypes": [
+        "message"
+      ],
+      "functionCalls": [],
+      "inputTokens": 5269,
+      "outputTokens": 658
+    }
+  ]
+}
