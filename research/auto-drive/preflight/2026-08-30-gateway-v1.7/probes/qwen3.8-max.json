@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "provider": "d-robotics-gateway",
+  "gatewaySoftware": "LiteLLM 1.90.0",
+  "billing": "sponsored",
+  "modelVersion": "qwen3.8-max",
+  "trajectoryCapacity": 1,
+  "spendEndpoint": "/key/info",
+  "spendBeforeProbeUSD": 3.5973077,
+  "spendAfterProbeUSD": 3.5973077,
+  "providerMaxBudgetUSD": null,
+  "blocked": null,
+  "credentialExpiresAt": null,
+  "localCanarySpendCapUSD": 5,
+  "catalogModelsVerified": ["qwen3.8-max", "deepseek-v4-pro", "glm-5.3"],
+  "workerTransport": "openai-responses",
+  "workerReasoningEffort": "low",
+  "normalizedReasoning": { "effort": "low" },
+  "compatibilityProbe": {
+    "httpStatus": 200,
+    "responseStatus": "completed",
+    "outputTypes": ["reasoning", "message"],
+    "inputTokens": 100,
+    "outputTokens": 27
+  },
+  "controllerTransport": "openai-chat-completions",
+  "idleFailureBoundaryMS": 5000,
+  "partialPatchGraded": true,
+  "incompleteUsageRecordedAsLowerBound": true,
+  "blockedReason": null
+}
