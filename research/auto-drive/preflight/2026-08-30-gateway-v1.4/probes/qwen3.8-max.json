@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "provider": "d-robotics-gateway",
+  "gatewaySoftware": "LiteLLM 1.90.0",
+  "billing": "sponsored",
+  "modelVersion": "qwen3.8-max",
+  "trajectoryCapacity": 1,
+  "spendEndpoint": "/key/info",
+  "spendAtCaptureUSD": 2.6865133,
+  "providerMaxBudgetUSD": null,
+  "blocked": null,
+  "credentialExpiresAt": null,
+  "localCanarySpendCapUSD": 5,
+  "catalogModelsVerified": ["qwen3.8-max", "deepseek-v4-pro", "glm-5.3"],
+  "workerTransport": "openai-responses",
+  "controllerTransport": "openai-chat-completions",
+  "responsesFunctionCallingVerified": {
+    "httpStatus": 200,
+    "responseStatus": "completed",
+    "functionNamePresent": true,
+    "callIDPresent": true,
+    "argumentsPresent": true
+  },
+  "blockedReason": null
+}
