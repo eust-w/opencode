@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "provider": "d-robotics-gateway",
+  "gatewaySoftware": "LiteLLM 1.90.0",
+  "billing": "sponsored",
+  "modelVersion": "qwen3.8-max",
+  "trajectoryCapacity": 1,
+  "spendEndpoint": "/key/info",
+  "spendAtCaptureUSD": 1.9355693,
+  "providerMaxBudgetUSD": null,
+  "blocked": null,
+  "credentialExpiresAt": null,
+  "localCanarySpendCapUSD": 5,
+  "functionCallingVerified": true,
+  "fullSystemCanary": {
+    "runID": "adr_55555555555555555555",
+    "workerRequests": 1,
+    "controllerRequests": 1,
+    "statuses": [200, 200],
+    "promptTokens": 3414,
+    "completionTokens": 141,
+    "spendDeltaUSD": 0.048564,
+    "requestHashesVerified": true,
+    "secretScanPassed": true
+  }
+}

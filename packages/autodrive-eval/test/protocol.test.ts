@@ -3,13 +3,16 @@ import manifest from "../../../research/auto-drive/protocol/swe-evo-48.json"
 import { createRunPlan, parseManifest, protocol } from "../src/protocol"
 
 describe("frozen AutoDrive protocol", () => {
-  test("records both pre-execution protocol amendments", async () => {
-    expect(protocol.version).toBe("auto-drive-swe-evo-v1.2")
-    expect(protocol.models.primary).toBe("google/gemini-3.7-flash")
-    expect(protocol.models.controller).toBe("google/gemini-3.7-flash")
+  test("records all pre-execution protocol amendments", async () => {
+    expect(protocol.version).toBe("auto-drive-swe-evo-v1.3")
+    expect(protocol.models.primary).toBe("d-robotics/qwen3.8-max")
+    expect(protocol.models.replication).toEqual(["d-robotics/deepseek-v4-pro", "d-robotics/glm-5.3"])
+    expect(protocol.models.controller).toBe("d-robotics/qwen3.8-max")
+    expect(protocol.workerMaxOutputTokens).toBe(32_000)
+    expect(protocol.controllerMaxOutputTokens).toBe(1_024)
     expect(
       await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
-    ).toContain("Artifact-integrity amendment")
+    ).toContain("Gateway model-matrix amendment")
   })
 
   test("pins all 48 unique SWE-EVO tasks from seven repositories", () => {

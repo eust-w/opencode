@@ -19,7 +19,7 @@ export const Preflight = z.object({
       catalogModelID: z.string().min(1),
       modelVersion: z.string().min(1),
       credentialPresent: z.literal(true),
-      billing: z.enum(["paid", "free", "unknown"]),
+      billing: z.enum(["paid", "sponsored", "free", "unknown"]),
       trajectoryCapacity: z.number().int().nonnegative(),
       probe: ArtifactReference,
     }),
@@ -34,7 +34,7 @@ export const Preflight = z.object({
 export type Preflight = z.infer<typeof Preflight>
 
 const ProviderProbe = z.object({
-  billing: z.enum(["paid", "free", "unknown"]),
+  billing: z.enum(["paid", "sponsored", "free", "unknown"]),
   modelVersion: z.string().min(1),
   trajectoryCapacity: z.number().int().nonnegative(),
 })
@@ -61,7 +61,8 @@ export function parsePreflight(input: unknown, options: { scope: PreflightScope;
     throw new Error(`Preflight must resolve exactly: ${Array.from(requirements.keys()).join(", ")}`)
 
   receipt.models.forEach((model) => {
-    if (model.billing !== "paid") throw new Error(`${model.model} does not have verified paid billing`)
+    if (model.billing !== "paid" && model.billing !== "sponsored")
+      throw new Error(`${model.model} does not have verified metered billing`)
     if (model.trajectoryCapacity < requirements.get(model.model)!)
       throw new Error(`${model.model} does not have enough verified trajectory capacity`)
   })
@@ -133,8 +134,8 @@ async function verifyArtifact(label: string, reference: z.infer<typeof ArtifactR
 
 function verifyProviderProbe(model: Preflight["models"][number], input: string) {
   const probe = ProviderProbe.parse(JSON.parse(input))
-  if (probe.billing !== "paid" || probe.billing !== model.billing)
-    throw new Error(`${model.model} provider probe does not verify paid billing`)
+  if ((probe.billing !== "paid" && probe.billing !== "sponsored") || probe.billing !== model.billing)
+    throw new Error(`${model.model} provider probe does not verify metered billing`)
   if (probe.modelVersion !== model.modelVersion)
     throw new Error(`${model.model} provider probe model version does not match the receipt`)
   if (probe.trajectoryCapacity !== model.trajectoryCapacity)

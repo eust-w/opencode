@@ -6,17 +6,17 @@ import { createModelMetadataSnapshot, loadPreflight, parsePreflight } from "../s
 
 const base = {
   schemaVersion: 1,
-  protocol: "auto-drive-swe-evo-v1.2",
+  protocol: "auto-drive-swe-evo-v1.3",
   scope: "canary",
   capturedAt: "2026-08-30T02:00:00.000Z",
   expiresAt: "2026-08-30T14:00:00.000Z",
   models: [
     {
-      model: "google/gemini-3.7-flash",
-      catalogModelID: "gemini-3.7-flash",
-      modelVersion: "3.7-flash-08-2026",
+      model: "d-robotics/qwen3.8-max",
+      catalogModelID: "qwen3.8-max",
+      modelVersion: "qwen3.8-max",
       credentialPresent: true,
-      billing: "paid",
+      billing: "sponsored",
       trajectoryCapacity: 1,
       probe: { path: "probes/google.json", sha256: "a".repeat(64) },
     },
@@ -30,10 +30,10 @@ const base = {
 } as const
 
 describe("experiment preflight gate", () => {
-  test("requires fresh paid model capacity and isolated runtime flags", () => {
+  test("requires fresh metered model capacity and isolated runtime flags", () => {
     expect(parsePreflight(base, { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") })).toMatchObject({
       scope: "canary",
-      models: [{ modelVersion: "3.7-flash-08-2026" }],
+      models: [{ modelVersion: "qwen3.8-max" }],
     })
     expect(() =>
       parsePreflight(
@@ -46,7 +46,7 @@ describe("experiment preflight gate", () => {
         { ...base, models: [{ ...base.models[0], billing: "free" }] },
         { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") },
       ),
-    ).toThrow("paid billing")
+    ).toThrow("metered billing")
     expect(() =>
       parsePreflight(
         { ...base, models: [{ ...base.models[0], trajectoryCapacity: 0 }] },
@@ -66,15 +66,24 @@ describe("experiment preflight gate", () => {
 
   test("creates a minimal cache with explicit logical-to-catalog resolutions", () => {
     const result = createModelMetadataSnapshot({
-      google: { id: "google", models: { "gemini-3.7-flash": { id: "gemini-3.7-flash" }, other: {} } },
-      anthropic: { id: "anthropic", models: { "claude-sonnet-4-6": { id: "claude-sonnet-4-6" } } },
-      openai: { id: "openai", models: { "gpt-5.4": { id: "gpt-5.4" } } },
+      "d-robotics": {
+        id: "d-robotics",
+        models: {
+          "qwen3.8-max": { id: "qwen3.8-max" },
+          "deepseek-v4-pro": { id: "deepseek-v4-pro" },
+          "glm-5.3": { id: "glm-5.3" },
+          other: {},
+        },
+      },
     })
-    expect(Object.keys(result.providers.google.models)).toEqual(["gemini-3.7-flash"])
-    expect(Object.keys(result.providers.anthropic.models)).toEqual(["claude-sonnet-4-6"])
+    expect(Object.keys(result.providers["d-robotics"].models)).toEqual([
+      "qwen3.8-max",
+      "deepseek-v4-pro",
+      "glm-5.3",
+    ])
     expect(result.resolutions).toContainEqual({
-      model: "anthropic/claude-sonnet-4.6",
-      catalogModelID: "claude-sonnet-4-6",
+      model: "d-robotics/deepseek-v4-pro",
+      catalogModelID: "deepseek-v4-pro",
     })
   })
 
@@ -85,8 +94,8 @@ describe("experiment preflight gate", () => {
         mkdir(path.join(directory, "metadata"), { recursive: true }),
         mkdir(path.join(directory, "probes"), { recursive: true }),
       ])
-      const metadata = '{"google":{"models":{"gemini-3.7-flash":{"id":"gemini-3.7-flash"}}}}\n'
-      const probe = '{"billing":"paid","modelVersion":"3.7-flash-08-2026","trajectoryCapacity":1}\n'
+      const metadata = '{"d-robotics":{"models":{"qwen3.8-max":{"id":"qwen3.8-max"}}}}\n'
+      const probe = '{"billing":"sponsored","modelVersion":"qwen3.8-max","trajectoryCapacity":1}\n'
       const digest = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
       await Promise.all([
         Bun.write(path.join(directory, base.modelMetadata.path), metadata),
@@ -109,7 +118,7 @@ describe("experiment preflight gate", () => {
         loadPreflight(receiptPath, { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") }),
       ).rejects.toThrow("Provider probe artifact hash mismatch")
 
-      const freeProbe = '{"billing":"free","modelVersion":"3.7-flash-08-2026","trajectoryCapacity":1}\n'
+      const freeProbe = '{"billing":"free","modelVersion":"qwen3.8-max","trajectoryCapacity":1}\n'
       await Bun.write(path.join(directory, base.models[0].probe.path), freeProbe)
       await Bun.write(
         receiptPath,
@@ -120,9 +129,9 @@ describe("experiment preflight gate", () => {
       )
       await expect(
         loadPreflight(receiptPath, { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") }),
-      ).rejects.toThrow("does not verify paid billing")
+      ).rejects.toThrow("does not verify metered billing")
 
-      const missingModelMetadata = '{"google":{"models":{}}}\n'
+      const missingModelMetadata = '{"d-robotics":{"models":{}}}\n'
       await Bun.write(path.join(directory, base.modelMetadata.path), missingModelMetadata)
       await Bun.write(path.join(directory, base.models[0].probe.path), probe)
       await Bun.write(

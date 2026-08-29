@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.2
+# AutoDrive Preregistration v1.3
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -9,6 +9,12 @@ Before any paid trajectory was accepted, the executable model inventory showed t
 ## Artifact-integrity amendment (v1.2)
 
 The rejected v1.1 engineering pilot showed that a single declared request hash was insufficient for an end-to-end trajectory containing multiple worker and controller calls. Before any paid trajectory was accepted, version 1.2 upgraded the result contract to an ordered request manifest and requires the host harness to recompute every normalized request, model-metadata, preflight-receipt, and raw-trace SHA-256 before admitting either the result or its ledger entry. A fresh paid-capacity receipt with exact resolved model versions and disabled external skill/model discovery is mandatory. Because the protocol version is part of the deterministic run key, all 384 run IDs were regenerated. Experimental tasks, policies, prompts, sampling, outcomes, statistics, and budget are unchanged; rejected v1.1 pilot IDs remain historical evidence and are not rewritten.
+
+## Gateway model-matrix amendment (v1.3)
+
+Before any end-to-end trajectory was accepted, the user authorized the sponsored D-Robotics LiteLLM-compatible gateway for execution. Its sealed catalog does not expose the v1.2 Google, Anthropic, or OpenAI model IDs, so the matrix is changed transparently instead of relabeling gateway models as the originally planned workers. The primary worker and every supervisor call use `d-robotics/qwen3.8-max`; the two twelve-task replication workers use `d-robotics/deepseek-v4-pro` and `d-robotics/glm-5.3`. Gateway aliases and undisclosed upstream revisions are not treated as direct-provider model identities; this limitation must be reported in the paper.
+
+The gateway key is classified as sponsored and metered because `/key/info` exposes cumulative spend but no provider-confirmed account budget. The host proxy therefore fails closed with a local spend cap, and a full 384-run receipt remains invalid until trajectory capacity is independently confirmed. The proxy is the frozen generation-parameter boundary: it materializes omitted worker defaults as `temperature=0,max_tokens=32000`, requires controller requests to use `temperature=0,max_tokens=1024`, replaces task-side credentials, and hashes the exact normalized outbound body. The dataset, four policies, task selection, repeat counts, six-step segment limit, five-continuation limit, statistics, and USD 800 overall budget remain unchanged. Because the protocol version and model IDs are part of the deterministic run key, all 384 run IDs are regenerated; all v1.2 engineering canaries remain excluded from results.
 
 ## Claim boundary
 
@@ -45,7 +51,7 @@ The off result is the first-boundary prefix of each paid trajectory. It is never
 - Cross-model: 12 tasks × 4 policies × 2 models × one run = 96 trajectories.
 - Total: 384 paid end-to-end trajectories.
 
-The primary worker is `google/gemini-3.7-flash`. Replication workers are `anthropic/claude-sonnet-4.6` and `openai/gpt-5.4`. Every supervisor call uses `google/gemini-3.7-flash`. Cross-model results are a generalization replication and not the primary estimate.
+The primary worker is `d-robotics/qwen3.8-max`. Replication workers are `d-robotics/deepseek-v4-pro` and `d-robotics/glm-5.3`. Every supervisor call uses `d-robotics/qwen3.8-max`. Cross-model results are a generalization replication and not the primary estimate.
 
 Every run uses the pinned task image and base commit, temperature zero, the exact request record in `model-requests.json`, six worker steps per segment, at most five automatic continuations, at most 45 minutes, and no more than two concurrent tasks. The resolved provider/model version and normalized request body must be saved before a record is accepted.
 

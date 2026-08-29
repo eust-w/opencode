@@ -1,0 +1,14 @@
+[
+  {
+    "model": "d-robotics/qwen3.8-max",
+    "catalogModelID": "qwen3.8-max"
+  },
+  {
+    "model": "d-robotics/deepseek-v4-pro",
+    "catalogModelID": "deepseek-v4-pro"
+  },
+  {
+    "model": "d-robotics/glm-5.3",
+    "catalogModelID": "glm-5.3"
+  }
+]

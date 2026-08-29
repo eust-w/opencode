@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "protocol": "auto-drive-swe-evo-v1.2",
+  "protocol": "auto-drive-swe-evo-v1.3",
   "worker": {
-    "models": ["google/gemini-3.7-flash", "anthropic/claude-sonnet-4.6", "openai/gpt-5.4"],
+    "models": ["d-robotics/qwen3.8-max", "d-robotics/deepseek-v4-pro", "d-robotics/glm-5.3"],
     "temperature": 0,
+    "maxOutputTokens": 32000,
     "segmentSteps": 6,
     "maxContinuations": 5,
     "timeoutSeconds": 2700,
@@ -13,7 +14,7 @@
     "resolutionRule": "Executor must save the exact provider model version and normalized outbound request SHA-256 in every trajectory. Null is invalid for a completed trajectory."
   },
   "supervisor": {
-    "model": "google/gemini-3.7-flash",
+    "model": "d-robotics/qwen3.8-max",
     "temperature": 0,
     "maxOutputTokens": 1024,
     "tools": [],

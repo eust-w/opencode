@@ -1,6 +1,6 @@
 import type { Trajectory } from "./artifact"
 import type { Preflight } from "./preflight"
-import type { Run, Task } from "./protocol"
+import { protocol, type Run, type Task } from "./protocol"
 
 export function assertTrajectoryProvenance(
   trajectory: Trajectory,
@@ -37,7 +37,11 @@ export function assertTrajectoryProvenance(
     const separator = model.indexOf("/")
     const sealed = context.preflight.receipt.models.find((item) => item.model === model)
     if (!sealed) throw new Error(`${model} is not present in the sealed preflight`)
-    if (request.provider !== model.slice(0, separator) || request.modelID !== model.slice(separator + 1))
+    const provider =
+      model.slice(0, separator) === protocol.gateway.logicalProvider
+        ? protocol.gateway.requestProvider
+        : model.slice(0, separator)
+    if (request.provider !== provider || request.modelID !== model.slice(separator + 1))
       throw new Error(`Trajectory ${request.kind} request does not match ${model}`)
     if (request.modelVersion !== sealed.modelVersion)
       throw new Error(`Trajectory ${request.kind} model version does not match the sealed preflight`)

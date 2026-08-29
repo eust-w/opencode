@@ -26,18 +26,15 @@ describe("paid experiment CLI gates", () => {
       await Bun.write(
         source,
         JSON.stringify({
-          google: {
-            id: "google",
+          "d-robotics": {
+            id: "d-robotics",
             models: {
-              "gemini-3.7-flash": { id: "gemini-3.7-flash" },
+              "qwen3.8-max": { id: "qwen3.8-max" },
+              "deepseek-v4-pro": { id: "deepseek-v4-pro" },
+              "glm-5.3": { id: "glm-5.3" },
               other: {},
             },
           },
-          anthropic: {
-            id: "anthropic",
-            models: { "claude-sonnet-4-6": { id: "claude-sonnet-4-6" } },
-          },
-          openai: { id: "openai", models: { "gpt-5.4": { id: "gpt-5.4" } } },
         }),
       )
       const child = Bun.spawn(
@@ -56,10 +53,14 @@ describe("paid experiment CLI gates", () => {
       )
       const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
       expect(exitCode, stderr).toBe(0)
-      expect(Object.keys((await Bun.file(output).json()).google.models)).toEqual(["gemini-3.7-flash"])
+      expect(Object.keys((await Bun.file(output).json())["d-robotics"].models)).toEqual([
+        "qwen3.8-max",
+        "deepseek-v4-pro",
+        "glm-5.3",
+      ])
       expect(await Bun.file(resolutions).json()).toContainEqual({
-        model: "anthropic/claude-sonnet-4.6",
-        catalogModelID: "claude-sonnet-4-6",
+        model: "d-robotics/deepseek-v4-pro",
+        catalogModelID: "deepseek-v4-pro",
       })
     } finally {
       await rm(directory, { recursive: true, force: true })

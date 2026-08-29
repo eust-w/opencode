@@ -47,12 +47,17 @@ export const Run = z.object({
 export type Run = z.infer<typeof Run>
 
 export const protocol = {
-  version: "auto-drive-swe-evo-v1.2",
+  version: "auto-drive-swe-evo-v1.3",
   strategies: Strategy.options,
   models: {
-    primary: "google/gemini-3.7-flash",
-    replication: ["anthropic/claude-sonnet-4.6", "openai/gpt-5.4"],
-    controller: "google/gemini-3.7-flash",
+    primary: "d-robotics/qwen3.8-max",
+    replication: ["d-robotics/deepseek-v4-pro", "d-robotics/glm-5.3"],
+    controller: "d-robotics/qwen3.8-max",
+  },
+  gateway: {
+    logicalProvider: "d-robotics",
+    requestProvider: "d-robotics-gateway",
+    software: "LiteLLM 1.90.0",
   },
   replicationTaskIDs: [
     "conan-io__conan_2.0.2_2.0.3",
@@ -70,6 +75,8 @@ export const protocol = {
   ],
   offPolicy: "first-boundary-prefix",
   temperature: 0,
+  workerMaxOutputTokens: 32_000,
+  controllerMaxOutputTokens: 1_024,
   segmentSteps: 6,
   maxContinuations: 5,
   timeoutMinutes: 45,

@@ -1,0 +1,20 @@
+{
+  "d-robotics": {
+    "id": "d-robotics",
+    "gateway": {
+      "software": "LiteLLM 1.90.0",
+      "baseURL": "https://ai-api.d-robotics.cc/v1"
+    },
+    "models": {
+      "qwen3.8-max": {
+        "id": "qwen3.8-max"
+      },
+      "deepseek-v4-pro": {
+        "id": "deepseek-v4-pro"
+      },
+      "glm-5.3": {
+        "id": "glm-5.3"
+      }
+    }
+  }
+}

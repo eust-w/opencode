@@ -1,0 +1,75 @@
+import { z } from "zod"
+
+export const TaskInput = z
+  .object({
+    schemaVersion: z.literal(1),
+    instanceID: z.string().min(1),
+    repo: z.string().regex(/^[^/]+\/[^/]+$/),
+    baseCommit: z.string().regex(/^[a-f0-9]{40}$/),
+    environmentSetupCommit: z.string().regex(/^[a-f0-9]{40}$/),
+    image: z.string().min(1),
+    problemStatement: z.string().min(1),
+    testPatch: z.string().min(1),
+    testCommand: z.string().min(1),
+    logParser: z.literal("parse_log_pytest"),
+    failToPass: z.array(z.string().min(1)).min(1),
+    passToPass: z.array(z.string().min(1)),
+    source: z.object({
+      commit: z.string().regex(/^[a-f0-9]{40}$/),
+      sha256: z.string().regex(/^[a-f0-9]{64}$/),
+    }),
+  })
+  .strict()
+export type TaskInput = z.infer<typeof TaskInput>
+
+export function parseTaskInput(input: unknown) {
+  return TaskInput.parse(input)
+}
+
+export function buildTaskPrompt(task: TaskInput) {
+  return [
+    "Fix the repository issue described below.",
+    "Work directly in the current checkout. Inspect the code, implement the smallest correct fix, and run relevant existing tests when practical.",
+    "Do not ask the user for input. Do not access the network. Do not commit changes.",
+    "When the fix is complete, summarize what changed and the validation you performed.",
+    "",
+    task.problemStatement,
+  ].join("\n")
+}
+
+const statuses = new Set(["PASSED", "FAILED", "SKIPPED", "ERROR", "XFAIL"])
+
+export function parsePytestLog(content: string) {
+  return Object.fromEntries(
+    content
+      .split("\n")
+      .flatMap((line) => {
+        const status = line.split(/\s+/, 1)[0]
+        if (!statuses.has(status)) return []
+        const normalized = status === "FAILED" ? line.replaceAll(" - ", " ") : line
+        const fields = normalized.split(/\s+/)
+        if (fields.length <= 1) return []
+        return [[fields[1], fields[0]]]
+      }),
+  )
+}
+
+export function gradePytest(task: TaskInput, status: Record<string, string>) {
+  const passed = (test: string) => status[test] === "PASSED" || status[test] === "XFAIL"
+  const failToPassPassed = task.failToPass.filter(passed)
+  const failToPassFailed = task.failToPass.filter((test) => !passed(test))
+  const passToPassPassed = task.passToPass.filter(passed)
+  const passToPassFailed = task.passToPass.filter((test) => !passed(test))
+  const failToPassRate = failToPassPassed.length / task.failToPass.length
+  const passToPassRate = task.passToPass.length ? passToPassPassed.length / task.passToPass.length : 1
+  return {
+    resolved: failToPassRate === 1 && passToPassRate === 1,
+    fixRate: passToPassRate === 1 ? failToPassRate : 0,
+    failToPassRate,
+    passToPassRate,
+    failToPassPassed,
+    failToPassFailed,
+    passToPassPassed,
+    passToPassFailed,
+  }
+}
