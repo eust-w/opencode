@@ -1,0 +1,6 @@
+plan_slot,run_id,attempt,status,failure,model_steps,normal_boundary,resolved,fail_to_pass,pass_to_pass,prompt_tokens,output_plus_reasoning_tokens,cost_usd,latency_ms,accepted_frozen_result
+oracle,adr_e8eb9ff9daf80ed4dff5,1,failed,non-retryable-provider,4,false,false,0/1,12/12,52436,550,0.043836975,498104,false
+blind,adr_0f6f50f85d7fa60d6c88,1,failed,infrastructure,0,false,false,0/1,12/12,0,0,0,20245,false
+blind,adr_0f6f50f85d7fa60d6c88,2,failed,non-retryable-provider,5,false,false,0/1,12/12,49475,888,0.0419589,549456,false
+regex,adr_4113f3ad7175bdda18cf,1,failed,retryable-provider,0,false,false,0/1,12/12,0,0,0,124064,false
+supervisor,adr_9fc87f41446d760558d3,0,not-run,quota-preflight,0,false,false,0/1,12/12,0,0,0,0,false

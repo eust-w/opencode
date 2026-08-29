@@ -1,0 +1,33 @@
+{
+  "protocol": "auto-drive-swe-evo-v1.1",
+  "taskID": "iterative__dvc_0.30.0_0.30.1",
+  "baseCommit": "9175c45b1472070e02521380e4db8315d7c910c4",
+  "opencodeCommit": "f24c701402ae3fedd1a904bda8c5b2a2676c7539",
+  "image": "xingyaoww/sweb.eval.x86_64.iterative_s_dvc-1681",
+  "imageDigest": "sha256:47f2213bba1f71e6674cef8027d6cd7df892c480bb2a27a58391162a268eee8e",
+  "model": {
+    "provider": "google",
+    "id": "gemini-3.7-flash",
+    "version": "3.7-flash-08-2026",
+    "temperature": 0,
+    "inputTokenLimit": 1048576,
+    "outputTokenLimit": 65536
+  },
+  "limits": {
+    "segmentSteps": 6,
+    "maxContinuations": 5,
+    "timeoutMinutes": 45,
+    "providerRetries": 5
+  },
+  "isolation": {
+    "credentialInTaskContainer": false,
+    "taskContainerNetworkUsedByWorker": false,
+    "hiddenTestsMountedInWorkerContainer": false,
+    "workerWorkspaceCleanAfterRuns": true
+  },
+  "providerPreflight": {
+    "tier": "free",
+    "observedRequestLimit": 20,
+    "billingReadyForFrozenMatrix": false
+  }
+}

@@ -1,0 +1,234 @@
+F............                                                            [100%]
+=================================== FAILURES ===================================
+_____________ TestDefaultWorkingDirectory.test_ignored_in_checksum _____________
+
+self = <tests.test_stage.TestDefaultWorkingDirectory testMethod=test_ignored_in_checksum>
+
+    def test_ignored_in_checksum(self):
+        stage = self.dvc.run(
+            cmd="echo test > {}".format(self.FOO),
+            deps=[self.BAR],
+            outs=[self.FOO],
+        )
+    
+        d = stage.dumpd()
+>       self.assertEqual(d[stage.PARAM_WDIR], ".")
+E       AssertionError: '/tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446' != '.'
+E       - /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446
+E       + .
+
+tests/test_stage.py:107: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Adding '.dvc/state' to '.dvc/.gitignore'.
+Adding '.dvc/lock' to '.dvc/.gitignore'.
+Adding '.dvc/config.local' to '.dvc/.gitignore'.
+Adding '.dvc/updater' to '.dvc/.gitignore'.
+Adding '.dvc/updater.lock' to '.dvc/.gitignore'.
+Adding '.dvc/state-journal' to '.dvc/.gitignore'.
+Adding '.dvc/state-wal' to '.dvc/.gitignore'.
+Adding '.dvc/cache' to '.dvc/.gitignore'.
+
+You can now commit the changes to git.
+
+[31m+---------------------------------------------------------------------+
+[39m[31m|[39m                                                                     [31m|[39m
+[31m|[39m        DVC has enabled anonymous aggregate usage analytics.         [31m|[39m
+[31m|[39m     Read the analytics documentation (and how to opt-out) here:     [31m|[39m
+[31m|[39m              [34mhttps://dvc.org/doc/user-guide/analytics[39m               [31m|[39m
+[31m|[39m                                                                     [31m|[39m
+[31m+---------------------------------------------------------------------+
+[39m
+[33mWhat's next?[39m
+[33m------------[39m
+- Check out the documentation: [34mhttps://dvc.org/doc[39m
+- Get help and share ideas: [34mhttps://dvc.org/chat[39m
+- Star us on GitHub: [34mhttps://github.com/iterative/dvc[39m
+[34mDebug[39m: CREATE TABLE IF NOT EXISTS state (inode INTEGER PRIMARY KEY, mtime TEXT NOT NULL, size TEXT NOT NULL, md5 TEXT NOT NULL, timestamp TEXT NOT NULL)
+[34mDebug[39m: CREATE TABLE IF NOT EXISTS state_info (count INTEGER)
+[34mDebug[39m: CREATE TABLE IF NOT EXISTS link_state (path TEXT PRIMARY KEY, inode INTEGER NOT NULL, mtime TEXT NOT NULL)
+[34mDebug[39m: INSERT OR IGNORE INTO state_info (count) SELECT 0 WHERE NOT EXISTS (SELECT * FROM state_info)
+[34mDebug[39m: PRAGMA user_version = 3;
+[34mDebug[39m: Skipping copying for '/tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo', since it is not a symlink or a hardlink.
+[34mDebug[39m: SELECT count from state_info WHERE rowid=1
+[34mDebug[39m: fetched: [(0,)]
+[34mDebug[39m: UPDATE state_info SET count = 0 WHERE rowid = 1
+[34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache inode 1490206
+[34mDebug[39m: INSERT OR REPLACE INTO state(inode, size, mtime, timestamp, md5) VALUES (1490206, "4096", "1788029810673058048", "1788029810779638784", "")
+[34mDebug[39m: PRAGMA user_version;
+[34mDebug[39m: fetched: [(3,)]
+[34mDebug[39m: CREATE TABLE IF NOT EXISTS state (inode INTEGER PRIMARY KEY, mtime TEXT NOT NULL, size TEXT NOT NULL, md5 TEXT NOT NULL, timestamp TEXT NOT NULL)
+[34mDebug[39m: CREATE TABLE IF NOT EXISTS state_info (count INTEGER)
+[34mDebug[39m: CREATE TABLE IF NOT EXISTS link_state (path TEXT PRIMARY KEY, inode INTEGER NOT NULL, mtime TEXT NOT NULL)
+[34mDebug[39m: INSERT OR IGNORE INTO state_info (count) SELECT 0 WHERE NOT EXISTS (SELECT * FROM state_info)
+[34mDebug[39m: PRAGMA user_version = 3;
+Running command:
+	echo test > foo
+[34mDebug[39m: Computed stage 'foo.dvc' md5: '57234b9e9c10c3c86d83677496c43f6d'
+[34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/bar inode 1490158
+[34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490158
+[34mDebug[39m: fetched: []
+[34mDebug[39m: INSERT INTO state(inode, mtime, size, md5, timestamp) VALUES (1490158, "1788029810566057984", "4", "8978c98bb5a48c2fb5f2c4c905768afa", "1788029811316564480")
+[34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo inode 1490157
+[34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490157
+[34mDebug[39m: fetched: []
+[34mDebug[39m: INSERT INTO state(inode, mtime, size, md5, timestamp) VALUES (1490157, "1788029811310058240", "5", "d8e8fca2dc0f896fd7cb4cb0031ba249", "1788029811318627584")
+Adding 'foo' to '.gitignore'.
+[34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo inode 1490157
+[34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490157
+[34mDebug[39m: fetched: [('1788029811310058240', '5', 'd8e8fca2dc0f896fd7cb4cb0031ba249', '1788029811318627584')]
+[34mDebug[39m: UPDATE state SET timestamp = "1788029811372675328" WHERE inode = 1490157
+[34mDebug[39m: Computed stage 'foo.dvc' md5: 'a119982d8a00e5346215b1d36d70af3c'
+Saving 'foo' to cache '.dvc/cache'.
+[34mDebug[39m: File '/tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache/d8/e8fca2dc0f896fd7cb4cb0031ba249', md5 'd8e8fca2dc0f896fd7cb4cb0031ba249', actual 'None'
+[34mDebug[39m: Cache type 'reflink' is not supported: reflink is not supported
+[34mDebug[39m: Created 'hardlink': /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache/d8/e8fca2dc0f896fd7cb4cb0031ba249 -> /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo
+[34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo inode 1490157
+[34mDebug[39m: REPLACE INTO link_state(path, inode, mtime) VALUES ("foo", 1490157, "1788029811310058240")
+[34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo inode 1490157
+[34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490157
+[34mDebug[39m: fetched: [('1788029811310058240', '5', 'd8e8fca2dc0f896fd7cb4cb0031ba249', '1788029811372675328')]
+[34mDebug[39m: UPDATE state SET timestamp = "1788029811375950848" WHERE inode = 1490157
+[34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache/d8/e8fca2dc0f896fd7cb4cb0031ba249 inode 1490157
+[34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490157
+[34mDebug[39m: fetched: [('1788029811310058240', '5', 'd8e8fca2dc0f896fd7cb4cb0031ba249', '1788029811375950848')]
+[34mDebug[39m: UPDATE state SET timestamp = "1788029811376113664" WHERE inode = 1490157
+[34mDebug[39m: SELECT count from state_info WHERE rowid=1
+[34mDebug[39m: fetched: [(0,)]
+[34mDebug[39m: UPDATE state_info SET count = 2 WHERE rowid = 1
+[34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache inode 1490206
+[34mDebug[39m: INSERT OR REPLACE INTO state(inode, size, mtime, timestamp, md5) VALUES (1490206, "8197", "1788029811373058048", "1788029811376454144", "")
+Saving information to 'foo.dvc'.
+
+To track the changes with git run:
+
+	git add .gitignore foo.dvc
+------------------------------ Captured log call -------------------------------
+INFO     dvc:logger.py:22 Adding '.dvc/state' to '.dvc/.gitignore'.
+INFO     dvc:logger.py:22 Adding '.dvc/lock' to '.dvc/.gitignore'.
+INFO     dvc:logger.py:22 Adding '.dvc/config.local' to '.dvc/.gitignore'.
+INFO     dvc:logger.py:22 Adding '.dvc/updater' to '.dvc/.gitignore'.
+INFO     dvc:logger.py:22 Adding '.dvc/updater.lock' to '.dvc/.gitignore'.
+INFO     dvc:logger.py:22 Adding '.dvc/state-journal' to '.dvc/.gitignore'.
+INFO     dvc:logger.py:22 Adding '.dvc/state-wal' to '.dvc/.gitignore'.
+INFO     dvc:logger.py:22 Adding '.dvc/cache' to '.dvc/.gitignore'.
+INFO     dvc:logger.py:22 
+You can now commit the changes to git.
+
+INFO     dvc:logger.py:120 [31m+---------------------------------------------------------------------+
+[39m[31m|[39m                                                                     [31m|[39m
+[31m|[39m        DVC has enabled anonymous aggregate usage analytics.         [31m|[39m
+[31m|[39m     Read the analytics documentation (and how to opt-out) here:     [31m|[39m
+[31m|[39m              [34mhttps://dvc.org/doc/user-guide/analytics[39m               [31m|[39m
+[31m|[39m                                                                     [31m|[39m
+[31m+---------------------------------------------------------------------+
+[39m
+INFO     dvc:logger.py:22 [33mWhat's next?[39m
+[33m------------[39m
+- Check out the documentation: [34mhttps://dvc.org/doc[39m
+- Get help and share ideas: [34mhttps://dvc.org/chat[39m
+- Star us on GitHub: [34mhttps://github.com/iterative/dvc[39m
+DEBUG    dvc:logger.py:31 [34mDebug[39m: CREATE TABLE IF NOT EXISTS state (inode INTEGER PRIMARY KEY, mtime TEXT NOT NULL, size TEXT NOT NULL, md5 TEXT NOT NULL, timestamp TEXT NOT NULL)
+DEBUG    dvc:logger.py:31 [34mDebug[39m: CREATE TABLE IF NOT EXISTS state_info (count INTEGER)
+DEBUG    dvc:logger.py:31 [34mDebug[39m: CREATE TABLE IF NOT EXISTS link_state (path TEXT PRIMARY KEY, inode INTEGER NOT NULL, mtime TEXT NOT NULL)
+DEBUG    dvc:logger.py:31 [34mDebug[39m: INSERT OR IGNORE INTO state_info (count) SELECT 0 WHERE NOT EXISTS (SELECT * FROM state_info)
+DEBUG    dvc:logger.py:31 [34mDebug[39m: PRAGMA user_version = 3;
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Skipping copying for '/tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo', since it is not a symlink or a hardlink.
+DEBUG    dvc:logger.py:31 [34mDebug[39m: SELECT count from state_info WHERE rowid=1
+DEBUG    dvc:logger.py:31 [34mDebug[39m: fetched: [(0,)]
+DEBUG    dvc:logger.py:31 [34mDebug[39m: UPDATE state_info SET count = 0 WHERE rowid = 1
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache inode 1490206
+DEBUG    dvc:logger.py:31 [34mDebug[39m: INSERT OR REPLACE INTO state(inode, size, mtime, timestamp, md5) VALUES (1490206, "4096", "1788029810673058048", "1788029810779638784", "")
+DEBUG    dvc:logger.py:31 [34mDebug[39m: PRAGMA user_version;
+DEBUG    dvc:logger.py:31 [34mDebug[39m: fetched: [(3,)]
+DEBUG    dvc:logger.py:31 [34mDebug[39m: CREATE TABLE IF NOT EXISTS state (inode INTEGER PRIMARY KEY, mtime TEXT NOT NULL, size TEXT NOT NULL, md5 TEXT NOT NULL, timestamp TEXT NOT NULL)
+DEBUG    dvc:logger.py:31 [34mDebug[39m: CREATE TABLE IF NOT EXISTS state_info (count INTEGER)
+DEBUG    dvc:logger.py:31 [34mDebug[39m: CREATE TABLE IF NOT EXISTS link_state (path TEXT PRIMARY KEY, inode INTEGER NOT NULL, mtime TEXT NOT NULL)
+DEBUG    dvc:logger.py:31 [34mDebug[39m: INSERT OR IGNORE INTO state_info (count) SELECT 0 WHERE NOT EXISTS (SELECT * FROM state_info)
+DEBUG    dvc:logger.py:31 [34mDebug[39m: PRAGMA user_version = 3;
+INFO     dvc:logger.py:22 Running command:
+	echo test > foo
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Computed stage 'foo.dvc' md5: '57234b9e9c10c3c86d83677496c43f6d'
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/bar inode 1490158
+DEBUG    dvc:logger.py:31 [34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490158
+DEBUG    dvc:logger.py:31 [34mDebug[39m: fetched: []
+DEBUG    dvc:logger.py:31 [34mDebug[39m: INSERT INTO state(inode, mtime, size, md5, timestamp) VALUES (1490158, "1788029810566057984", "4", "8978c98bb5a48c2fb5f2c4c905768afa", "1788029811316564480")
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo inode 1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: fetched: []
+DEBUG    dvc:logger.py:31 [34mDebug[39m: INSERT INTO state(inode, mtime, size, md5, timestamp) VALUES (1490157, "1788029811310058240", "5", "d8e8fca2dc0f896fd7cb4cb0031ba249", "1788029811318627584")
+INFO     dvc:logger.py:22 Adding 'foo' to '.gitignore'.
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo inode 1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: fetched: [('1788029811310058240', '5', 'd8e8fca2dc0f896fd7cb4cb0031ba249', '1788029811318627584')]
+DEBUG    dvc:logger.py:31 [34mDebug[39m: UPDATE state SET timestamp = "1788029811372675328" WHERE inode = 1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Computed stage 'foo.dvc' md5: 'a119982d8a00e5346215b1d36d70af3c'
+INFO     dvc:logger.py:22 Saving 'foo' to cache '.dvc/cache'.
+DEBUG    dvc:logger.py:31 [34mDebug[39m: File '/tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache/d8/e8fca2dc0f896fd7cb4cb0031ba249', md5 'd8e8fca2dc0f896fd7cb4cb0031ba249', actual 'None'
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Cache type 'reflink' is not supported: reflink is not supported
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Created 'hardlink': /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache/d8/e8fca2dc0f896fd7cb4cb0031ba249 -> /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo inode 1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: REPLACE INTO link_state(path, inode, mtime) VALUES ("foo", 1490157, "1788029811310058240")
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/foo inode 1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: fetched: [('1788029811310058240', '5', 'd8e8fca2dc0f896fd7cb4cb0031ba249', '1788029811372675328')]
+DEBUG    dvc:logger.py:31 [34mDebug[39m: UPDATE state SET timestamp = "1788029811375950848" WHERE inode = 1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache/d8/e8fca2dc0f896fd7cb4cb0031ba249 inode 1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: SELECT mtime, size, md5, timestamp from state WHERE inode=1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: fetched: [('1788029811310058240', '5', 'd8e8fca2dc0f896fd7cb4cb0031ba249', '1788029811375950848')]
+DEBUG    dvc:logger.py:31 [34mDebug[39m: UPDATE state SET timestamp = "1788029811376113664" WHERE inode = 1490157
+DEBUG    dvc:logger.py:31 [34mDebug[39m: SELECT count from state_info WHERE rowid=1
+DEBUG    dvc:logger.py:31 [34mDebug[39m: fetched: [(0,)]
+DEBUG    dvc:logger.py:31 [34mDebug[39m: UPDATE state_info SET count = 2 WHERE rowid = 1
+DEBUG    dvc:logger.py:31 [34mDebug[39m: Path /tmp/dvc-test.1.zer64dfy.f89c2a98-78dd-4ad1-8423-42b9c53eb446/.dvc/cache inode 1490206
+DEBUG    dvc:logger.py:31 [34mDebug[39m: INSERT OR REPLACE INTO state(inode, size, mtime, timestamp, md5) VALUES (1490206, "8197", "1788029811373058048", "1788029811376454144", "")
+INFO     dvc:logger.py:22 Saving information to 'foo.dvc'.
+INFO     dvc:logger.py:22 
+To track the changes with git run:
+
+	git add .gitignore foo.dvc
+=============================== warnings summary ===============================
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/google/cloud/storage/__init__.py:34
+  /opt/miniconda3/envs/testbed/lib/python3.8/site-packages/google/cloud/storage/__init__.py:34: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    from pkg_resources import get_distribution
+
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144
+  /opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('collective')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144
+  /opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('google')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144
+  /opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('google.cloud')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:2553
+  /opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:2553: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('google')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(parent)
+
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144
+  /opt/miniconda3/envs/testbed/lib/python3.8/site-packages/pkg_resources/__init__.py:3144: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('zc')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/google/cloud/iam.py:38
+  /opt/miniconda3/envs/testbed/lib/python3.8/site-packages/google/cloud/iam.py:38: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+    class Policy(collections.MutableMapping):
+
+../opt/miniconda3/envs/testbed/lib/python3.8/site-packages/botocore/vendored/requests/packages/urllib3/_collections.py:1
+  /opt/miniconda3/envs/testbed/lib/python3.8/site-packages/botocore/vendored/requests/packages/urllib3/_collections.py:1: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+    from collections import Mapping, MutableMapping
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_stage.py::TestDefaultWorkingDirectory::test_ignored_in_checksum
+1 failed, 12 passed, 12 warnings in 4.46s

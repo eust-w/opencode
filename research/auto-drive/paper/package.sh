@@ -14,5 +14,5 @@ install -m 0644 "$paper_dir/generated/results.tex" "$staging_dir/generated/resul
 install -m 0644 "$paper_dir/generated/task-manifest.tex" "$staging_dir/generated/task-manifest.tex"
 
 TZ=UTC find "$staging_dir" -exec touch -t 202608300000 {} +
-COPYFILE_DISABLE=1 tar -C "$staging_dir" -czf "$paper_dir/output/autodrive-arxiv-source.tar.gz" .
+COPYFILE_DISABLE=1 tar -C "$staging_dir" -cf - . | gzip -n > "$paper_dir/output/autodrive-arxiv-source.tar.gz"
 echo "Built output/autodrive-arxiv-source.tar.gz"

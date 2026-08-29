@@ -1,0 +1,9 @@
+230a290d1291999f592dd536cf11078687c06fef003c63eea87cdb638daa2db0  ./environment.json
+4930e982f568a6517ba3c6ae70c7c868be941879da008351c0585e88ecf13c40  ./raw/baseline-grader.log
+355e819e2c516728beca0dd97eb8e01551d140e8ae784b3ca96ee13000dfa8f8  ./raw/blind-attempt-2.jsonl
+9392f73b62a6967886c50a38d596cb2cdfc77765513807b52fc78105f637e48f  ./raw/blind-infrastructure-attempt.jsonl
+fc89d36d4d2e897c36814a55ae0ca4b09fb75de9c2ac23802c7afda598cf60d9  ./raw/oracle-attempt.jsonl
+76b8509a788d59a7581e94948b441f8aa24649913a96b3eeaba91d849bf7d0ba  ./raw/oracle-auth-preflight.jsonl
+055cdcccf3645809f944a46c316847bc527936a322360459bbef23732273ebde  ./raw/regex-attempt.jsonl
+ab346285eadd20c84f022f22ff2aeb726c0d0e5917f2346c503665a8374faacd  ./report.md
+a32a77e229a8e9ced1600d81f0ce7b185e7b7bcb1a6ec69ae1529ab2e2044e5b  ./runs.csv
