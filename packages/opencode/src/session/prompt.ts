@@ -1278,11 +1278,11 @@ const layer = Layer.effect(
               system,
               messages: [
                 ...modelMsgs,
-                ...(isLastStep ? [{ role: "assistant" as const, content: MAX_STEPS_PROMPT }] : []),
+                ...(isLastStep ? [{ role: "user" as const, content: MAX_STEPS_PROMPT }] : []),
               ],
-              tools,
+              tools: isLastStep ? {} : tools,
               model,
-              toolChoice: format.type === "json_schema" ? "required" : undefined,
+              toolChoice: isLastStep ? "none" : format.type === "json_schema" ? "required" : undefined,
             })
 
             if (structured !== undefined) {

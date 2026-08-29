@@ -628,6 +628,37 @@ it.instance("legacy prompt emits message events without session.next events", ()
   }),
 )
 
+it.instance("legacy final step uses a user directive and disables tools", () =>
+  Effect.gen(function* () {
+    const { llm } = yield* useServerConfig((url) => ({
+      ...providerCfg(url),
+      agent: { build: { steps: 1 } },
+    }))
+    const prompt = yield* SessionPrompt.Service
+    const sessions = yield* Session.Service
+    const chat = yield* sessions.create({ title: "Pinned" })
+    yield* prompt.prompt({
+      sessionID: chat.id,
+      agent: "build",
+      noReply: true,
+      parts: [{ type: "text", text: "finish at the limit" }],
+    })
+    yield* llm.text("work remains")
+
+    yield* prompt.loop({ sessionID: chat.id })
+
+    const [request] = yield* llm.inputs
+    const messages = request?.messages
+    expect(Array.isArray(messages)).toBe(true)
+    if (!Array.isArray(messages)) throw new Error("missing model messages")
+    expect(messages.at(-1)).toMatchObject({
+      role: "user",
+      content: expect.stringContaining("MAXIMUM STEPS REACHED"),
+    })
+    expect(request?.tools ?? []).toEqual([])
+  }),
+)
+
 it.instance("loop surfaces content-filter finishes as session errors", () =>
   Effect.gen(function* () {
     const { llm } = yield* useServerConfig(providerCfg)
