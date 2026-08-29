@@ -16,19 +16,20 @@ describe("gateway experiment transport", () => {
       parseGatewayCatalog({
         object: "list",
         data: [
-          { id: "qwen3.8-max" },
           { id: "deepseek-v4-pro" },
-          { id: "glm-5.3" },
+          { id: "qwen3.7-max" },
+          { id: "deepseek-v4-flash" },
+          { id: "qwen3.8-max" },
           { id: "qwen-max@latest" },
         ],
       }),
     ).toEqual({
-      primary: "qwen3.8-max",
-      replication: ["deepseek-v4-pro", "glm-5.3"],
+      primary: "deepseek-v4-pro",
+      replication: ["qwen3.7-max", "deepseek-v4-flash"],
       controller: "qwen3.8-max",
     })
 
-    expect(() => parseGatewayCatalog({ object: "list", data: [{ id: "qwen3.8-max" }] })).toThrow(
+    expect(() => parseGatewayCatalog({ object: "list", data: [{ id: "deepseek-v4-pro" }] })).toThrow(
       "missing frozen models",
     )
   })
@@ -54,8 +55,8 @@ describe("gateway experiment transport", () => {
       endpoint: "chat",
       body: {
         temperature: 0,
-        model: "qwen3.8-max",
-        max_tokens: 32_000,
+        model: "deepseek-v4-pro",
+        max_tokens: 4_096,
         messages: [{ content: "Fix the task", role: "user" }],
       },
     })
@@ -63,13 +64,13 @@ describe("gateway experiment transport", () => {
       sequence: 0,
       kind: "worker",
       provider: "d-robotics-gateway",
-      modelID: "qwen3.8-max",
-      modelVersion: "qwen3.8-max",
+      modelID: "deepseek-v4-pro",
+      modelVersion: "deepseek-v4-pro",
       temperature: 0,
-      maxOutputTokens: 32_000,
+      maxOutputTokens: 4_096,
     })
     expect(request.normalized).toBe(
-      '{"max_tokens":32000,"messages":[{"content":"Fix the task","role":"user"}],"model":"qwen3.8-max","temperature":0}',
+      '{"max_tokens":4096,"messages":[{"content":"Fix the task","role":"user"}],"model":"deepseek-v4-pro","temperature":0}',
     )
     expect(request.requestSHA256).toMatch(/^[a-f0-9]{64}$/)
     expect(() =>
@@ -88,14 +89,14 @@ describe("gateway experiment transport", () => {
       kind: "worker",
       endpoint: "chat",
       body: {
-        model: "qwen3.8-max",
+        model: "deepseek-v4-pro",
         messages: [{ content: "Fix the task", role: "user" }],
       },
     })
 
     expect(request.temperature).toBe(0)
     expect(request.normalized).toBe(
-      '{"max_tokens":32000,"messages":[{"content":"Fix the task","role":"user"}],"model":"qwen3.8-max","temperature":0}',
+      '{"max_tokens":4096,"messages":[{"content":"Fix the task","role":"user"}],"model":"deepseek-v4-pro","temperature":0}',
     )
   })
 
@@ -130,14 +131,14 @@ describe("gateway experiment transport", () => {
       endpoint: "responses",
       body: {
         input: [{ content: [{ text: "Fix the task", type: "input_text" }], role: "user" }],
-        max_output_tokens: 32_000,
-        model: "qwen3.8-max",
+        max_output_tokens: 4_096,
+        model: "deepseek-v4-pro",
         temperature: 0,
       },
     })
 
     expect(request.normalized).toBe(
-      '{"input":[{"content":[{"text":"Fix the task","type":"input_text"}],"role":"user"}],"max_output_tokens":32000,"model":"qwen3.8-max","temperature":0}',
+      '{"input":[{"content":[{"text":"Fix the task","type":"input_text"}],"role":"user"}],"max_output_tokens":4096,"model":"deepseek-v4-pro","temperature":0}',
     )
     expect(request.endpoint).toBe("responses")
   })
@@ -217,7 +218,7 @@ describe("gateway experiment transport", () => {
         receivedAuthorization = request.headers.get("authorization") ?? ""
         receivedBody = await request.text()
         return Response.json({
-          model: "qwen3.8-max",
+          model: "deepseek-v4-pro",
           choices: [{ finish_reason: "stop", message: { role: "assistant", content: "OK" } }],
           usage: { prompt_tokens: 4, completion_tokens: 1, total_tokens: 5 },
         })
@@ -232,8 +233,8 @@ describe("gateway experiment transport", () => {
           headers: { authorization: "Bearer task-key", "content-type": "application/json" },
           body: JSON.stringify({
             messages: [{ role: "user", content: "OK" }],
-            max_tokens: 32_000,
-            model: "qwen3.8-max",
+            max_tokens: 4_096,
+            model: "deepseek-v4-pro",
             temperature: 0,
           }),
         }),
@@ -250,19 +251,19 @@ describe("gateway experiment transport", () => {
         },
       )
       expect(response.status).toBe(200)
-      expect(await response.json()).toMatchObject({ model: "qwen3.8-max" })
+      expect(await response.json()).toMatchObject({ model: "deepseek-v4-pro" })
       expect(receivedAuthorization).toBe("Bearer host-key")
       expect(receivedBody).toBe(
-        '{"max_tokens":32000,"messages":[{"content":"OK","role":"user"}],"model":"qwen3.8-max","temperature":0}',
+        '{"max_tokens":4096,"messages":[{"content":"OK","role":"user"}],"model":"deepseek-v4-pro","temperature":0}',
       )
       expect(requests).toHaveLength(1)
-      expect(requests[0]).toMatchObject({ kind: "worker", sequence: 0, modelID: "qwen3.8-max" })
+      expect(requests[0]).toMatchObject({ kind: "worker", sequence: 0, modelID: "deepseek-v4-pro" })
       expect(responses).toEqual([
         {
           sequence: 0,
           status: 200,
           usageComplete: true,
-          modelVersion: "qwen3.8-max",
+          modelVersion: "deepseek-v4-pro",
           promptTokens: 4,
           completionTokens: 1,
         },

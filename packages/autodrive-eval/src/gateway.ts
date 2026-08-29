@@ -3,8 +3,8 @@ import { z } from "zod"
 import { serializeNormalizedRequest } from "./artifact"
 
 const gatewayModels = {
-  primary: "qwen3.8-max",
-  replication: ["deepseek-v4-pro", "glm-5.3"],
+  primary: "deepseek-v4-pro",
+  replication: ["qwen3.7-max", "deepseek-v4-flash"],
   controller: "qwen3.8-max",
 } as const
 
@@ -15,7 +15,7 @@ const Catalog = z.object({
 
 export function parseGatewayCatalog(input: unknown) {
   const ids = new Set(Catalog.parse(input).data.map((item) => item.id))
-  const required = [gatewayModels.primary, ...gatewayModels.replication]
+  const required = Array.from(new Set([gatewayModels.primary, ...gatewayModels.replication, gatewayModels.controller]))
   const missing = required.filter((model) => !ids.has(model))
   if (missing.length) throw new Error(`Gateway is missing frozen models: ${missing.join(", ")}`)
   return {
@@ -47,7 +47,7 @@ export function createGatewayRequest(input: {
   if (body.temperature !== undefined && body.temperature !== 0)
     throw new Error("Gateway requests must use temperature zero")
   const modelID = z.string().min(1).parse(body.model)
-  const maxOutputTokens = input.kind === "worker" ? 32_000 : 1_024
+  const maxOutputTokens = input.kind === "worker" ? 4_096 : 1_024
   const requestedMax = body.max_tokens ?? body.max_completion_tokens ?? body.max_output_tokens
   if (requestedMax !== undefined && requestedMax !== maxOutputTokens)
     throw new Error("Gateway request differs from the frozen output allowance")

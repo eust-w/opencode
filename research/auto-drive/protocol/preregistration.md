@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.9
+# AutoDrive Preregistration v1.10
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -53,6 +53,12 @@ The accepted v1.8 DVC canary verified that the normalized first and sixth worker
 Before the main matrix, a paid compatibility ablation replayed that exact sixth-turn input at temperature zero, low reasoning effort, no tools, and 4,096 maximum output tokens. `deepseek-v4-pro`, `qwen3.7-max`, and `deepseek-v4-flash` returned `response.completed`; `qwen3.8-max` again lacked a terminal event, GLM 5.2 returned `response.failed`, and GLM 5.3 and Kimi K3 returned HTTP 400. Exact first-turn tool probes then confirmed that each of the three completing candidates returned a valid `bash` function call with call ID and serialized arguments.
 
 Version 1.9 therefore uses `deepseek-v4-pro` as the 48-task primary worker, `qwen3.7-max` as a different-family twelve-task replication, and `deepseek-v4-flash` as a twelve-task scale/variant replication. The supervisor remains `qwen3.8-max` so worker-model comparisons keep one controller. Worker output is capped at the qualified 4,096 tokens. The second replication cannot be presented as independent family generalization. The 384-run structure, dataset, tasks, prompts, policies, statistics, and overall budget remain unchanged; all run IDs are regenerated.
+
+## Gateway output-normalization amendment (v1.10)
+
+The first v1.9 request failed its explicit normalized-body gate because the gateway proxy still materialized the historical 32,000-token worker allowance instead of the 4,096-token limit frozen by the compatibility amendment. The run was interrupted and excluded. Before teardown, DeepSeek completed all six worker responses with complete lower-bound usage of 19,145 input and 845 output tokens, and the executor produced the first held supervisor request at sequence 6. The controller was not released to a completed response, and no controller decision, grade, trajectory, boundary example, or ledger row was accepted.
+
+Version 1.10 changes only the gateway worker normalizer from 32,000 to 4,096 output tokens so it matches the already frozen protocol and model-request contract. The worker/controller model matrix, prompts, four policies, task selection, temperature, low reasoning effort, six-step segment limit, five-continuation limit, statistics, and budget remain unchanged. Because the charged v1.9 run ID is historical evidence, every deterministic run ID is regenerated and no v1.9 ID is reused.
 
 ## Claim boundary
 
