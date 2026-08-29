@@ -27,6 +27,15 @@ const preflight = {
           trajectoryCapacity: 1,
           probe: { path: "probes/google.json", sha256: "a".repeat(64) },
         },
+        {
+          model: "d-robotics/qwen3.8-max",
+          catalogModelID: "qwen3.8-max",
+          modelVersion: "qwen3.8-max",
+          credentialPresent: true,
+          billing: "paid",
+          trajectoryCapacity: 1,
+          probe: { path: "probes/controller.json", sha256: "c".repeat(64) },
+        },
       ],
       modelMetadata: metadata,
       runtime: {

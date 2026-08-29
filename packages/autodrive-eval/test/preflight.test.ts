@@ -20,6 +20,15 @@ const base = {
       trajectoryCapacity: 1,
       probe: { path: "probes/google.json", sha256: "a".repeat(64) },
     },
+    {
+      model: "d-robotics/qwen3.8-max",
+      catalogModelID: "qwen3.8-max",
+      modelVersion: "qwen3.8-max",
+      credentialPresent: true,
+      billing: "sponsored",
+      trajectoryCapacity: 1,
+      probe: { path: "probes/controller.json", sha256: "c".repeat(64) },
+    },
   ],
   modelMetadata: { path: "metadata/models.json", sha256: "b".repeat(64) },
   runtime: {
@@ -33,23 +42,23 @@ describe("experiment preflight gate", () => {
   test("requires fresh metered model capacity and isolated runtime flags", () => {
     expect(parsePreflight(base, { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") })).toMatchObject({
       scope: "canary",
-      models: [{ modelVersion: "deepseek-v4-pro" }],
+      models: [{ modelVersion: "deepseek-v4-pro" }, { modelVersion: "qwen3.8-max" }],
     })
     expect(() =>
       parsePreflight(
-        { ...base, models: [{ ...base.models[0], catalogModelID: undefined }] },
+        { ...base, models: [{ ...base.models[0], catalogModelID: undefined }, base.models[1]] },
         { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") },
       ),
     ).toThrow()
     expect(() =>
       parsePreflight(
-        { ...base, models: [{ ...base.models[0], billing: "free" }] },
+        { ...base, models: [{ ...base.models[0], billing: "free" }, base.models[1]] },
         { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") },
       ),
     ).toThrow("metered billing")
     expect(() =>
       parsePreflight(
-        { ...base, models: [{ ...base.models[0], trajectoryCapacity: 0 }] },
+        { ...base, models: [{ ...base.models[0], trajectoryCapacity: 0 }, base.models[1]] },
         { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") },
       ),
     ).toThrow("capacity")
@@ -72,6 +81,7 @@ describe("experiment preflight gate", () => {
           "deepseek-v4-pro": { id: "deepseek-v4-pro" },
           "qwen3.7-max": { id: "qwen3.7-max" },
           "deepseek-v4-flash": { id: "deepseek-v4-flash" },
+          "qwen3.8-max": { id: "qwen3.8-max" },
           other: {},
         },
       },
@@ -80,6 +90,7 @@ describe("experiment preflight gate", () => {
       "deepseek-v4-pro",
       "qwen3.7-max",
       "deepseek-v4-flash",
+      "qwen3.8-max",
     ])
     expect(result.resolutions).toContainEqual({
       model: "d-robotics/deepseek-v4-pro",
@@ -94,17 +105,23 @@ describe("experiment preflight gate", () => {
         mkdir(path.join(directory, "metadata"), { recursive: true }),
         mkdir(path.join(directory, "probes"), { recursive: true }),
       ])
-      const metadata = '{"d-robotics":{"models":{"deepseek-v4-pro":{"id":"deepseek-v4-pro"}}}}\n'
+      const metadata =
+        '{"d-robotics":{"models":{"deepseek-v4-pro":{"id":"deepseek-v4-pro"},"qwen3.8-max":{"id":"qwen3.8-max"}}}}\n'
       const probe = '{"billing":"sponsored","modelVersion":"deepseek-v4-pro","trajectoryCapacity":1}\n'
+      const controllerProbe = '{"billing":"sponsored","modelVersion":"qwen3.8-max","trajectoryCapacity":1}\n'
       const digest = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
       await Promise.all([
         Bun.write(path.join(directory, base.modelMetadata.path), metadata),
         Bun.write(path.join(directory, base.models[0].probe.path), probe),
+        Bun.write(path.join(directory, base.models[1].probe.path), controllerProbe),
       ])
       const receipt = {
         ...base,
         modelMetadata: { ...base.modelMetadata, sha256: digest(metadata) },
-        models: [{ ...base.models[0], probe: { ...base.models[0].probe, sha256: digest(probe) } }],
+        models: [
+          { ...base.models[0], probe: { ...base.models[0].probe, sha256: digest(probe) } },
+          { ...base.models[1], probe: { ...base.models[1].probe, sha256: digest(controllerProbe) } },
+        ],
       }
       const receiptPath = path.join(directory, "receipt.json")
       const content = JSON.stringify(receipt, null, 2) + "\n"
@@ -124,7 +141,10 @@ describe("experiment preflight gate", () => {
         receiptPath,
         JSON.stringify({
           ...receipt,
-          models: [{ ...receipt.models[0], probe: { ...receipt.models[0].probe, sha256: digest(freeProbe) } }],
+          models: [
+            { ...receipt.models[0], probe: { ...receipt.models[0].probe, sha256: digest(freeProbe) } },
+            receipt.models[1],
+          ],
         }),
       )
       await expect(

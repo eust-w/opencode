@@ -47,14 +47,22 @@ export function parsePreflight(input: unknown, options: { scope: PreflightScope;
     throw new Error("Preflight cannot be captured in the future")
   if (new Date(receipt.expiresAt).getTime() <= now.getTime()) throw new Error("Preflight receipt has expired")
 
-  const requirements: ReadonlyMap<string, number> =
+  const requiredModels: [string, number][] =
     options.scope === "canary"
-      ? new Map([[protocol.models.primary, 1]])
-      : new Map([
+      ? [
+          [protocol.models.primary, 1],
+          [protocol.models.controller, 1],
+        ]
+      : [
           [protocol.models.primary, 384],
           [protocol.models.replication[0], 48],
           [protocol.models.replication[1], 48],
-        ])
+          [protocol.models.controller, 384],
+        ]
+  const requirements = requiredModels.reduce(
+    (result, [model, capacity]) => result.set(model, Math.max(result.get(model) ?? 0, capacity)),
+    new Map<string, number>(),
+  )
   if (new Set(receipt.models.map((model) => model.model)).size !== receipt.models.length)
     throw new Error("Preflight contains duplicate models")
   if (receipt.models.length !== requirements.size || receipt.models.some((model) => !requirements.has(model.model)))
@@ -71,7 +79,9 @@ export function parsePreflight(input: unknown, options: { scope: PreflightScope;
 
 export function createModelMetadataSnapshot(input: unknown) {
   const source = z.record(z.string(), z.object({ models: z.record(z.string(), z.unknown()) }).loose()).parse(input)
-  const resolutions = [protocol.models.primary, ...protocol.models.replication].map((model) => {
+  const resolutions = Array.from(
+    new Set([protocol.models.primary, ...protocol.models.replication, protocol.models.controller]),
+  ).map((model) => {
     const separator = model.indexOf("/")
     const providerID = model.slice(0, separator)
     const modelID = model.slice(separator + 1)

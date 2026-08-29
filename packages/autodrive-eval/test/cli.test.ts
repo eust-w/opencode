@@ -32,6 +32,7 @@ describe("paid experiment CLI gates", () => {
               "deepseek-v4-pro": { id: "deepseek-v4-pro" },
               "qwen3.7-max": { id: "qwen3.7-max" },
               "deepseek-v4-flash": { id: "deepseek-v4-flash" },
+              "qwen3.8-max": { id: "qwen3.8-max" },
               other: {},
             },
           },
@@ -57,6 +58,7 @@ describe("paid experiment CLI gates", () => {
         "deepseek-v4-pro",
         "qwen3.7-max",
         "deepseek-v4-flash",
+        "qwen3.8-max",
       ])
       expect(await Bun.file(resolutions).json()).toContainEqual({
         model: "d-robotics/deepseek-v4-pro",
