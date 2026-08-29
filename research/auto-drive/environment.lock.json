@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-30T01:19:20+08:00",
+  "host": {
+    "os": "macOS 15.7.7 (24G720)",
+    "architecture": "arm64",
+    "bun": "1.4.0"
+  },
+  "containerRuntime": {
+    "dockerDesktop": "4.63.0",
+    "engine": "29.2.1",
+    "api": "1.53",
+    "serverOS": "linux",
+    "serverArchitecture": "arm64"
+  },
+  "repository": {
+    "remote": "https://github.com/anomalyco/opencode",
+    "branch": "auto-drive-engine",
+    "implementationCommit": null,
+    "freezeRule": "Set only after the implementation and evaluation harness commits are clean and verified."
+  },
+  "dataset": {
+    "repository": "https://github.com/SWE-EVO/SWE-EVO",
+    "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+    "arrowSHA256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
+  },
+  "latex": {
+    "image": null,
+    "digest": null,
+    "freezeRule": "Record an immutable TeX Live image digest before the first PDF build."
+  }
+}

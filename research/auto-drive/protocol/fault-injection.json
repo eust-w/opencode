@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "decision-before-admission-crash",
+      "invariant": "A persisted continue decision admits its deterministic input exactly once after recovery."
+    },
+    {
+      "id": "admission-before-promotion-crash",
+      "invariant": "An admitted pending input survives restart and is promoted once."
+    },
+    {
+      "id": "duplicate-wake",
+      "invariant": "Duplicate advisory wakes do not duplicate provider work or SessionInput rows."
+    },
+    {
+      "id": "user-preemption",
+      "invariant": "Real user steer and queue inputs precede automatic queue work and begin a new chain."
+    },
+    {
+      "id": "supervisor-timeout",
+      "invariant": "A 15-second supervisor timeout terminates and falls back to the deterministic heuristic."
+    },
+    {
+      "id": "supervisor-invalid-json",
+      "invariant": "Malformed supervisor output falls back without unsafe implicit continuation."
+    },
+    {
+      "id": "retryable-provider-error",
+      "invariant": "Provider retries are finite and remain visible in trace classification."
+    },
+    {
+      "id": "non-retryable-provider-error",
+      "invariant": "Non-retryable provider failures stop immediately and count as task failures."
+    },
+    {
+      "id": "maximum-continuations",
+      "invariant": "The persisted chain never admits continuation maxRuns + 1."
+    }
+  ],
+  "evidence": {
+    "core": [
+      "packages/core/test/session-auto-drive-controller.test.ts",
+      "packages/core/test/session-auto-drive.test.ts",
+      "packages/core/test/session-runner.test.ts"
+    ],
+    "server": ["packages/opencode/test/server/httpapi-session.test.ts"],
+    "browser": ["packages/app/e2e/regression/auto-drive-session.spec.ts"]
+  }
+}

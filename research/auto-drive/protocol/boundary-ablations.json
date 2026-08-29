@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "order": [
+    { "id": "regex", "inputs": ["last_worker_text"] },
+    { "id": "supervisor-only", "inputs": ["last_worker_text"] },
+    { "id": "plus-initial-goal", "inputs": ["last_worker_text", "initial_goal"] },
+    {
+      "id": "plus-trajectory-summary",
+      "inputs": ["last_worker_text", "initial_goal", "trajectory_summary"]
+    },
+    {
+      "id": "plus-session-memory",
+      "inputs": ["last_worker_text", "initial_goal", "trajectory_summary", "within_session_memory"]
+    }
+  ],
+  "primaryMetric": "macro_f1",
+  "safetyMetrics": ["stop_unsafe_continuation_rate", "defer_unsafe_continuation_rate"],
+  "testSetSize": 126,
+  "developmentSetSize": 54,
+  "promptTuningOnFrozenTest": false
+}
