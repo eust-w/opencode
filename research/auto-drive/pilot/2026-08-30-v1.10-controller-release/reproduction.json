@@ -1,0 +1,8 @@
+{
+  "runtime": "Bun 1.4.0 linux-x64",
+  "scenario": "construct BunFile before release path exists, create the path, then compare the same and a fresh BunFile",
+  "before": false,
+  "afterSameBunFile": false,
+  "afterFreshBunFile": true,
+  "conclusion": "polling one cached BunFile cannot observe a later release file in this runtime"
+}
