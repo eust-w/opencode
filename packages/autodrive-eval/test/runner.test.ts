@@ -43,4 +43,22 @@ describe("bounded experiment runner", () => {
     ).rejects.toThrow("model timeout")
     expect(calls).toBe(1)
   })
+
+  test("uses the isolated pilot budget policy for a canary", async () => {
+    const run = createRunPlan(parseManifest(manifest))[0]
+    const contexts: unknown[] = []
+    await expect(
+      executeRuns(
+        [run],
+        async (_input, _attempt, context) => {
+          contexts.push(context)
+          throw new Error("stop after observing the reserved budget")
+        },
+        {
+          budget: () => ({ category: "pilot", maxCostUSD: 50 }),
+        },
+      ),
+    ).rejects.toThrow("stop after observing the reserved budget")
+    expect(contexts).toEqual([{ category: "pilot", maxCostUSD: 50, remainingUSD: 750 }])
+  })
 })

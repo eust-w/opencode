@@ -26,6 +26,10 @@ export async function executeRuns(
   options: {
     readonly concurrency?: number
     readonly ledger?: readonly LedgerEntry[]
+    readonly budget?: (run: Run) => {
+      readonly category: BudgetCategory
+      readonly maxCostUSD: number
+    }
     readonly onRecord?: (record: Trajectory, entry: LedgerEntry) => Promise<void>
   } = {},
 ) {
@@ -40,8 +44,12 @@ export async function executeRuns(
       while (queue.length) {
         const run = queue.shift()
         if (!run) return
-        const category: BudgetCategory = run.model === protocol.models.primary ? "primary" : "cross-model"
-        const maxCostUSD = category === "primary" ? caps.primary / 288 : caps[category] / 96
+        const selected = options.budget?.(run)
+        const category: BudgetCategory =
+          selected?.category ?? (run.model === protocol.models.primary ? "primary" : "cross-model")
+        const maxCostUSD = selected?.maxCostUSD ?? (category === "primary" ? caps.primary / 288 : caps[category] / 96)
+        if (!Number.isFinite(maxCostUSD) || maxCostUSD <= 0)
+          throw new Error(`${run.id} has an invalid $${maxCostUSD} cost ceiling`)
         const reservation: LedgerEntry = { category, amountUSD: maxCostUSD }
         const budget = summarizeBudget([...ledger, ...reservations, reservation])
         reservations.push(reservation)
@@ -54,7 +62,10 @@ export async function executeRuns(
           throw new Error(`${run.id} cost $${record.costUSD} exceeds its preregistered $${maxCostUSD} ceiling`)
         ledger.push({ category, amountUSD: record.costUSD })
         summarizeBudget(ledger)
-        await options.onRecord?.(record, { category, amountUSD: record.costUSD })
+        await options.onRecord?.(record, {
+          category,
+          amountUSD: record.costUSD,
+        })
         records.push(record)
       }
     }),

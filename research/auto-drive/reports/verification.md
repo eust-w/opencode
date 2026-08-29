@@ -10,7 +10,8 @@ Branch: `auto-drive-engine`
 - Generated Client contracts: code generation produced no diff; 16 tests passed; `bun typecheck` passed.
 - App Session projection and settings controllers: 95 tests passed; app and E2E typechecks passed; the production Vite build passed.
 - Chromium regression: current layout, legacy layout, and `/autodrive <task>` all passed (3/3).
-- Evaluation package: 19 tests and 108 assertions passed; `bun typecheck` and formatting checks passed.
+- Evaluation package: 32 tests and 153 assertions passed; `bun typecheck` passed and targeted Oxlint completed with 0 errors and 18 pre-existing warnings.
+- Host-executor dry-run: one frozen run envelope was accepted at USD 0, four content-addressed artifacts were re-hashed, provider credentials were stripped from the child process, and neither the formal trajectory index nor formal ledger was created.
 - Protocol validation: 48 pinned SWE-EVO tasks, 384 planned trajectories, 0 completed, USD 0 spent, USD 800 remaining, and no indexed secret.
 - Paper: two 11-page PDFs passed text, font, metadata, and page-by-page visual inspection. The deterministic arXiv source archive compiled after clean extraction in a network-disabled, digest-locked TeX image.
 - `git diff --check` and a branch-diff secret-pattern scan passed. Client generation and all builds left the worktree clean.
@@ -19,7 +20,7 @@ The first Server run used Bun's default 5-second test timeout. Two multi-route r
 
 ## Open quality gate
 
-`bun audit` exits 1 with 237 repository-wide findings: 4 critical, 78 high, 125 moderate, and 30 low. Representative affected dependency families include Astro, `fast-xml-parser`, Seroval, `tar`, and Undici. These are existing monorepo resolutions outside the AutoDrive change boundary.
+`bun audit` still exits 1 with 237 repository-wide findings: 4 critical, 78 high, 125 moderate, and 30 low. Representative affected dependency families include Astro, `fast-xml-parser`, Seroval, `tar`, and Undici. These are existing monorepo resolutions outside the AutoDrive change boundary.
 
 The new `@opencode-ai/autodrive-eval` package references only existing catalog dependencies (`zod`, `@tsconfig/bun`, `@types/bun`, and `@typescript/native-preview`). Its lockfile diff adds the workspace package mapping and does not introduce a new third-party version resolution. Therefore, this work does not claim a clean dependency audit, and the artifact checklist keeps that gate open. Remediation should be a separately scoped dependency-upgrade effort because several advisories require coordinated major-version changes across unrelated workspaces.
 

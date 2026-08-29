@@ -27,8 +27,22 @@ if (command === "snapshot-models") await snapshotModels()
 if (command === "preflight") await checkPreflight()
 if (command === "validate") await validate()
 if (command === "analyze") await analyze()
+if (command === "verify-executor") await verifyExecutor()
+if (command === "canary") await canary()
 if (command === "run") await run()
-if (!new Set(["plan", "paper-protocol", "snapshot-models", "preflight", "validate", "analyze", "run"]).has(command))
+if (
+  !new Set([
+    "plan",
+    "paper-protocol",
+    "snapshot-models",
+    "preflight",
+    "validate",
+    "analyze",
+    "verify-executor",
+    "canary",
+    "run",
+  ]).has(command)
+)
   fail(`Unknown command: ${command}`)
 
 async function printPlan() {
@@ -83,7 +97,9 @@ async function checkPreflight() {
   if (!receipt) fail("--receipt PATH is required")
   const scope = PreflightScope.safeParse(option("scope") ?? "canary")
   if (!scope.success) fail("--scope must be canary or full")
-  const loaded = await loadPreflight(path.resolve(receipt), { scope: scope.data })
+  const loaded = await loadPreflight(path.resolve(receipt), {
+    scope: scope.data,
+  })
   console.log(
     JSON.stringify(
       {
@@ -111,6 +127,7 @@ async function validate() {
     "research/auto-drive/protocol/model-requests.json",
     "research/auto-drive/protocol/fault-injection.json",
     "research/auto-drive/annotations/guidelines.md",
+    "research/auto-drive/host-executor.md",
     "research/auto-drive/environment.lock.json",
   ]
   const missing = []
@@ -133,8 +150,16 @@ async function validate() {
     JSON.stringify(
       {
         status: records.length === 384 ? "complete" : "pending",
-        manifest: { tasks: manifest.tasks.length, commit: manifest.source.commit, sha256: manifest.source.sha256 },
-        plan: { trajectories: plan.length, completed: completed.size, remaining: plan.length - completed.size },
+        manifest: {
+          tasks: manifest.tasks.length,
+          commit: manifest.source.commit,
+          sha256: manifest.source.sha256,
+        },
+        plan: {
+          trajectories: plan.length,
+          completed: completed.size,
+          remaining: plan.length - completed.size,
+        },
         budget,
         secrets: "not detected in indexed artifacts",
       },
@@ -156,6 +181,103 @@ async function analyze() {
   await Bun.write(path.join(output, "summary.json"), JSON.stringify(analysis, null, 2) + "\n")
   await Bun.write(path.join(output, "runs.csv"), toCSV(records))
   console.log(JSON.stringify({ output, trajectories: records.length }))
+}
+
+async function verifyExecutor() {
+  const executorPath = option("executor")
+  if (!executorPath) fail("--executor PATH is required")
+  const artifactRoot = option("artifact-root")
+  if (!artifactRoot) fail("--artifact-root PATH is required")
+  const selected = selectOneRun()
+  const resolvedArtifactRoot = path.resolve(artifactRoot)
+  await mkdir(resolvedArtifactRoot, { recursive: true })
+  const record = await invokeExecutor(path.resolve(executorPath), selected, 1, {
+    context: { category: "pilot", maxCostUSD: 0, remainingUSD: 800 },
+    env: dryRunEnvironment(resolvedArtifactRoot),
+    timeoutMS: 30_000,
+  })
+  assertDryRunTrajectory(record, selected)
+  await verifyTrajectoryArtifacts(record, resolvedArtifactRoot)
+  console.log(
+    JSON.stringify({
+      status: "accepted",
+      mode: "dry-run",
+      runID: record.runID,
+      costUSD: record.costUSD,
+    }),
+  )
+}
+
+async function canary() {
+  if (!flag("execute")) fail("Paid canary execution is disabled; pass --execute after verify-executor succeeds")
+  const selected = selectOneRun()
+  if (selected.model !== protocol.models.primary) fail("Canary must use the frozen primary model")
+  const preflightPath = option("preflight")
+  if (!preflightPath) fail("--preflight PATH is required")
+  const artifactRoot = option("artifact-root")
+  if (!artifactRoot) fail("--artifact-root PATH is required")
+  const executorPath = option("executor")
+  if (!executorPath) fail("--executor PATH is required")
+  const resolvedArtifactRoot = path.resolve(artifactRoot)
+  const resolvedPreflightPath = path.resolve(preflightPath)
+  assertInside(resolvedArtifactRoot, resolvedPreflightPath, "Preflight receipt")
+  const preflight = await loadPreflight(resolvedPreflightPath, {
+    scope: "canary",
+  })
+  const resultsPath = path.join(resolvedArtifactRoot, "canary", "trajectories.jsonl")
+  const ledgerPath = path.join(resolvedArtifactRoot, "canary", "ledger.jsonl")
+  const existing = await readJSONL(resultsPath, parseTrajectory)
+  if (existing.length) fail("A paid canary result already exists for this artifact root")
+  const ledger = await readJSONL(ledgerPath, parseLedger)
+  const spent = summarizeBudget(ledger).categories.pilot
+  const maxCostUSD = 50 - spent
+  if (maxCostUSD <= 0) fail("Pilot budget is exhausted")
+  await Promise.all([
+    mkdir(path.dirname(resultsPath), { recursive: true }),
+    mkdir(path.dirname(ledgerPath), { recursive: true }),
+  ])
+  const records = await executeRuns(
+    [selected],
+    createExecutor(path.resolve(executorPath), {
+      artifactRoot: resolvedArtifactRoot,
+      preflight,
+      preflightPath: resolvedPreflightPath,
+    }),
+    {
+      concurrency: 1,
+      ledger,
+      budget: () => ({ category: "pilot", maxCostUSD }),
+      onRecord: async (record, entry) => {
+        const serialized = JSON.stringify(record)
+        assertSecretFree(serialized)
+        await appendFile(resultsPath, serialized + "\n", {
+          encoding: "utf8",
+          flag: "a",
+          mode: 0o600,
+        })
+        await appendFile(
+          ledgerPath,
+          JSON.stringify({
+            timestamp: record.endedAt,
+            runID: record.runID,
+            category: entry.category,
+            amountUSD: entry.amountUSD,
+            promptTokens: record.promptTokens,
+            completionTokens: record.completionTokens,
+          }) + "\n",
+          { encoding: "utf8", flag: "a", mode: 0o600 },
+        )
+      },
+    },
+  )
+  console.log(
+    JSON.stringify({
+      status: "accepted",
+      mode: "paid-canary",
+      runID: records[0].runID,
+      costUSD: records[0].costUSD,
+    }),
+  )
 }
 
 async function run() {
@@ -180,7 +302,9 @@ async function run() {
   const resolvedPreflightPath = path.resolve(preflightPath)
   const resolvedArtifactRoot = path.resolve(artifactRoot)
   assertInside(resolvedArtifactRoot, resolvedPreflightPath, "Preflight receipt")
-  const preflight = await loadPreflight(resolvedPreflightPath, { scope: "full" })
+  const preflight = await loadPreflight(resolvedPreflightPath, {
+    scope: "full",
+  })
   await mkdir(path.dirname(resultsPath), { recursive: true })
   await mkdir(path.dirname(ledgerPath), { recursive: true })
   const records = await executeRuns(
@@ -195,7 +319,11 @@ async function run() {
       onRecord: async (record, entry) => {
         const serialized = JSON.stringify(record)
         assertSecretFree(serialized)
-        await appendFile(resultsPath, serialized + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
+        await appendFile(resultsPath, serialized + "\n", {
+          encoding: "utf8",
+          flag: "a",
+          mode: 0o600,
+        })
         await appendFile(
           ledgerPath,
           JSON.stringify({
@@ -211,7 +339,12 @@ async function run() {
       },
     },
   )
-  console.log(JSON.stringify({ completed: records.length, remaining: 384 - completed.size - records.length }))
+  console.log(
+    JSON.stringify({
+      completed: records.length,
+      remaining: 384 - completed.size - records.length,
+    }),
+  )
 }
 
 function createExecutor(
@@ -223,10 +356,9 @@ function createExecutor(
   },
 ) {
   return async (run: Run, attempt: number, context: ExecutionContext) => {
-    const process = Bun.spawn([executable], {
-      stdin: "pipe",
-      stdout: "pipe",
-      stderr: "pipe",
+    const record = await invokeExecutor(executable, run, attempt, {
+      context,
+      timeoutMS: run.timeoutMinutes * 60_000,
       env: {
         ...Bun.env,
         AUTODRIVE_EVAL_ARTIFACT_ROOT: options.artifactRoot,
@@ -242,26 +374,110 @@ function createExecutor(
         ),
       },
     })
-    process.stdin.write(JSON.stringify({ run, attempt, budget: context }))
-    process.stdin.end()
-    const timeout = setTimeout(() => process.kill(), run.timeoutMinutes * 60_000)
-    const exitCode = await process.exited.finally(() => clearTimeout(timeout))
-    const stdout = await new Response(process.stdout).text()
-    const stderr = await new Response(process.stderr).text()
-    if (exitCode !== 0) {
-      if (exitCode === 75) throw new InfrastructureFailure(stderr.trim() || "executor infrastructure failure")
-      throw new Error(stderr.trim() || `executor exited ${exitCode}`)
-    }
-    assertSecretFree(stdout)
-    const record = parseTrajectory(JSON.parse(stdout))
     if (record.runID !== run.id || record.attempt !== attempt)
       throw new Error(`Executor returned mismatched provenance for ${run.id}`)
     const task = manifest.tasks.find((item) => item.instanceID === run.taskID)
     if (!task) throw new Error(`Frozen task is missing: ${run.taskID}`)
-    assertTrajectoryProvenance(record, { run, task, preflight: options.preflight })
+    assertTrajectoryProvenance(record, {
+      run,
+      task,
+      preflight: options.preflight,
+    })
     await verifyTrajectoryArtifacts(record, options.artifactRoot)
     return record
   }
+}
+
+async function invokeExecutor(
+  executable: string,
+  run: Run,
+  attempt: number,
+  options: {
+    context: ExecutionContext
+    env: Record<string, string | undefined>
+    timeoutMS: number
+  },
+) {
+  const process = Bun.spawn([executable], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "pipe",
+    env: options.env,
+  })
+  process.stdin.write(JSON.stringify({ run, attempt, budget: options.context }))
+  process.stdin.end()
+  const timeout = setTimeout(() => process.kill(), options.timeoutMS)
+  const exitCode = await process.exited.finally(() => clearTimeout(timeout))
+  const stdout = await new Response(process.stdout).text()
+  const stderr = await new Response(process.stderr).text()
+  assertSecretFree(stderr)
+  if (exitCode !== 0) {
+    if (exitCode === 75) throw new InfrastructureFailure(stderr.trim() || "executor infrastructure failure")
+    throw new Error(stderr.trim() || `executor exited ${exitCode}`)
+  }
+  assertSecretFree(stdout)
+  return parseTrajectory(JSON.parse(stdout))
+}
+
+function selectOneRun() {
+  const requested = values("run-id")
+  if (flag("all") || requested.length !== 1) fail("Select exactly one --run-id ID; --all is forbidden")
+  const selected = plan.find((run) => run.id === requested[0])
+  if (!selected) fail(`Run ID is outside the frozen plan: ${requested[0]}`)
+  return selected
+}
+
+function dryRunEnvironment(artifactRoot: string) {
+  return {
+    PATH: Bun.env.PATH,
+    LANG: Bun.env.LANG,
+    LC_ALL: Bun.env.LC_ALL,
+    TMPDIR: Bun.env.TMPDIR,
+    AUTODRIVE_EVAL_MODE: "dry-run",
+    AUTODRIVE_EVAL_ARTIFACT_ROOT: artifactRoot,
+    AUTODRIVE_EVAL_PROTOCOL: protocol.version,
+    OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: "1",
+    OPENCODE_DISABLE_EXTERNAL_SKILLS: "1",
+    OPENCODE_DISABLE_MODELS_FETCH: "1",
+  }
+}
+
+function assertDryRunTrajectory(record: Trajectory, run: Run) {
+  if (record.runID !== run.id || record.attempt !== 1)
+    throw new Error("Dry-run executor returned mismatched provenance")
+  if (
+    record.taskID !== run.taskID ||
+    record.model !== run.model ||
+    record.controllerModel !== run.controllerModel ||
+    record.strategy !== run.strategy ||
+    record.repeat !== run.repeat
+  )
+    throw new Error("Dry-run executor changed the frozen run configuration")
+  if (record.costUSD !== 0 || record.promptTokens !== 0 || record.completionTokens !== 0)
+    throw new Error("Dry-run executor must report zero provider usage")
+  if (record.status !== "failed" || record.failure !== "infrastructure")
+    throw new Error("Dry-run executor must use the non-empirical infrastructure outcome")
+  const task = manifest.tasks.find((item) => item.instanceID === run.taskID)
+  if (!task || record.environment.image !== task.image || record.environment.baseCommit !== task.baseCommit)
+    throw new Error("Dry-run executor changed the frozen task environment")
+  if (
+    record.modelRequests.some(
+      (request) =>
+        request.kind !== "worker" ||
+        request.provider !== run.model.slice(0, run.model.indexOf("/")) ||
+        request.modelID !== run.model.slice(run.model.indexOf("/") + 1) ||
+        request.modelVersion !== "dry-run-contract-v1",
+    )
+  )
+    throw new Error("Dry-run executor must use the synthetic worker request contract")
+  const references = [
+    ...record.modelRequests.map((request) => request.normalizedRequest.path),
+    record.environment.modelMetadata.path,
+    record.preflight.path,
+    record.trace.path,
+  ]
+  if (references.some((reference) => !reference.startsWith("dry-run/")))
+    throw new Error("Dry-run artifacts must stay under dry-run/")
 }
 
 function assertInside(root: string, target: string, label: string) {
@@ -286,7 +502,10 @@ function parseLedger(input: unknown): LedgerEntry {
   if (!new Set(["pilot", "primary", "cross-model", "boundary"]).has(String(entry.category)))
     throw new Error("Invalid ledger category")
   if (typeof entry.amountUSD !== "number") throw new Error("Invalid ledger amount")
-  return { category: entry.category as BudgetCategory, amountUSD: entry.amountUSD }
+  return {
+    category: entry.category as BudgetCategory,
+    amountUSD: entry.amountUSD,
+  }
 }
 
 function toCSV(records: readonly Trajectory[]) {

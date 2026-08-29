@@ -94,6 +94,10 @@ export function hashNormalizedRequest(input: unknown) {
   return createHash("sha256").update(normalizeRequest(input)).digest("hex")
 }
 
+export function serializeNormalizedRequest(input: unknown) {
+  return normalizeRequest(input)
+}
+
 export async function verifyTrajectoryArtifacts(trajectory: Trajectory, root: string) {
   await Promise.all([
     ...trajectory.modelRequests.map((request) => verifyNormalizedRequest(request, root)),

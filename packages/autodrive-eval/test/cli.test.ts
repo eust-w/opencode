@@ -26,8 +26,17 @@ describe("paid experiment CLI gates", () => {
       await Bun.write(
         source,
         JSON.stringify({
-          google: { id: "google", models: { "gemini-3.7-flash": { id: "gemini-3.7-flash" }, other: {} } },
-          anthropic: { id: "anthropic", models: { "claude-sonnet-4-6": { id: "claude-sonnet-4-6" } } },
+          google: {
+            id: "google",
+            models: {
+              "gemini-3.7-flash": { id: "gemini-3.7-flash" },
+              other: {},
+            },
+          },
+          anthropic: {
+            id: "anthropic",
+            models: { "claude-sonnet-4-6": { id: "claude-sonnet-4-6" } },
+          },
           openai: { id: "openai", models: { "gpt-5.4": { id: "gpt-5.4" } } },
         }),
       )
@@ -52,6 +61,79 @@ describe("paid experiment CLI gates", () => {
         model: "anthropic/claude-sonnet-4.6",
         catalogModelID: "claude-sonnet-4-6",
       })
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("rejects bulk selection for the paid canary", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-canary-"))
+    try {
+      const child = Bun.spawn(
+        [
+          Bun.which("bun")!,
+          "src/cli.ts",
+          "canary",
+          "--execute",
+          "--executor",
+          "/usr/bin/true",
+          "--preflight",
+          path.join(directory, "receipt.json"),
+          "--artifact-root",
+          directory,
+          "--all",
+        ],
+        { cwd: import.meta.dir + "/..", stdout: "pipe", stderr: "pipe" },
+      )
+      const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
+      expect(exitCode).toBe(1)
+      expect(stderr).toContain("exactly one --run-id")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("verifies the host executor contract without appending an experiment result", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-executor-"))
+    const run = createRunPlan(parseManifest(manifestInput))[0]
+    try {
+      const child = Bun.spawn(
+        [
+          Bun.which("bun")!,
+          "src/cli.ts",
+          "verify-executor",
+          "--executor",
+          path.resolve(import.meta.dir, "../scripts/dry-run-executor.ts"),
+          "--artifact-root",
+          directory,
+          "--run-id",
+          run.id,
+        ],
+        {
+          cwd: import.meta.dir + "/..",
+          stdout: "pipe",
+          stderr: "pipe",
+          env: {
+            ...Bun.env,
+            GOOGLE_GENERATIVE_AI_API_KEY: "must-not-reach-dry-run",
+          },
+        },
+      )
+      const [exitCode, stdout, stderr] = await Promise.all([
+        child.exited,
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+      ])
+      expect(exitCode, stderr).toBe(0)
+      expect(JSON.parse(stdout)).toMatchObject({
+        status: "accepted",
+        mode: "dry-run",
+        runID: run.id,
+        costUSD: 0,
+      })
+      expect(await Bun.file(path.join(directory, "dry-run", "raw", `${run.id}.jsonl`)).exists()).toBeTrue()
+      expect(await Bun.file(path.join(directory, "results", "trajectories.jsonl")).exists()).toBeFalse()
+      expect(await Bun.file(path.join(directory, "cost", "ledger.jsonl")).exists()).toBeFalse()
     } finally {
       await rm(directory, { recursive: true, force: true })
     }

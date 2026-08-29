@@ -12,6 +12,7 @@ This directory contains the preregistered evaluation and paper artifacts for **A
 | Boundary corpus                | pending human work   | No labels are fabricated; two independent annotators are required                                                                     |
 | Paid trajectories              | pilot gate failed    | Two charged preflight attempts are retained under `pilot/`; neither reached a normal boundary or satisfied accepted-result provenance |
 | Execution readiness            | blocked              | Artifact-integrity gates pass; billable Google, Anthropic, and OpenAI provider probes are unavailable                                 |
+| Host-executor contract         | dry-run verified     | Zero-cost contract mode validates request/trace hashes and isolation; no empirical record or cost row is written                      |
 | Statistical tables and figures | pending trajectories | Generated only from validated JSONL records                                                                                           |
 | Paper numbers                  | pending trajectories | LaTeX uses explicit `PENDING` markers                                                                                                 |
 
@@ -41,6 +42,8 @@ bun run analyze
 ```
 
 Paid execution is fail-closed. It requires `run-eval --execute --executor <host-executor> --preflight <receipt> --artifact-root <root>` plus either explicit `--run-id` values or `--all`. The executor runs on the host, receives a per-run maximum cost, and must keep provider credentials outside the task container. Exit code 75 is the only retryable infrastructure failure, and it is retried once.
+
+Before any paid call, validate the host-executor envelope with `verify-executor`. This mode strips provider credentials from the child environment, forces a zero-dollar pilot context, confines files to `dry-run/`, and never appends an experiment result. A paid `canary` requires a sealed canary preflight, exactly one primary-model run ID, and stores its result and ledger under the external artifact root's `canary/` directory rather than the official result index.
 
 ## Integrity and privacy
 

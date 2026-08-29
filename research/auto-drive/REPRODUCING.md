@@ -31,9 +31,25 @@ The evaluator sends one JSON object on stdin containing the immutable run specif
 
 Provider credentials stay in the host executor. The task container receives only repository files, task metadata, and test commands. The executor must record every worker/controller request in order, with the exact resolved model version, canonical request artifact and hash, image digest, code commit, model-metadata hash, preflight hash, and raw trace hash.
 
+Validate the process and artifact envelope without credentials or provider traffic:
+
+```bash
+cd packages/autodrive-eval
+bun run verify-executor -- --executor "$PWD/scripts/dry-run-executor.ts" --artifact-root /tmp/autodrive-executor-contract --run-id adr_790a41b7e674b65c6fa7
+```
+
+The expected status is `accepted` with `mode: dry-run` and `costUSD: 0`. The generated trajectory is deliberately marked as an infrastructure outcome with model version `dry-run-contract-v1`; it is not an experiment observation and is never appended to the formal result or cost files. See `research/auto-drive/host-executor.md` for the complete boundary.
+
 ## 4. Pilot and execute
 
-Run a non-primary pilot inside the USD 50 category before selecting any frozen task. Once isolation, trace completeness, grading, and billing agree, execute explicit run IDs. `--all` is supported but should be used only after the pilot and annotation freeze.
+Run a non-primary pilot inside the USD 50 category before selecting any frozen task. Once isolation, trace completeness, grading, and billing agree, execute exactly one paid canary against a sealed canary receipt:
+
+```bash
+cd packages/autodrive-eval
+bun run canary -- --execute --executor /absolute/path/to/host-executor --preflight /artifact-root/preflight/canary.json --artifact-root /artifact-root --run-id adr_...
+```
+
+The canary command rejects `--all`, requires the frozen primary model, uses the pilot budget category, and writes only under `/artifact-root/canary/`. After the canary is independently accepted and the annotation set is frozen, formal execution may use explicit run IDs. `--all` remains supported by the formal runner but should be used only after those gates.
 
 ```bash
 cd packages/autodrive-eval

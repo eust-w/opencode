@@ -22,8 +22,11 @@ Status: **BLOCKED before provider dispatch**
 | OpenAI credential            | No direct credential in the current environment or OpenCode auth store | Blocked |
 | Model metadata               | Required entries resolved and reduced to a 5,050-byte snapshot         | Passed  |
 | External discovery isolation | Forced by the host harness                                             | Passed  |
+| Host-executor dry-run        | Contract artifacts accepted at USD 0; formal outputs remained absent   | Passed  |
 | Paid six-step canary         | Not dispatched because credential/quota gates failed                   | Not run |
 
 The metadata snapshot SHA-256 is `103c8aa7b7f6544c5d6c6d4165b9b1cd3d40ecad7579625db2e9c624be2d15a7`. It resolves the frozen logical Anthropic name `anthropic/claude-sonnet-4.6` to the current catalog key `claude-sonnet-4-6` without silently changing the preregistered worker name.
 
-This directory intentionally contains no passing preflight receipt. A receipt may be created only after provider-specific paid probes record exact model versions and enough trajectory capacity. Until then, both the canary and the 384-run matrix remain disabled.
+The dry-run validates only the process, isolation, and artifact envelope. It uses the explicit synthetic version `dry-run-contract-v1` and is not trajectory or ablation evidence.
+
+This directory intentionally contains no passing paid preflight receipt. A receipt may be created only after provider-specific paid probes record exact model versions and enough trajectory capacity. Until then, both the paid canary and the 384-run matrix remain disabled.
