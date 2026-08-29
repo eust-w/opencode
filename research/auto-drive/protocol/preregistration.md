@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.10
+# AutoDrive Preregistration v1.11
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -59,6 +59,12 @@ Version 1.9 therefore uses `deepseek-v4-pro` as the 48-task primary worker, `qwe
 The first v1.9 request failed its explicit normalized-body gate because the gateway proxy still materialized the historical 32,000-token worker allowance instead of the 4,096-token limit frozen by the compatibility amendment. The run was interrupted and excluded. Before teardown, DeepSeek completed all six worker responses with complete lower-bound usage of 19,145 input and 845 output tokens, and the executor produced the first held supervisor request at sequence 6. The controller was not released to a completed response, and no controller decision, grade, trajectory, boundary example, or ledger row was accepted.
 
 Version 1.10 changes only the gateway worker normalizer from 32,000 to 4,096 output tokens so it matches the already frozen protocol and model-request contract. The worker/controller model matrix, prompts, four policies, task selection, temperature, low reasoning effort, six-step segment limit, five-continuation limit, statistics, and budget remain unchanged. Because the charged v1.9 run ID is historical evidence, every deterministic run ID is regenerated and no v1.9 ID is reused.
+
+## Controller-release amendment (v1.11)
+
+The first v1.10 request passed its normalized-body gate. DeepSeek completed six worker responses with complete usage of 20,286 input and 957 output tokens, the executor captured the first boundary, and the real supervisor request was held at sequence 6. Although the executor wrote `release-6` and the file was visible inside the proxy container, the controller was never sent upstream: Bun 1.4.0 cached the initially missing state on the single `BunFile` used by the polling loop, which timed out after 60 seconds. No controller response, decision, continuation, grade, trajectory, boundary example, or ledger row was accepted.
+
+A zero-provider-cost reproduction observed `false` before creation, `false` from the same `BunFile` after creation, and `true` from a fresh `BunFile`. Version 1.11 reconstructs the file handle on every release poll and adds a delayed-creation regression test. No policy logic, model, prompt, task, generation parameter, run limit, statistic, or budget changes. Because v1.10 worker calls were charged, every run ID is regenerated and no v1.10 ID is reused.
 
 ## Claim boundary
 

@@ -171,6 +171,14 @@ export function requireCompleteGatewayUsage(events: readonly unknown[]) {
   if (incomplete) throw new Error("Successful provider response has incomplete usage accounting")
 }
 
+export async function waitForControllerRelease(input: { path: string; timeoutMS: number; pollMS: number }) {
+  const deadline = Date.now() + input.timeoutMS
+  while (!(await Bun.file(input.path).exists())) {
+    if (Date.now() >= deadline) throw new Error("Controller release timed out")
+    await Bun.sleep(input.pollMS)
+  }
+}
+
 export async function proxyGatewayRequest(
   input: Request,
   options: {

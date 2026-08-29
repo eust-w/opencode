@@ -3,7 +3,7 @@
 import { appendFile, mkdir, stat } from "node:fs/promises"
 import path from "node:path"
 import { assertSecretFree } from "../src/artifact"
-import { proxyGatewayRequest, requireGatewayBudget } from "../src/gateway"
+import { proxyGatewayRequest, requireGatewayBudget, waitForControllerRelease } from "../src/gateway"
 
 const keyFile = requireAbsolute("AUTODRIVE_GATEWAY_KEY_FILE")
 const artifactRoot = requireAbsolute("AUTODRIVE_EVAL_ARTIFACT_ROOT")
@@ -66,12 +66,11 @@ Bun.serve({
         beforeUpstream: async (request) => {
           if (request.kind !== "controller" || Bun.env.AUTODRIVE_GATEWAY_HOLD_CONTROLLERS !== "1") return
           await writeTrace({ type: "controller-held", sequence: request.sequence })
-          const release = Bun.file(path.join(runRoot, "control", `release-${request.sequence}`))
-          const deadline = Date.now() + 60_000
-          while (!(await release.exists())) {
-            if (Date.now() >= deadline) throw new Error("Controller release timed out")
-            await Bun.sleep(100)
-          }
+          await waitForControllerRelease({
+            path: path.join(runRoot, "control", `release-${request.sequence}`),
+            timeoutMS: 60_000,
+            pollMS: 100,
+          })
           await writeTrace({ type: "controller-released", sequence: request.sequence })
         },
         onRawResponse: async (response) => {

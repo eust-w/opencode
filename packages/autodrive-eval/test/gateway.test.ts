@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test"
+import { mkdtemp, rm } from "node:fs/promises"
+import os from "node:os"
+import path from "node:path"
 import {
   createGatewayRequest,
   gatewayHeaders,
@@ -11,6 +14,21 @@ import {
 } from "../src/gateway"
 
 describe("gateway experiment transport", () => {
+  test("observes a controller release created after polling starts", async () => {
+    const gateway: Record<string, unknown> = await import("../src/gateway")
+    expect(gateway.waitForControllerRelease).toBeFunction()
+    if (typeof gateway.waitForControllerRelease !== "function") return
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-controller-release-"))
+    try {
+      const release = path.join(directory, "release-6")
+      setTimeout(() => void Bun.write(release, "released\n"), 20)
+      await gateway.waitForControllerRelease({ path: release, timeoutMS: 1_000, pollMS: 5 })
+      expect(await Bun.file(release).text()).toBe("released\n")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   test("freezes only exact versioned model IDs present in the gateway catalog", () => {
     expect(
       parseGatewayCatalog({
