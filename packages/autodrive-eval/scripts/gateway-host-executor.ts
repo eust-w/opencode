@@ -60,8 +60,6 @@ await Promise.all([
   mkdir(patchRoot, { recursive: true }),
   mkdir(controlRoot, { recursive: true }),
 ])
-await Bun.write(path.join(configRoot, "opencode.json"), JSON.stringify(createConfig(), null, 2) + "\n")
-await Bun.write(path.join(configRoot, "models.json"), await Bun.file(modelMetadataPath).text())
 await trace({ type: "executor-started", runID: input.run.id, attempt: input.attempt, taskID: task.instanceID })
 
 let proxyStarted = false
@@ -69,6 +67,8 @@ let taskStarted = false
 let networkCreated = false
 
 try {
+  await Bun.write(path.join(configRoot, "opencode.json"), JSON.stringify(createConfig(), null, 2) + "\n")
+  await Bun.write(path.join(configRoot, "models.json"), await Bun.file(modelMetadataPath).text())
   await command(["docker", "pull", task.image], { timeoutMS: 20 * 60_000 })
   const imageDigest = await inspectImageDigest()
   await command(["docker", "network", "create", "--internal", networkName])
@@ -162,6 +162,8 @@ try {
     "XDG_DATA_HOME=/autodrive-state/data",
     "--env",
     "XDG_CACHE_HOME=/autodrive-state/cache",
+    "--env",
+    "XDG_CONFIG_HOME=/autodrive-state/config",
     "--env",
     "XDG_STATE_HOME=/autodrive-state/state",
     "--workdir",
