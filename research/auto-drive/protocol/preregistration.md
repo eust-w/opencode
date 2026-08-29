@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.7
+# AutoDrive Preregistration v1.8
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -39,6 +39,12 @@ Version 1.6 implements the preregistered rule that provider errors count as task
 The accepted v1.6 DVC canary is retained as a negative pilot trajectory. Five tool-bearing worker responses completed, but the sixth forced tool-free response exhausted the gateway stream in reasoning deltas without a terminal response or usage. The executor correctly recorded a `retryable-provider` task failure, an empty patch, zero Fix Rate, observed-token lower bounds, and settled cost. It never reached an AutoDrive controller boundary, so it is not evidence for or against a continuation policy and is excluded from treatment-effect estimates.
 
 Before launching the main matrix, bounded direct Responses probes showed that the same gateway model completed the tool-free request when the standard OpenAI reasoning effort was explicitly set to `low`. Version 1.7 therefore pins `reasoningEffort=low` on every worker request while leaving the controller request unchanged. The normalized gateway body must contain `reasoning: {"effort":"low"}` before a v1.7 paid canary may continue. This is a new protocol and not a same-configuration rerun of the v1.6 failure. Dataset, prompts, four policies, task selection, sampling temperature, output limits, statistics, and budget are unchanged; all 384 run IDs are regenerated.
+
+## V2 request-routing amendment (v1.8)
+
+The v1.7 compatibility canary failed its explicit first-request gate: the normalized worker body did not contain `reasoning`. The host was interrupted and the run is excluded. Process teardown allowed the already-running worker to finish five complete tool responses and issue a sixth request before its containers were removed; all six normalized requests omitted the field, the captured patch was empty, complete observed usage was 23,976 input and 1,088 output tokens, and the metered spend delta was USD 0.1617816. No controller boundary, trajectory, grade, or ledger row was accepted.
+
+Root-cause inspection showed that the V2 native runner materializes model-level request bodies, while v1.7 placed the option in the agent-level request body. Version 1.8 moves the exact standard OpenAI body `reasoning: {"effort":"low"}` to the worker model request and leaves the controller model body empty. A first-request normalized-body check remains mandatory. Because the v1.7 ID was charged, version 1.8 regenerates all run IDs rather than reusing it. Experimental outcomes, dataset, prompts, policies, limits, statistics, and budget remain unchanged.
 
 ## Claim boundary
 

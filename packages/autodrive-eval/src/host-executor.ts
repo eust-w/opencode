@@ -51,18 +51,26 @@ export function buildExperimentConfig(input: {
       experiment: {
         mode: "primary",
         steps: input.segmentSteps,
-        request: { body: { temperature: input.temperature, reasoningEffort: "low" } },
+        request: { body: { temperature: input.temperature } },
         permissions: permissions(),
       },
     },
     providers: {
-      openai: provider("http://autodrive-proxy:8080/worker/v1", input.workerModel, true, 32_000, "@ai-sdk/openai"),
+      openai: provider(
+        "http://autodrive-proxy:8080/worker/v1",
+        input.workerModel,
+        true,
+        32_000,
+        "@ai-sdk/openai",
+        { reasoning: { effort: "low" } },
+      ),
       "autodrive-controller": provider(
         "http://autodrive-proxy:8080/controller/v1",
         input.controllerModel,
         false,
         1_024,
         "@ai-sdk/openai-compatible",
+        {},
       ),
     },
   }
@@ -90,13 +98,14 @@ function permissions() {
   ]
 }
 
-function provider(url: string, model: string, tools: boolean, output: number, pkg: string) {
+function provider(url: string, model: string, tools: boolean, output: number, pkg: string, body: object) {
   return {
     api: { type: "aisdk", package: pkg, url },
     request: { body: { apiKey: "proxy-only-no-secret" } },
     models: {
       [model]: {
         api: { id: model },
+        request: { body },
         capabilities: { tools, input: ["text"], output: ["text"] },
         limit: { context: 131_072, output },
       },

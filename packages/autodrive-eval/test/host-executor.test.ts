@@ -34,9 +34,9 @@ describe("SWE-EVO host executor", () => {
     })
 
     expect(config.model).toBe("openai/qwen3.8-max")
-    expect(config.agents.experiment.request.body).toEqual({
-      temperature: 0,
-      reasoningEffort: "low",
+    expect(config.agents.experiment.request.body).toEqual({ temperature: 0 })
+    expect(config.providers.openai.models["qwen3.8-max"].request.body).toEqual({
+      reasoning: { effort: "low" },
     })
     expect(config.providers.openai.api.package).toBe("@ai-sdk/openai")
     expect(config.providers.openai.api.url).toBe("http://autodrive-proxy:8080/worker/v1")

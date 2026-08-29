@@ -4,7 +4,7 @@ import { createRunPlan, parseManifest, protocol } from "../src/protocol"
 
 describe("frozen AutoDrive protocol", () => {
   test("records all pre-execution protocol amendments", async () => {
-    expect(protocol.version).toBe("auto-drive-swe-evo-v1.7")
+    expect(protocol.version).toBe("auto-drive-swe-evo-v1.8")
     expect(protocol.models.primary).toBe("d-robotics/qwen3.8-max")
     expect(protocol.models.replication).toEqual(["d-robotics/deepseek-v4-pro", "d-robotics/glm-5.3"])
     expect(protocol.models.controller).toBe("d-robotics/qwen3.8-max")
@@ -27,6 +27,9 @@ describe("frozen AutoDrive protocol", () => {
     expect(
       await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
     ).toContain("Worker reasoning amendment")
+    expect(
+      await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
+    ).toContain("V2 request-routing amendment")
   })
 
   test("pins all 48 unique SWE-EVO tasks from seven repositories", () => {
