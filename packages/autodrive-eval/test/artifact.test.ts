@@ -1,8 +1,17 @@
 import { describe, expect, test } from "bun:test"
-import { analyzeTrajectories, assertSecretFree, parseTrajectory } from "../src/artifact"
+import { mkdir, mkdtemp, rm } from "node:fs/promises"
+import os from "node:os"
+import path from "node:path"
+import {
+  analyzeTrajectories,
+  assertSecretFree,
+  hashNormalizedRequest,
+  parseTrajectory,
+  verifyTrajectoryArtifacts,
+} from "../src/artifact"
 
 const base = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   runID: "adr_0123456789abcdefabcd",
   taskID: "task-1",
   model: "opencode/gemini-3.7-flash",
@@ -26,19 +35,35 @@ const base = {
   latencyMS: 60_000,
   recoverySucceeded: true,
   unsafeContinuationCount: 0,
-  modelRequest: {
-    provider: "opencode",
-    modelID: "gemini-3.7-flash",
-    modelVersion: "gemini-3.7-flash-2026-08-01",
-    requestSHA256: "a".repeat(64),
-    temperature: 0,
-    maxOutputTokens: 16_384,
-  },
+  modelRequests: [
+    {
+      sequence: 0,
+      kind: "worker",
+      provider: "opencode",
+      modelID: "gemini-3.7-flash",
+      modelVersion: "gemini-3.7-flash-2026-08-01",
+      requestSHA256: "a".repeat(64),
+      normalizedRequest: {
+        path: "requests/adr_0123456789abcdefabcd-000.json",
+        sha256: "a".repeat(64),
+      },
+      temperature: 0,
+      maxOutputTokens: 16_384,
+    },
+  ],
   environment: {
     image: "example/image",
     imageDigest: `sha256:${"b".repeat(64)}`,
     baseCommit: "c".repeat(40),
     opencodeCommit: "d".repeat(40),
+    modelMetadata: {
+      path: "metadata/models.json",
+      sha256: "f".repeat(64),
+    },
+  },
+  preflight: {
+    path: "preflight/paid-canary.json",
+    sha256: "0".repeat(64),
   },
   trace: {
     path: "raw/adr_0123456789abcdefabcd.jsonl",
@@ -48,9 +73,40 @@ const base = {
 
 describe("trajectory artifact contract", () => {
   test("requires exact model, request, container and trace provenance", () => {
-    expect(parseTrajectory(base)).toMatchObject({ resolved: true, modelRequest: { temperature: 0 } })
-    expect(() => parseTrajectory({ ...base, modelRequest: { ...base.modelRequest, modelVersion: "" } })).toThrow()
+    expect(parseTrajectory(base)).toMatchObject({ resolved: true, modelRequests: [{ temperature: 0 }] })
+    expect(() =>
+      parseTrajectory({
+        ...base,
+        modelRequests: [{ ...base.modelRequests[0], modelVersion: "" }],
+      }),
+    ).toThrow()
+    expect(() =>
+      parseTrajectory({
+        ...base,
+        modelRequests: [{ ...base.modelRequests[0], normalizedRequest: undefined }],
+      }),
+    ).toThrow()
+    expect(() =>
+      parseTrajectory({
+        ...base,
+        modelRequests: [
+          {
+            ...base.modelRequests[0],
+            normalizedRequest: { ...base.modelRequests[0].normalizedRequest, sha256: "1".repeat(64) },
+          },
+        ],
+      }),
+    ).toThrow("Normalized request hash must match")
+    expect(() =>
+      parseTrajectory({
+        ...base,
+        modelRequests: [base.modelRequests[0], { ...base.modelRequests[0] }],
+      }),
+    ).toThrow("contiguous")
     expect(() => parseTrajectory({ ...base, environment: { ...base.environment, imageDigest: "latest" } })).toThrow()
+    expect(() => parseTrajectory({ ...base, environment: { ...base.environment, modelMetadata: undefined } })).toThrow()
+    expect(() => parseTrajectory({ ...base, preflight: undefined })).toThrow()
+    expect(() => parseTrajectory({ ...base, trace: { ...base.trace, path: "../../outside.jsonl" } })).toThrow()
   })
 
   test("blocks common provider secrets from artifact output", () => {
@@ -61,6 +117,57 @@ describe("trajectory artifact contract", () => {
     expect(() =>
       assertSecretFree(JSON.stringify({ key: ["AI", "zaSyabcdefghijklmnopqrstuvwxyz123456"].join("") })),
     ).toThrow("possible secret")
+  })
+
+  test("normalizes request JSON before hashing", () => {
+    expect(hashNormalizedRequest({ b: 2, a: { d: 4, c: 3 } })).toBe(hashNormalizedRequest({ a: { c: 3, d: 4 }, b: 2 }))
+    expect(() => hashNormalizedRequest({ unsupported: undefined })).toThrow("JSON-compatible")
+  })
+
+  test("recomputes every referenced artifact before accepting a trajectory", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-artifact-"))
+    try {
+      const files = {
+        request: '{"messages":[],"temperature":0}',
+        metadata: '{"google":{"models":{}}}\n',
+        preflight: '{"protocol":"auto-drive-swe-evo-v1.2"}\n',
+        trace: '{"type":"step-finish"}\n',
+      }
+      await Promise.all([
+        mkdir(path.join(directory, "requests"), { recursive: true }),
+        mkdir(path.join(directory, "metadata"), { recursive: true }),
+        mkdir(path.join(directory, "preflight"), { recursive: true }),
+        mkdir(path.join(directory, "raw"), { recursive: true }),
+      ])
+      await Promise.all([
+        Bun.write(path.join(directory, base.modelRequests[0].normalizedRequest.path), files.request),
+        Bun.write(path.join(directory, base.environment.modelMetadata.path), files.metadata),
+        Bun.write(path.join(directory, base.preflight.path), files.preflight),
+        Bun.write(path.join(directory, base.trace.path), files.trace),
+      ])
+      const digest = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
+      const record = parseTrajectory({
+        ...base,
+        modelRequests: [
+          {
+            ...base.modelRequests[0],
+            requestSHA256: digest(files.request),
+            normalizedRequest: { ...base.modelRequests[0].normalizedRequest, sha256: digest(files.request) },
+          },
+        ],
+        environment: {
+          ...base.environment,
+          modelMetadata: { ...base.environment.modelMetadata, sha256: digest(files.metadata) },
+        },
+        preflight: { ...base.preflight, sha256: digest(files.preflight) },
+        trace: { ...base.trace, sha256: digest(files.trace) },
+      })
+      await expect(verifyTrajectoryArtifacts(record, directory)).resolves.toBeUndefined()
+      await Bun.write(path.join(directory, record.trace.path), '{"type":"tampered"}\n')
+      await expect(verifyTrajectoryArtifacts(record, directory)).rejects.toThrow("Trace artifact hash mismatch")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
   })
 
   test("derives off-policy prefixes without adding runs", () => {

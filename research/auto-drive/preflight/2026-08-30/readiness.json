@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "protocol": "auto-drive-swe-evo-v1.2",
+  "capturedAt": "2026-08-29T19:22:47Z",
+  "status": "blocked",
+  "credentials": {
+    "environment": {
+      "GOOGLE_GENERATIVE_AI_API_KEY": "absent",
+      "ANTHROPIC_API_KEY": "absent",
+      "OPENAI_API_KEY": "absent",
+      "OPENCODE_API_KEY": "absent"
+    },
+    "opencodeAuthProviders": ["digua", "openrouter", "zai-coding-plan"]
+  },
+  "quotaEvidence": {
+    "google": {
+      "status": "blocked",
+      "tier": "free",
+      "metric": "generate_content_free_tier_requests",
+      "limit": 20,
+      "evidence": "../../pilot/2026-08-30-dvc030/raw/regex-attempt.jsonl",
+      "sha256": "055cdcccf3645809f944a46c316847bc527936a322360459bbef23732273ebde"
+    },
+    "anthropic": { "status": "blocked", "reason": "credential-absent" },
+    "openai": { "status": "blocked", "reason": "credential-absent" }
+  },
+  "modelMetadata": {
+    "sourceSHA256": "9ca3ed4906662a880824d91ff805cbd2809f490d0073ba2ce5a6ebcb5287d94b",
+    "snapshot": "metadata/models.json",
+    "snapshotSHA256": "103c8aa7b7f6544c5d6c6d4165b9b1cd3d40ecad7579625db2e9c624be2d15a7",
+    "resolutions": "metadata/resolutions.json",
+    "resolutionsSHA256": "e67520e6884e99b34b09e54a3f819b037d077facc9eec435ee535f8b065d1e70"
+  },
+  "gates": {
+    "normalizedRequestManifest": "implemented",
+    "artifactHashRecomputation": "implemented",
+    "externalSkillDiscoveryDisabled": "implemented",
+    "modelsFetchDisabled": "implemented",
+    "paidGoogleProbe": "blocked",
+    "anthropicProbe": "blocked",
+    "openaiProbe": "blocked",
+    "sixStepCanary": "not-run"
+  }
+}

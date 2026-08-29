@@ -9,6 +9,8 @@
     "typecheck": "tsgo --noEmit",
     "plan": "bun src/cli.ts plan",
     "paper:protocol": "bun src/cli.ts paper-protocol",
+    "snapshot-models": "bun src/cli.ts snapshot-models",
+    "preflight": "bun src/cli.ts preflight",
     "validate": "bun src/cli.ts validate",
     "analyze": "bun src/cli.ts analyze",
     "run-eval": "bun src/cli.ts run"

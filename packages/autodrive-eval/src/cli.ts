@@ -1,9 +1,17 @@
 import { appendFile, mkdir } from "node:fs/promises"
 import path from "node:path"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
-import { analyzeTrajectories, assertSecretFree, parseTrajectory, type Trajectory } from "./artifact"
+import { assertTrajectoryProvenance } from "./acceptance"
+import {
+  analyzeTrajectories,
+  assertSecretFree,
+  parseTrajectory,
+  verifyTrajectoryArtifacts,
+  type Trajectory,
+} from "./artifact"
 import { summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
 import { renderTaskManifest } from "./paper"
+import { createModelMetadataSnapshot, loadPreflight, PreflightScope } from "./preflight"
 import { createRunPlan, parseManifest, protocol, type Run } from "./protocol"
 import { executeRuns, InfrastructureFailure, type ExecutionContext } from "./runner"
 
@@ -15,15 +23,21 @@ const args = Bun.argv.slice(3)
 
 if (command === "plan") await printPlan()
 if (command === "paper-protocol") await paperProtocol()
+if (command === "snapshot-models") await snapshotModels()
+if (command === "preflight") await checkPreflight()
 if (command === "validate") await validate()
 if (command === "analyze") await analyze()
 if (command === "run") await run()
-if (!new Set(["plan", "paper-protocol", "validate", "analyze", "run"]).has(command)) fail(`Unknown command: ${command}`)
+if (!new Set(["plan", "paper-protocol", "snapshot-models", "preflight", "validate", "analyze", "run"]).has(command))
+  fail(`Unknown command: ${command}`)
 
 async function printPlan() {
   const content = plan.map((run) => JSON.stringify(run)).join("\n") + "\n"
   const output = option("output")
-  if (!output) return process.stdout.write(content)
+  if (!output) {
+    process.stdout.write(content)
+    return
+  }
   await mkdir(path.dirname(path.resolve(output)), { recursive: true })
   await Bun.write(path.resolve(output), content)
   console.log(JSON.stringify({ output: path.resolve(output), trajectories: plan.length }))
@@ -36,6 +50,58 @@ async function paperProtocol() {
   await mkdir(path.dirname(output), { recursive: true })
   await Bun.write(output, renderTaskManifest(manifest.tasks))
   console.log(JSON.stringify({ output, tasks: manifest.tasks.length }))
+}
+
+async function snapshotModels() {
+  const source = option("source")
+  const output = option("output")
+  const resolutions = option("resolutions")
+  if (!source || !output || !resolutions) fail("--source, --output and --resolutions are required")
+  const content = await Bun.file(path.resolve(source)).text()
+  assertSecretFree(content)
+  const snapshot = createModelMetadataSnapshot(JSON.parse(content))
+  await Promise.all([
+    mkdir(path.dirname(path.resolve(output)), { recursive: true }),
+    mkdir(path.dirname(path.resolve(resolutions)), { recursive: true }),
+  ])
+  const serialized = JSON.stringify(snapshot.providers, null, 2) + "\n"
+  await Promise.all([
+    Bun.write(path.resolve(output), serialized),
+    Bun.write(path.resolve(resolutions), JSON.stringify(snapshot.resolutions, null, 2) + "\n"),
+  ])
+  console.log(
+    JSON.stringify({
+      output: path.resolve(output),
+      sha256: new Bun.CryptoHasher("sha256").update(serialized).digest("hex"),
+      resolutions: path.resolve(resolutions),
+    }),
+  )
+}
+
+async function checkPreflight() {
+  const receipt = option("receipt")
+  if (!receipt) fail("--receipt PATH is required")
+  const scope = PreflightScope.safeParse(option("scope") ?? "canary")
+  if (!scope.success) fail("--scope must be canary or full")
+  const loaded = await loadPreflight(path.resolve(receipt), { scope: scope.data })
+  console.log(
+    JSON.stringify(
+      {
+        status: "ready",
+        scope: loaded.receipt.scope,
+        expiresAt: loaded.receipt.expiresAt,
+        models: loaded.receipt.models.map((model) => ({
+          model: model.model,
+          modelVersion: model.modelVersion,
+          trajectoryCapacity: model.trajectoryCapacity,
+        })),
+        modelMetadataSHA256: loaded.receipt.modelMetadata.sha256,
+        receiptSHA256: loaded.sha256,
+      },
+      null,
+      2,
+    ),
+  )
 }
 
 async function validate() {
@@ -94,6 +160,10 @@ async function analyze() {
 
 async function run() {
   if (!flag("execute")) fail("Paid execution is disabled; pass --execute after validating the executor and pilot")
+  const preflightPath = option("preflight")
+  if (!preflightPath) fail("--preflight PATH is required")
+  const artifactRoot = option("artifact-root")
+  if (!artifactRoot) fail("--artifact-root PATH is required")
   const executorPath = option("executor")
   if (!executorPath) fail("--executor PATH is required")
   const requested = values("run-id")
@@ -107,38 +177,70 @@ async function run() {
   const selected = plan.filter((run) => !completed.has(run.id) && (!requested.length || requested.includes(run.id)))
   if (!selected.length) fail("No pending frozen runs match the selection")
   const ledger = await readJSONL(ledgerPath, parseLedger)
+  const resolvedPreflightPath = path.resolve(preflightPath)
+  const resolvedArtifactRoot = path.resolve(artifactRoot)
+  assertInside(resolvedArtifactRoot, resolvedPreflightPath, "Preflight receipt")
+  const preflight = await loadPreflight(resolvedPreflightPath, { scope: "full" })
   await mkdir(path.dirname(resultsPath), { recursive: true })
   await mkdir(path.dirname(ledgerPath), { recursive: true })
-  const records = await executeRuns(selected, createExecutor(path.resolve(executorPath)), {
-    ledger,
-    onRecord: async (record, entry) => {
-      const serialized = JSON.stringify(record)
-      assertSecretFree(serialized)
-      await appendFile(resultsPath, serialized + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
-      await appendFile(
-        ledgerPath,
-        JSON.stringify({
-          timestamp: record.endedAt,
-          runID: record.runID,
-          category: entry.category,
-          amountUSD: entry.amountUSD,
-          promptTokens: record.promptTokens,
-          completionTokens: record.completionTokens,
-        }) + "\n",
-        { encoding: "utf8", flag: "a", mode: 0o600 },
-      )
+  const records = await executeRuns(
+    selected,
+    createExecutor(path.resolve(executorPath), {
+      artifactRoot: resolvedArtifactRoot,
+      preflight,
+      preflightPath: resolvedPreflightPath,
+    }),
+    {
+      ledger,
+      onRecord: async (record, entry) => {
+        const serialized = JSON.stringify(record)
+        assertSecretFree(serialized)
+        await appendFile(resultsPath, serialized + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
+        await appendFile(
+          ledgerPath,
+          JSON.stringify({
+            timestamp: record.endedAt,
+            runID: record.runID,
+            category: entry.category,
+            amountUSD: entry.amountUSD,
+            promptTokens: record.promptTokens,
+            completionTokens: record.completionTokens,
+          }) + "\n",
+          { encoding: "utf8", flag: "a", mode: 0o600 },
+        )
+      },
     },
-  })
+  )
   console.log(JSON.stringify({ completed: records.length, remaining: 384 - completed.size - records.length }))
 }
 
-function createExecutor(executable: string) {
+function createExecutor(
+  executable: string,
+  options: {
+    artifactRoot: string
+    preflight: Awaited<ReturnType<typeof loadPreflight>>
+    preflightPath: string
+  },
+) {
   return async (run: Run, attempt: number, context: ExecutionContext) => {
     const process = Bun.spawn([executable], {
       stdin: "pipe",
       stdout: "pipe",
       stderr: "pipe",
-      env: { ...Bun.env, AUTODRIVE_EVAL_PROTOCOL: protocol.version },
+      env: {
+        ...Bun.env,
+        AUTODRIVE_EVAL_ARTIFACT_ROOT: options.artifactRoot,
+        AUTODRIVE_EVAL_PREFLIGHT_PATH: options.preflightPath,
+        AUTODRIVE_EVAL_PREFLIGHT_SHA256: options.preflight.sha256,
+        AUTODRIVE_EVAL_PROTOCOL: protocol.version,
+        OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: "1",
+        OPENCODE_DISABLE_EXTERNAL_SKILLS: "1",
+        OPENCODE_DISABLE_MODELS_FETCH: "1",
+        OPENCODE_MODELS_PATH: path.resolve(
+          path.dirname(options.preflightPath),
+          options.preflight.receipt.modelMetadata.path,
+        ),
+      },
     })
     process.stdin.write(JSON.stringify({ run, attempt, budget: context }))
     process.stdin.end()
@@ -154,8 +256,17 @@ function createExecutor(executable: string) {
     const record = parseTrajectory(JSON.parse(stdout))
     if (record.runID !== run.id || record.attempt !== attempt)
       throw new Error(`Executor returned mismatched provenance for ${run.id}`)
+    const task = manifest.tasks.find((item) => item.instanceID === run.taskID)
+    if (!task) throw new Error(`Frozen task is missing: ${run.taskID}`)
+    assertTrajectoryProvenance(record, { run, task, preflight: options.preflight })
+    await verifyTrajectoryArtifacts(record, options.artifactRoot)
     return record
   }
+}
+
+function assertInside(root: string, target: string, label: string) {
+  if (target === root || target.startsWith(`${root}${path.sep}`)) return
+  fail(`${label} must be inside --artifact-root`)
 }
 
 async function readJSONL<T>(filePath: string, parse: (input: unknown) => T) {

@@ -47,7 +47,7 @@ export const Run = z.object({
 export type Run = z.infer<typeof Run>
 
 export const protocol = {
-  version: "auto-drive-swe-evo-v1.1",
+  version: "auto-drive-swe-evo-v1.2",
   strategies: Strategy.options,
   models: {
     primary: "google/gemini-3.7-flash",

@@ -15,11 +15,21 @@ bun run validate
 
 Expected before paid runs: 48 tasks, 384 planned trajectories, status `pending`, completed 0, spent USD 0, and remaining USD 800.
 
+Freeze the required model metadata and validate a sealed provider receipt before execution:
+
+```bash
+cd packages/autodrive-eval
+bun run snapshot-models -- --source /path/to/models.json --output /artifact-root/metadata/models.json --resolutions /artifact-root/metadata/resolutions.json
+bun run preflight -- --receipt /artifact-root/preflight/receipt.json --scope full
+```
+
+A passing full receipt must cover all three frozen workers with paid billing, exact model versions, sufficient trajectory capacity, verified probe hashes, and all external discovery flags disabled. A canary receipt cannot be used to append an official result.
+
 ## 3. Prepare a host executor
 
 The evaluator sends one JSON object on stdin containing the immutable run specification, attempt number, and per-run cost ceiling. The executable returns one validated trajectory JSON object on stdout. Exit 75 is reserved for a zero-cost infrastructure failure. All other nonzero exits are final outcomes.
 
-Provider credentials stay in the host executor. The task container receives only repository files, task metadata, and test commands. The executor must record the resolved model version, normalized request hash, image digest, code commit, and raw trace hash.
+Provider credentials stay in the host executor. The task container receives only repository files, task metadata, and test commands. The executor must record every worker/controller request in order, with the exact resolved model version, canonical request artifact and hash, image digest, code commit, model-metadata hash, preflight hash, and raw trace hash.
 
 ## 4. Pilot and execute
 
@@ -27,7 +37,7 @@ Run a non-primary pilot inside the USD 50 category before selecting any frozen t
 
 ```bash
 cd packages/autodrive-eval
-bun run run-eval -- --execute --executor /absolute/path/to/host-executor --run-id adr_...
+bun run run-eval -- --execute --executor /absolute/path/to/host-executor --preflight /artifact-root/preflight/receipt.json --artifact-root /artifact-root --run-id adr_...
 ```
 
 The harness permits at most two concurrent tasks and one identical retry for a predefined, zero-cost infrastructure failure.

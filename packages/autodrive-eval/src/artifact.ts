@@ -1,19 +1,35 @@
+import { createHash } from "node:crypto"
+import path from "node:path"
 import { z } from "zod"
 import { Strategy } from "./protocol"
 
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/)
 
+export const ArtifactReference = z.object({
+  path: z
+    .string()
+    .min(1)
+    .refine(
+      (value) => !path.isAbsolute(value) && !value.split(/[\\/]/).includes(".."),
+      "Artifact path must be relative",
+    ),
+  sha256,
+})
+
 export const ModelRequest = z.object({
+  sequence: z.number().int().nonnegative(),
+  kind: z.enum(["worker", "controller"]),
   provider: z.string().min(1),
   modelID: z.string().min(1),
   modelVersion: z.string().min(1),
   requestSHA256: sha256,
+  normalizedRequest: ArtifactReference,
   temperature: z.literal(0),
   maxOutputTokens: z.number().int().positive(),
 })
 
 export const Trajectory = z.object({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   runID: z.string().regex(/^adr_[a-f0-9]{20}$/),
   taskID: z.string().min(1),
   model: z.string().min(1),
@@ -48,27 +64,52 @@ export const Trajectory = z.object({
   latencyMS: z.number().int().nonnegative(),
   recoverySucceeded: z.boolean(),
   unsafeContinuationCount: z.number().int().nonnegative(),
-  modelRequest: ModelRequest,
+  modelRequests: z.array(ModelRequest).min(1),
   environment: z.object({
     image: z.string().min(1),
     imageDigest: z.string().regex(/^sha256:[a-f0-9]{64}$/),
     baseCommit: z.string().regex(/^[a-f0-9]{40}$/),
     opencodeCommit: z.string().regex(/^[a-f0-9]{40}$/),
+    modelMetadata: ArtifactReference,
   }),
-  trace: z.object({
-    path: z.string().min(1),
-    sha256,
-  }),
+  preflight: ArtifactReference,
+  trace: ArtifactReference,
 })
 export type Trajectory = z.infer<typeof Trajectory>
 
 export function parseTrajectory(input: unknown) {
   const trajectory = Trajectory.parse(input)
+  if (trajectory.modelRequests.some((request) => request.requestSHA256 !== request.normalizedRequest.sha256))
+    throw new Error("Normalized request hash must match requestSHA256")
+  if (trajectory.modelRequests.some((request, index) => request.sequence !== index))
+    throw new Error("Model request sequences must be contiguous and start at zero")
   if (trajectory.status === "failed" && !trajectory.failure)
     throw new Error("Failed trajectories require a failure classification")
   if (trajectory.status === "succeeded" && trajectory.failure)
     throw new Error("Succeeded trajectories cannot carry a failure classification")
   return trajectory
+}
+
+export function hashNormalizedRequest(input: unknown) {
+  return createHash("sha256").update(normalizeRequest(input)).digest("hex")
+}
+
+export async function verifyTrajectoryArtifacts(trajectory: Trajectory, root: string) {
+  await Promise.all([
+    ...trajectory.modelRequests.map((request) => verifyNormalizedRequest(request, root)),
+    verifyArtifact("Model metadata", trajectory.environment.modelMetadata, root),
+    verifyArtifact("Preflight", trajectory.preflight, root),
+    verifyArtifact("Trace", trajectory.trace, root),
+  ])
+}
+
+async function verifyNormalizedRequest(request: z.infer<typeof ModelRequest>, root: string) {
+  const content = await readArtifact(root, request.normalizedRequest.path)
+  assertSecretFree(content)
+  const input = JSON.parse(content)
+  if (content !== normalizeRequest(input)) throw new Error("Normalized request artifact is not canonical JSON")
+  if (hashNormalizedRequest(input) !== request.requestSHA256)
+    throw new Error("Normalized request artifact hash mismatch")
 }
 
 export function assertSecretFree(content: string) {
@@ -78,6 +119,39 @@ export function assertSecretFree(content: string) {
     /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
   ]
   if (patterns.some((pattern) => pattern.test(content))) throw new Error("Artifact contains a possible secret")
+}
+
+function normalizeRequest(input: unknown): string {
+  return JSON.stringify(canonicalize(input))
+}
+
+function canonicalize(input: unknown): null | boolean | number | string | unknown[] | Record<string, unknown> {
+  if (input === null || typeof input === "boolean" || typeof input === "string") return input
+  if (typeof input === "number" && Number.isFinite(input)) return input
+  if (Array.isArray(input)) return input.map(canonicalize)
+  if (typeof input !== "object" || Object.getPrototypeOf(input) !== Object.prototype)
+    throw new Error("Request body must contain only JSON-compatible values")
+  return Object.fromEntries(
+    Object.entries(input)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, value]) => [key, canonicalize(value)]),
+  )
+}
+
+async function verifyArtifact(label: string, reference: z.infer<typeof ArtifactReference>, root: string) {
+  const content = await readArtifact(root, reference.path)
+  assertSecretFree(content)
+  if (createHash("sha256").update(content).digest("hex") !== reference.sha256)
+    throw new Error(`${label} artifact hash mismatch`)
+}
+
+async function readArtifact(root: string, relative: string) {
+  const resolvedRoot = path.resolve(root)
+  const resolved = path.resolve(resolvedRoot, relative)
+  if (!resolved.startsWith(`${resolvedRoot}${path.sep}`)) throw new Error("Artifact path escapes root")
+  const file = Bun.file(resolved)
+  if (!(await file.exists())) throw new Error(`Artifact is missing: ${relative}`)
+  return file.text()
 }
 
 export function analyzeTrajectories(records: readonly Trajectory[]) {

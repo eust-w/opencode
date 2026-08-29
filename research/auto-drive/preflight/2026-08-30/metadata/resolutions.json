@@ -1,0 +1,14 @@
+[
+  {
+    "model": "google/gemini-3.7-flash",
+    "catalogModelID": "gemini-3.7-flash"
+  },
+  {
+    "model": "anthropic/claude-sonnet-4.6",
+    "catalogModelID": "claude-sonnet-4-6"
+  },
+  {
+    "model": "openai/gpt-5.4",
+    "catalogModelID": "gpt-5.4"
+  }
+]
