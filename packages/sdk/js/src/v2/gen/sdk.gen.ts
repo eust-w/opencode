@@ -177,6 +177,9 @@ import type {
   QuestionV2Reply,
   SessionAbortErrors,
   SessionAbortResponses,
+  SessionAutoDriveUnavailableErrors,
+  SessionAutoDriveUnavailableResponses,
+  SessionAutoDriveUpdate,
   SessionChildrenErrors,
   SessionChildrenResponses,
   SessionCommandErrors,
@@ -335,6 +338,8 @@ import type {
   V2ReferenceListResponses,
   V2SessionActiveErrors,
   V2SessionActiveResponses,
+  V2SessionAutoDriveErrors,
+  V2SessionAutoDriveResponses,
   V2SessionCompactErrors,
   V2SessionCompactResponses,
   V2SessionContextErrors,
@@ -4325,6 +4330,47 @@ export class Session2 extends HeyApiClient {
       ...params,
     })
   }
+
+  /**
+   * Auto-Drive unavailable on V1
+   *
+   * Auto-Drive is available only through the V2 /api/session endpoint.
+   *
+   * @deprecated
+   */
+  public autoDriveUnavailable<ThrowOnError extends boolean = false>(
+    parameters: {
+      sessionID: string
+      body?: unknown
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "sessionID" },
+            { key: "body", map: "body" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).put<
+      SessionAutoDriveUnavailableResponses,
+      SessionAutoDriveUnavailableErrors,
+      ThrowOnError
+    >({
+      url: "/session/{sessionID}/auto-drive",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
 }
 
 export class Part extends HeyApiClient {
@@ -5645,6 +5691,41 @@ export class Session3 extends HeyApiClient {
     )
     return (options?.client ?? this.client).post<V2SessionPromptResponses, V2SessionPromptErrors, ThrowOnError>({
       url: "/api/session/{sessionID}/prompt",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Update session Auto-Drive
+   *
+   * Update the durable Auto-Drive policy for this Session.
+   */
+  public autoDrive<ThrowOnError extends boolean = false>(
+    parameters: {
+      sessionID: string
+      sessionAutoDriveUpdate: SessionAutoDriveUpdate
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "sessionID" },
+            { key: "sessionAutoDriveUpdate", map: "body" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).put<V2SessionAutoDriveResponses, V2SessionAutoDriveErrors, ThrowOnError>({
+      url: "/api/session/{sessionID}/auto-drive",
       ...options,
       ...params,
       headers: {

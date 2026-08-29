@@ -438,5 +438,6 @@ export const sessionHandlers = HttpApiBuilder.group(InstanceHttpApi, "session", 
       .handle("deleteMessage", deleteMessage)
       .handle("deletePart", deletePart)
       .handle("updatePart", updatePart)
+      .handle("autoDriveUnavailable", () => Effect.fail(new HttpApiError.NotFound({})))
   }),
 )

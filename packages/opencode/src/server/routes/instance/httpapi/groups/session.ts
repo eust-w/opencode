@@ -102,6 +102,7 @@ export const SessionPaths = {
   deleteMessage: `${root}/:sessionID/message/:messageID`,
   deletePart: `${root}/:sessionID/message/:messageID/part/:partID`,
   updatePart: `${root}/:sessionID/message/:messageID/part/:partID`,
+  autoDriveUnavailable: `${root}/:sessionID/auto-drive`,
 } as const
 
 export const SessionApi = HttpApi.make("session")
@@ -440,6 +441,19 @@ export const SessionApi = HttpApi.make("session")
           OpenApi.annotations({
             identifier: "part.update",
             description: "Update a part in a message.",
+          }),
+        ),
+        HttpApiEndpoint.put("autoDriveUnavailable", SessionPaths.autoDriveUnavailable, {
+          params: { sessionID: SessionID },
+          payload: Schema.Unknown,
+          success: HttpApiSchema.NoContent,
+          error: HttpApiError.NotFound,
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "session.autoDriveUnavailable",
+            summary: "Auto-Drive unavailable on V1",
+            description: "Auto-Drive is available only through the V2 /api/session endpoint.",
+            deprecated: true,
           }),
         ),
       )

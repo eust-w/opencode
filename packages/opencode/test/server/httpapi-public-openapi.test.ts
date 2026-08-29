@@ -139,10 +139,11 @@ describe("PublicApi OpenAPI v2 errors", () => {
 
     for (const path of [
       "/api/session/{sessionID}/prompt",
+      "/api/session/{sessionID}/auto-drive",
       "/api/session/{sessionID}/permission/{requestID}/reply",
       "/api/session/{sessionID}/question/{requestID}/reply",
     ]) {
-      expect(spec.paths[path]?.post?.requestBody?.required, path).toBe(true)
+      expect((spec.paths[path]?.post ?? spec.paths[path]?.put)?.requestBody?.required, path).toBe(true)
     }
   })
 
@@ -225,6 +226,7 @@ describe("PublicApi OpenAPI v2 errors", () => {
 
     for (const route of [
       ["post", "/api/session/{sessionID}/prompt"],
+      ["put", "/api/session/{sessionID}/auto-drive"],
       ["post", "/api/session/{sessionID}/compact"],
       ["post", "/api/session/{sessionID}/wait"],
       ["get", "/api/session/{sessionID}/context"],

@@ -557,6 +557,51 @@ describe("session HttpApi", () => {
         })
         expect(prompt.status).toBe(404)
         expect(yield* responseJson(prompt)).toEqual(expected)
+
+        const autoDrive = yield* request(`/api/session/${missing}/auto-drive`, {
+          method: "PUT",
+          headers: { ...headers, "content-type": "application/json" },
+          body: JSON.stringify({ enabled: true }),
+        })
+        expect(autoDrive.status).toBe(404)
+        expect(yield* responseJson(autoDrive)).toEqual(expected)
+      }),
+    { git: true, config: { formatter: false, lsp: false } },
+  )
+
+  it.instance(
+    "updates durable v2 Auto-Drive state while keeping v1 unavailable",
+    () =>
+      Effect.gen(function* () {
+        const test = yield* TestInstance
+        const headers = { "x-opencode-directory": test.directory, "content-type": "application/json" }
+        const session = yield* createSession({ title: "v2 auto drive" })
+
+        const response = yield* request(`/api/session/${session.id}/auto-drive`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify({ enabled: true, policy: "supervisor", maxRuns: 3, memory: false }),
+        })
+        expect(response.status).toBe(200)
+        expect(
+          yield* json<{ data: { settings: Record<string, unknown>; status: Record<string, unknown> } }>(response),
+        ).toMatchObject({
+          data: {
+            settings: { enabled: true, policy: "supervisor", maxRuns: 3, memory: false },
+            status: { continuationCount: 0 },
+          },
+        })
+
+        expect(
+          yield* requestJson<{ data: { autoDrive: { settings: Record<string, unknown> } } }>(
+            `/api/session/${session.id}`,
+            { headers },
+          ),
+        ).toMatchObject({ data: { autoDrive: { settings: { enabled: true, maxRuns: 3 } } } })
+
+        expect(
+          (yield* request(`/session/${session.id}/auto-drive`, { method: "PUT", headers, body: "{}" })).status,
+        ).toBe(404)
       }),
     { git: true, config: { formatter: false, lsp: false } },
   )

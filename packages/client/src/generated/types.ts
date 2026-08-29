@@ -262,6 +262,27 @@ export type SessionsListOutput = {
         readonly patch: string
       }>
     }
+    readonly autoDrive?: {
+      readonly settings: {
+        readonly enabled: boolean
+        readonly policy: "heuristic" | "supervisor"
+        readonly maxRuns: number
+        readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+        readonly contextual: boolean
+        readonly memory: boolean
+        readonly prompt?: string
+        readonly projectPlaybook?: string
+      }
+      readonly status: {
+        readonly action?: "continue" | "stop" | "defer"
+        readonly reason?: string
+        readonly chainID?: string
+        readonly continuationCount: number
+        readonly inputID?: string
+        readonly nextPrompt?: string
+      }
+      readonly memory?: string
+    }
   }>
   readonly cursor: { readonly previous?: string | null; readonly next?: string | null }
 }
@@ -324,6 +345,27 @@ export type SessionsCreateOutput = {
         readonly patch: string
       }>
     }
+    readonly autoDrive?: {
+      readonly settings: {
+        readonly enabled: boolean
+        readonly policy: "heuristic" | "supervisor"
+        readonly maxRuns: number
+        readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+        readonly contextual: boolean
+        readonly memory: boolean
+        readonly prompt?: string
+        readonly projectPlaybook?: string
+      }
+      readonly status: {
+        readonly action?: "continue" | "stop" | "defer"
+        readonly reason?: string
+        readonly chainID?: string
+        readonly continuationCount: number
+        readonly inputID?: string
+        readonly nextPrompt?: string
+      }
+      readonly memory?: string
+    }
   }
 }["data"]
 
@@ -361,6 +403,27 @@ export type SessionsGetOutput = {
         readonly deletions: number
         readonly patch: string
       }>
+    }
+    readonly autoDrive?: {
+      readonly settings: {
+        readonly enabled: boolean
+        readonly policy: "heuristic" | "supervisor"
+        readonly maxRuns: number
+        readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+        readonly contextual: boolean
+        readonly memory: boolean
+        readonly prompt?: string
+        readonly projectPlaybook?: string
+      }
+      readonly status: {
+        readonly action?: "continue" | "stop" | "defer"
+        readonly reason?: string
+        readonly chainID?: string
+        readonly continuationCount: number
+        readonly inputID?: string
+        readonly nextPrompt?: string
+      }
+      readonly memory?: string
     }
   }
 }["data"]
@@ -479,6 +542,120 @@ export type SessionsPromptOutput = {
     readonly delivery: "steer" | "queue"
     readonly timeCreated: number
     readonly promotedSeq?: number
+    readonly source?: {
+      readonly type: "auto-drive"
+      readonly chainID: string
+      readonly decision: "continue" | "stop" | "defer"
+      readonly continuation: number
+    }
+  }
+}["data"]
+
+export type SessionsAutoDriveInput = {
+  readonly sessionID: { readonly sessionID: string }["sessionID"]
+  readonly enabled?: {
+    readonly enabled?: boolean
+    readonly policy?: "heuristic" | "supervisor"
+    readonly maxRuns?: number
+    readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+    readonly contextual?: boolean
+    readonly memory?: boolean
+    readonly prompt?: string
+    readonly projectPlaybook?: string
+  }["enabled"]
+  readonly policy?: {
+    readonly enabled?: boolean
+    readonly policy?: "heuristic" | "supervisor"
+    readonly maxRuns?: number
+    readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+    readonly contextual?: boolean
+    readonly memory?: boolean
+    readonly prompt?: string
+    readonly projectPlaybook?: string
+  }["policy"]
+  readonly maxRuns?: {
+    readonly enabled?: boolean
+    readonly policy?: "heuristic" | "supervisor"
+    readonly maxRuns?: number
+    readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+    readonly contextual?: boolean
+    readonly memory?: boolean
+    readonly prompt?: string
+    readonly projectPlaybook?: string
+  }["maxRuns"]
+  readonly supervisorModel?: {
+    readonly enabled?: boolean
+    readonly policy?: "heuristic" | "supervisor"
+    readonly maxRuns?: number
+    readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+    readonly contextual?: boolean
+    readonly memory?: boolean
+    readonly prompt?: string
+    readonly projectPlaybook?: string
+  }["supervisorModel"]
+  readonly contextual?: {
+    readonly enabled?: boolean
+    readonly policy?: "heuristic" | "supervisor"
+    readonly maxRuns?: number
+    readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+    readonly contextual?: boolean
+    readonly memory?: boolean
+    readonly prompt?: string
+    readonly projectPlaybook?: string
+  }["contextual"]
+  readonly memory?: {
+    readonly enabled?: boolean
+    readonly policy?: "heuristic" | "supervisor"
+    readonly maxRuns?: number
+    readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+    readonly contextual?: boolean
+    readonly memory?: boolean
+    readonly prompt?: string
+    readonly projectPlaybook?: string
+  }["memory"]
+  readonly prompt?: {
+    readonly enabled?: boolean
+    readonly policy?: "heuristic" | "supervisor"
+    readonly maxRuns?: number
+    readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+    readonly contextual?: boolean
+    readonly memory?: boolean
+    readonly prompt?: string
+    readonly projectPlaybook?: string
+  }["prompt"]
+  readonly projectPlaybook?: {
+    readonly enabled?: boolean
+    readonly policy?: "heuristic" | "supervisor"
+    readonly maxRuns?: number
+    readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+    readonly contextual?: boolean
+    readonly memory?: boolean
+    readonly prompt?: string
+    readonly projectPlaybook?: string
+  }["projectPlaybook"]
+}
+
+export type SessionsAutoDriveOutput = {
+  readonly data: {
+    readonly settings: {
+      readonly enabled: boolean
+      readonly policy: "heuristic" | "supervisor"
+      readonly maxRuns: number
+      readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+      readonly contextual: boolean
+      readonly memory: boolean
+      readonly prompt?: string
+      readonly projectPlaybook?: string
+    }
+    readonly status: {
+      readonly action?: "continue" | "stop" | "defer"
+      readonly reason?: string
+      readonly chainID?: string
+      readonly continuationCount: number
+      readonly inputID?: string
+      readonly nextPrompt?: string
+    }
+    readonly memory?: string
   }
 }["data"]
 
@@ -748,6 +925,12 @@ export type SessionsHistoryOutput = {
             }>
           }
           readonly delivery: "steer" | "queue"
+          readonly source?: {
+            readonly type: "auto-drive"
+            readonly chainID: string
+            readonly decision: "continue" | "stop" | "defer"
+            readonly continuation: number
+          }
         }
       }
     | {
@@ -775,6 +958,76 @@ export type SessionsHistoryOutput = {
             }>
           }
           readonly delivery: "steer" | "queue"
+          readonly source?: {
+            readonly type: "auto-drive"
+            readonly chainID: string
+            readonly decision: "continue" | "stop" | "defer"
+            readonly continuation: number
+          }
+        }
+      }
+    | {
+        readonly id: string
+        readonly metadata?: { readonly [x: string]: JsonValue }
+        readonly type: "session.next.auto-drive.updated"
+        readonly durable?: { readonly aggregateID: string; readonly seq: number; readonly version: number }
+        readonly location?: { readonly directory: string; readonly workspaceID?: string }
+        readonly data: {
+          readonly timestamp: number
+          readonly sessionID: string
+          readonly state: {
+            readonly settings: {
+              readonly enabled: boolean
+              readonly policy: "heuristic" | "supervisor"
+              readonly maxRuns: number
+              readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+              readonly contextual: boolean
+              readonly memory: boolean
+              readonly prompt?: string
+              readonly projectPlaybook?: string
+            }
+            readonly status: {
+              readonly action?: "continue" | "stop" | "defer"
+              readonly reason?: string
+              readonly chainID?: string
+              readonly continuationCount: number
+              readonly inputID?: string
+              readonly nextPrompt?: string
+            }
+            readonly memory?: string
+          }
+        }
+      }
+    | {
+        readonly id: string
+        readonly metadata?: { readonly [x: string]: JsonValue }
+        readonly type: "session.next.auto-drive.decided"
+        readonly durable?: { readonly aggregateID: string; readonly seq: number; readonly version: number }
+        readonly location?: { readonly directory: string; readonly workspaceID?: string }
+        readonly data: {
+          readonly timestamp: number
+          readonly sessionID: string
+          readonly state: {
+            readonly settings: {
+              readonly enabled: boolean
+              readonly policy: "heuristic" | "supervisor"
+              readonly maxRuns: number
+              readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+              readonly contextual: boolean
+              readonly memory: boolean
+              readonly prompt?: string
+              readonly projectPlaybook?: string
+            }
+            readonly status: {
+              readonly action?: "continue" | "stop" | "defer"
+              readonly reason?: string
+              readonly chainID?: string
+              readonly continuationCount: number
+              readonly inputID?: string
+              readonly nextPrompt?: string
+            }
+            readonly memory?: string
+          }
         }
       }
     | {
@@ -1206,6 +1459,12 @@ export type SessionsEventsOutput =
           }>
         }
         readonly delivery: "steer" | "queue"
+        readonly source?: {
+          readonly type: "auto-drive"
+          readonly chainID: string
+          readonly decision: "continue" | "stop" | "defer"
+          readonly continuation: number
+        }
       }
     }
   | {
@@ -1233,6 +1492,76 @@ export type SessionsEventsOutput =
           }>
         }
         readonly delivery: "steer" | "queue"
+        readonly source?: {
+          readonly type: "auto-drive"
+          readonly chainID: string
+          readonly decision: "continue" | "stop" | "defer"
+          readonly continuation: number
+        }
+      }
+    }
+  | {
+      readonly id: string
+      readonly metadata?: { readonly [x: string]: unknown }
+      readonly type: "session.next.auto-drive.updated"
+      readonly durable?: { readonly aggregateID: string; readonly seq: number; readonly version: number }
+      readonly location?: { readonly directory: string; readonly workspaceID?: string }
+      readonly data: {
+        readonly timestamp: number
+        readonly sessionID: string
+        readonly state: {
+          readonly settings: {
+            readonly enabled: boolean
+            readonly policy: "heuristic" | "supervisor"
+            readonly maxRuns: number
+            readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+            readonly contextual: boolean
+            readonly memory: boolean
+            readonly prompt?: string
+            readonly projectPlaybook?: string
+          }
+          readonly status: {
+            readonly action?: "continue" | "stop" | "defer"
+            readonly reason?: string
+            readonly chainID?: string
+            readonly continuationCount: number
+            readonly inputID?: string
+            readonly nextPrompt?: string
+          }
+          readonly memory?: string
+        }
+      }
+    }
+  | {
+      readonly id: string
+      readonly metadata?: { readonly [x: string]: unknown }
+      readonly type: "session.next.auto-drive.decided"
+      readonly durable?: { readonly aggregateID: string; readonly seq: number; readonly version: number }
+      readonly location?: { readonly directory: string; readonly workspaceID?: string }
+      readonly data: {
+        readonly timestamp: number
+        readonly sessionID: string
+        readonly state: {
+          readonly settings: {
+            readonly enabled: boolean
+            readonly policy: "heuristic" | "supervisor"
+            readonly maxRuns: number
+            readonly supervisorModel?: { readonly id: string; readonly providerID: string; readonly variant?: string }
+            readonly contextual: boolean
+            readonly memory: boolean
+            readonly prompt?: string
+            readonly projectPlaybook?: string
+          }
+          readonly status: {
+            readonly action?: "continue" | "stop" | "defer"
+            readonly reason?: string
+            readonly chainID?: string
+            readonly continuationCount: number
+            readonly inputID?: string
+            readonly nextPrompt?: string
+          }
+          readonly memory?: string
+        }
       }
     }
   | {

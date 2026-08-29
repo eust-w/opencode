@@ -21,6 +21,8 @@ export type Event =
   | EventSessionNextMoved
   | EventSessionNextPrompted
   | EventSessionNextPromptAdmitted
+  | EventSessionNextAutoDriveUpdated
+  | EventSessionNextAutoDriveDecided
   | EventSessionNextContextUpdated
   | EventSessionNextSynthetic
   | EventSessionNextShellStarted
@@ -857,6 +859,7 @@ export type GlobalEvent = {
           messageID: string
           prompt: Prompt
           delivery: "steer" | "queue"
+          source?: SessionAutoDriveSource
         }
       }
     | {
@@ -868,6 +871,25 @@ export type GlobalEvent = {
           messageID: string
           prompt: Prompt
           delivery: "steer" | "queue"
+          source?: SessionAutoDriveSource
+        }
+      }
+    | {
+        id: string
+        type: "session.next.auto-drive.updated"
+        properties: {
+          timestamp: number
+          sessionID: string
+          state: SessionAutoDriveState
+        }
+      }
+    | {
+        id: string
+        type: "session.next.auto-drive.decided"
+        properties: {
+          timestamp: number
+          sessionID: string
+          state: SessionAutoDriveState
         }
       }
     | {
@@ -1613,6 +1635,8 @@ export type GlobalEvent = {
     | SyncEventSessionNextMoved
     | SyncEventSessionNextPrompted
     | SyncEventSessionNextPromptAdmitted
+    | SyncEventSessionNextAutoDriveUpdated
+    | SyncEventSessionNextAutoDriveDecided
     | SyncEventSessionNextContextUpdated
     | SyncEventSessionNextSynthetic
     | SyncEventSessionNextShellStarted
@@ -2742,6 +2766,8 @@ export type SessionDurableEvent =
   | SessionNextMoved
   | SessionNextPrompted
   | SessionNextPromptAdmitted
+  | SessionNextAutoDriveUpdated
+  | SessionNextAutoDriveDecided
   | SessionNextContextUpdated
   | SessionNextSynthetic
   | SessionNextShellStarted
@@ -2869,6 +2895,8 @@ export type V2Event =
   | SessionNextMoved
   | SessionNextPrompted
   | SessionNextPromptAdmitted
+  | SessionNextAutoDriveUpdated
+  | SessionNextAutoDriveDecided
   | SessionNextContextUpdated
   | SessionNextSynthetic
   | SessionNextShellStarted
@@ -3063,6 +3091,39 @@ export type PromptFileAttachment = {
 export type PromptAgentAttachment = {
   name: string
   source?: PromptSource
+}
+
+export type SessionAutoDriveSource = {
+  type: "auto-drive"
+  chainID: string
+  decision: "continue" | "stop" | "defer"
+  continuation: number
+}
+
+export type SessionAutoDriveSettings = {
+  enabled: boolean
+  policy: "heuristic" | "supervisor"
+  maxRuns: number
+  supervisorModel?: ModelRef
+  contextual: boolean
+  memory: boolean
+  prompt?: string
+  projectPlaybook?: string
+}
+
+export type SessionAutoDriveStatus = {
+  action?: "continue" | "stop" | "defer"
+  reason?: string
+  chainID?: string
+  continuationCount: number
+  inputID?: string
+  nextPrompt?: string
+}
+
+export type SessionAutoDriveState = {
+  settings: SessionAutoDriveSettings
+  status: SessionAutoDriveStatus
+  memory?: string
 }
 
 export type SessionErrorUnknown = {
@@ -3363,6 +3424,7 @@ export type SyncEventSessionNextPrompted = {
       messageID: string
       prompt: Prompt
       delivery: "steer" | "queue"
+      source?: SessionAutoDriveSource
     }
   }
 }
@@ -3381,6 +3443,39 @@ export type SyncEventSessionNextPromptAdmitted = {
       messageID: string
       prompt: Prompt
       delivery: "steer" | "queue"
+      source?: SessionAutoDriveSource
+    }
+  }
+}
+
+export type SyncEventSessionNextAutoDriveUpdated = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "session.next.auto-drive.updated.1"
+    id: string
+    seq: number
+    aggregateID: string
+    data: {
+      timestamp: number
+      sessionID: string
+      state: SessionAutoDriveState
+    }
+  }
+}
+
+export type SyncEventSessionNextAutoDriveDecided = {
+  type: "sync"
+  id: string
+  syncEvent: {
+    type: "session.next.auto-drive.decided.1"
+    id: string
+    seq: number
+    aggregateID: string
+    data: {
+      timestamp: number
+      sessionID: string
+      state: SessionAutoDriveState
     }
   }
 }
@@ -3927,6 +4022,7 @@ export type SessionV2Info = {
   location: LocationRef
   subpath?: string
   revert?: RevertState
+  autoDrive?: SessionAutoDriveState
 }
 
 export type PromptInputFileAttachment = {
@@ -3944,6 +4040,18 @@ export type SessionInputAdmitted = {
   delivery: "steer" | "queue"
   timeCreated: number
   promotedSeq?: number
+  source?: SessionAutoDriveSource
+}
+
+export type SessionAutoDriveUpdate = {
+  enabled?: boolean
+  policy?: "heuristic" | "supervisor"
+  maxRuns?: number
+  supervisorModel?: ModelRef
+  contextual?: boolean
+  memory?: boolean
+  prompt?: string
+  projectPlaybook?: string
 }
 
 export type SessionMessageAgentSwitched = {
@@ -4240,6 +4348,7 @@ export type SessionNextPrompted = {
     messageID: string
     prompt: Prompt
     delivery: "steer" | "queue"
+    source?: SessionAutoDriveSource
   }
 }
 
@@ -4261,6 +4370,45 @@ export type SessionNextPromptAdmitted = {
     messageID: string
     prompt: Prompt
     delivery: "steer" | "queue"
+    source?: SessionAutoDriveSource
+  }
+}
+
+export type SessionNextAutoDriveUpdated = {
+  id: string
+  metadata?: {
+    [key: string]: unknown
+  }
+  type: "session.next.auto-drive.updated"
+  durable?: {
+    aggregateID: string
+    seq: number
+    version: number
+  }
+  location?: LocationRef
+  data: {
+    timestamp: number
+    sessionID: string
+    state: SessionAutoDriveState
+  }
+}
+
+export type SessionNextAutoDriveDecided = {
+  id: string
+  metadata?: {
+    [key: string]: unknown
+  }
+  type: "session.next.auto-drive.decided"
+  durable?: {
+    aggregateID: string
+    seq: number
+    version: number
+  }
+  location?: LocationRef
+  data: {
+    timestamp: number
+    sessionID: string
+    state: SessionAutoDriveState
   }
 }
 
@@ -6290,6 +6438,7 @@ export type EventSessionNextPrompted = {
     messageID: string
     prompt: Prompt
     delivery: "steer" | "queue"
+    source?: SessionAutoDriveSource
   }
 }
 
@@ -6302,6 +6451,27 @@ export type EventSessionNextPromptAdmitted = {
     messageID: string
     prompt: Prompt
     delivery: "steer" | "queue"
+    source?: SessionAutoDriveSource
+  }
+}
+
+export type EventSessionNextAutoDriveUpdated = {
+  id: string
+  type: "session.next.auto-drive.updated"
+  properties: {
+    timestamp: number
+    sessionID: string
+    state: SessionAutoDriveState
+  }
+}
+
+export type EventSessionNextAutoDriveDecided = {
+  id: string
+  type: "session.next.auto-drive.decided"
+  properties: {
+    timestamp: number
+    sessionID: string
+    state: SessionAutoDriveState
   }
 }
 
@@ -10476,6 +10646,39 @@ export type PartUpdateResponses = {
 
 export type PartUpdateResponse = PartUpdateResponses[keyof PartUpdateResponses]
 
+export type SessionAutoDriveUnavailableData = {
+  body?: unknown
+  path: {
+    sessionID: string
+  }
+  query?: never
+  url: "/session/{sessionID}/auto-drive"
+}
+
+export type SessionAutoDriveUnavailableErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type SessionAutoDriveUnavailableError =
+  SessionAutoDriveUnavailableErrors[keyof SessionAutoDriveUnavailableErrors]
+
+export type SessionAutoDriveUnavailableResponses = {
+  /**
+   * <No Content>
+   */
+  204: void
+}
+
+export type SessionAutoDriveUnavailableResponse =
+  SessionAutoDriveUnavailableResponses[keyof SessionAutoDriveUnavailableResponses]
+
 export type SyncStartData = {
   body?: never
   path?: never
@@ -11595,6 +11798,43 @@ export type V2SessionPromptResponses = {
 }
 
 export type V2SessionPromptResponse = V2SessionPromptResponses[keyof V2SessionPromptResponses]
+
+export type V2SessionAutoDriveData = {
+  body: SessionAutoDriveUpdate
+  path: {
+    sessionID: string
+  }
+  query?: never
+  url: "/api/session/{sessionID}/auto-drive"
+}
+
+export type V2SessionAutoDriveErrors = {
+  /**
+   * InvalidRequestError
+   */
+  400: InvalidRequestError
+  /**
+   * UnauthorizedError
+   */
+  401: UnauthorizedError
+  /**
+   * SessionNotFoundError
+   */
+  404: SessionNotFoundError
+}
+
+export type V2SessionAutoDriveError = V2SessionAutoDriveErrors[keyof V2SessionAutoDriveErrors]
+
+export type V2SessionAutoDriveResponses = {
+  /**
+   * Success
+   */
+  200: {
+    data: SessionAutoDriveState
+  }
+}
+
+export type V2SessionAutoDriveResponse = V2SessionAutoDriveResponses[keyof V2SessionAutoDriveResponses]
 
 export type V2SessionCompactData = {
   body?: never

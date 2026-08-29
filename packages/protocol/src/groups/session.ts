@@ -21,6 +21,7 @@ import { Model } from "@opencode-ai/schema/model"
 import { Location } from "@opencode-ai/schema/location"
 import { Revert } from "@opencode-ai/schema/revert"
 import { SessionEvent } from "@opencode-ai/schema/session-event"
+import { SessionAutoDrive } from "@opencode-ai/schema/session-auto-drive"
 
 const SessionsQueryFields = {
   workspace: Workspace.ID.pipe(Schema.optional),
@@ -219,6 +220,22 @@ export const makeSessionGroup = <I extends HttpApiMiddleware.AnyId, S>(sessionLo
             identifier: "v2.session.prompt",
             summary: "Send message",
             description: "Durably admit one session input and schedule agent-loop execution unless resume is false.",
+          }),
+        ),
+    )
+    .add(
+      HttpApiEndpoint.put("session.autoDrive", "/api/session/:sessionID/auto-drive", {
+        params: { sessionID: Session.ID },
+        payload: SessionAutoDrive.Update,
+        success: Schema.Struct({ data: SessionAutoDrive.State }),
+        error: SessionNotFoundError,
+      })
+        .middleware(sessionLocationMiddleware)
+        .annotateMerge(
+          OpenApi.annotations({
+            identifier: "v2.session.autoDrive",
+            summary: "Update session Auto-Drive",
+            description: "Update the durable Auto-Drive policy for this Session.",
           }),
         ),
     )
