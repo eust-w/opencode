@@ -29,9 +29,9 @@ describe("paid experiment CLI gates", () => {
           "d-robotics": {
             id: "d-robotics",
             models: {
-              "qwen3.8-max": { id: "qwen3.8-max" },
               "deepseek-v4-pro": { id: "deepseek-v4-pro" },
-              "glm-5.3": { id: "glm-5.3" },
+              "qwen3.7-max": { id: "qwen3.7-max" },
+              "deepseek-v4-flash": { id: "deepseek-v4-flash" },
               other: {},
             },
           },
@@ -54,9 +54,9 @@ describe("paid experiment CLI gates", () => {
       const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
       expect(exitCode, stderr).toBe(0)
       expect(Object.keys((await Bun.file(output).json())["d-robotics"].models)).toEqual([
-        "qwen3.8-max",
         "deepseek-v4-pro",
-        "glm-5.3",
+        "qwen3.7-max",
+        "deepseek-v4-flash",
       ])
       expect(await Bun.file(resolutions).json()).toContainEqual({
         model: "d-robotics/deepseek-v4-pro",

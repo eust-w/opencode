@@ -4,11 +4,11 @@ import { createRunPlan, parseManifest, protocol } from "../src/protocol"
 
 describe("frozen AutoDrive protocol", () => {
   test("records all pre-execution protocol amendments", async () => {
-    expect(protocol.version).toBe("auto-drive-swe-evo-v1.8")
-    expect(protocol.models.primary).toBe("d-robotics/qwen3.8-max")
-    expect(protocol.models.replication).toEqual(["d-robotics/deepseek-v4-pro", "d-robotics/glm-5.3"])
+    expect(protocol.version).toBe("auto-drive-swe-evo-v1.9")
+    expect(protocol.models.primary).toBe("d-robotics/deepseek-v4-pro")
+    expect(protocol.models.replication).toEqual(["d-robotics/qwen3.7-max", "d-robotics/deepseek-v4-flash"])
     expect(protocol.models.controller).toBe("d-robotics/qwen3.8-max")
-    expect(protocol.workerMaxOutputTokens).toBe(32_000)
+    expect(protocol.workerMaxOutputTokens).toBe(4_096)
     expect(protocol.workerReasoningEffort).toBe("low")
     expect(protocol.controllerMaxOutputTokens).toBe(1_024)
     expect(protocol.gateway.canaryMaxSpendUSD).toBe(5)
@@ -30,6 +30,9 @@ describe("frozen AutoDrive protocol", () => {
     expect(
       await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
     ).toContain("V2 request-routing amendment")
+    expect(
+      await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
+    ).toContain("Worker compatibility amendment")
   })
 
   test("pins all 48 unique SWE-EVO tasks from seven repositories", () => {

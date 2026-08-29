@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.8
+# AutoDrive Preregistration v1.9
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -46,6 +46,14 @@ The v1.7 compatibility canary failed its explicit first-request gate: the normal
 
 Root-cause inspection showed that the V2 native runner materializes model-level request bodies, while v1.7 placed the option in the agent-level request body. Version 1.8 moves the exact standard OpenAI body `reasoning: {"effort":"low"}` to the worker model request and leaves the controller model body empty. A first-request normalized-body check remains mandatory. Because the v1.7 ID was charged, version 1.8 regenerates all run IDs rather than reusing it. Experimental outcomes, dataset, prompts, policies, limits, statistics, and budget remain unchanged.
 
+## Worker compatibility amendment (v1.9)
+
+The accepted v1.8 DVC canary verified that the normalized first and sixth worker requests contained `reasoning: {"effort":"low"}`. Nevertheless, `qwen3.8-max` again ended its sixth tool-free response after 165,222 bytes of reasoning deltas without a terminal event or complete usage. The executor recorded a failed provider outcome, zero Fix Rate, an empty patch, and USD 0.1333632 cost; no controller boundary was reached.
+
+Before the main matrix, a paid compatibility ablation replayed that exact sixth-turn input at temperature zero, low reasoning effort, no tools, and 4,096 maximum output tokens. `deepseek-v4-pro`, `qwen3.7-max`, and `deepseek-v4-flash` returned `response.completed`; `qwen3.8-max` again lacked a terminal event, GLM 5.2 returned `response.failed`, and GLM 5.3 and Kimi K3 returned HTTP 400. Exact first-turn tool probes then confirmed that each of the three completing candidates returned a valid `bash` function call with call ID and serialized arguments.
+
+Version 1.9 therefore uses `deepseek-v4-pro` as the 48-task primary worker, `qwen3.7-max` as a different-family twelve-task replication, and `deepseek-v4-flash` as a twelve-task scale/variant replication. The supervisor remains `qwen3.8-max` so worker-model comparisons keep one controller. Worker output is capped at the qualified 4,096 tokens. The second replication cannot be presented as independent family generalization. The 384-run structure, dataset, tasks, prompts, policies, statistics, and overall budget remain unchanged; all run IDs are regenerated.
+
 ## Claim boundary
 
 AutoDrive targets **premature conversational handoff** by a coding agent: the worker ends a provider turn while safe, in-scope, actionable work toward the admitted user goal remains. The claimed mechanism combines safe turn-boundary evaluation, a `continue | stop | defer` decision, and durable exactly-once continuation admission. It does not claim the first supervisor, memory mechanism, agent termination rule, abstention method, or loop bound.
@@ -81,7 +89,7 @@ The off result is the first-boundary prefix of each paid trajectory. It is never
 - Cross-model: 12 tasks × 4 policies × 2 models × one run = 96 trajectories.
 - Total: 384 paid end-to-end trajectories.
 
-The primary worker is `d-robotics/qwen3.8-max`. Replication workers are `d-robotics/deepseek-v4-pro` and `d-robotics/glm-5.3`. Every supervisor call uses `d-robotics/qwen3.8-max`. Cross-model results are a generalization replication and not the primary estimate.
+The primary worker is `d-robotics/deepseek-v4-pro`. Replication workers are `d-robotics/qwen3.7-max` and `d-robotics/deepseek-v4-flash`. Every supervisor call uses `d-robotics/qwen3.8-max`. The qwen result is a different-family generalization replication; the DeepSeek Flash result is only a same-family scale/variant replication. Neither substitutes for the 48-task primary estimate.
 
 Every run uses the pinned task image and base commit, temperature zero, worker reasoning effort `low`, the endpoint-specific request record in `model-requests.json`, six worker steps per segment, at most five automatic continuations, at most 45 minutes, and no more than two concurrent tasks. The resolved provider/model version and normalized request body must be saved before a record is accepted.
 

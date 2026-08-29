@@ -13,15 +13,15 @@ const preflight = {
   receipt: parsePreflight(
     {
       schemaVersion: 1,
-      protocol: "auto-drive-swe-evo-v1.8",
+      protocol: "auto-drive-swe-evo-v1.9",
       scope: "canary",
       capturedAt: "2026-08-30T02:00:00.000Z",
       expiresAt: "2026-08-30T14:00:00.000Z",
       models: [
         {
-          model: "d-robotics/qwen3.8-max",
-          catalogModelID: "qwen3.8-max",
-          modelVersion: "qwen3.8-max",
+          model: "d-robotics/deepseek-v4-pro",
+          catalogModelID: "deepseek-v4-pro",
+          modelVersion: "deepseek-v4-pro",
           credentialPresent: true,
           billing: "paid",
           trajectoryCapacity: 1,
@@ -70,12 +70,12 @@ const trajectory = parseTrajectory({
       sequence: 0,
       kind: "worker",
       provider: "d-robotics-gateway",
-      modelID: "qwen3.8-max",
-      modelVersion: "qwen3.8-max",
+      modelID: "deepseek-v4-pro",
+      modelVersion: "deepseek-v4-pro",
       requestSHA256: "c".repeat(64),
       normalizedRequest: { path: `requests/${run.id}-000.json`, sha256: "c".repeat(64) },
       temperature: 0,
-      maxOutputTokens: 32_000,
+      maxOutputTokens: 4_096,
     },
   ],
   environment: {

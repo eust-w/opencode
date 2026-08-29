@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "protocol": "auto-drive-swe-evo-v1.8",
+  "protocol": "auto-drive-swe-evo-v1.9",
   "worker": {
-    "models": ["d-robotics/qwen3.8-max", "d-robotics/deepseek-v4-pro", "d-robotics/glm-5.3"],
+    "models": ["d-robotics/deepseek-v4-pro", "d-robotics/qwen3.7-max", "d-robotics/deepseek-v4-flash"],
     "temperature": 0,
     "reasoningEffort": "low",
-    "maxOutputTokens": 32000,
+    "maxOutputTokens": 4096,
     "segmentSteps": 6,
     "maxContinuations": 5,
     "timeoutSeconds": 2700,

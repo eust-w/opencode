@@ -47,11 +47,11 @@ export const Run = z.object({
 export type Run = z.infer<typeof Run>
 
 export const protocol = {
-  version: "auto-drive-swe-evo-v1.8",
+  version: "auto-drive-swe-evo-v1.9",
   strategies: Strategy.options,
   models: {
-    primary: "d-robotics/qwen3.8-max",
-    replication: ["d-robotics/deepseek-v4-pro", "d-robotics/glm-5.3"],
+    primary: "d-robotics/deepseek-v4-pro",
+    replication: ["d-robotics/qwen3.7-max", "d-robotics/deepseek-v4-flash"],
     controller: "d-robotics/qwen3.8-max",
   },
   gateway: {
@@ -76,7 +76,7 @@ export const protocol = {
   ],
   offPolicy: "first-boundary-prefix",
   temperature: 0,
-  workerMaxOutputTokens: 32_000,
+  workerMaxOutputTokens: 4_096,
   workerReasoningEffort: "low",
   controllerMaxOutputTokens: 1_024,
   segmentSteps: 6,

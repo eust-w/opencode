@@ -6,15 +6,15 @@ import { createModelMetadataSnapshot, loadPreflight, parsePreflight } from "../s
 
 const base = {
   schemaVersion: 1,
-  protocol: "auto-drive-swe-evo-v1.8",
+  protocol: "auto-drive-swe-evo-v1.9",
   scope: "canary",
   capturedAt: "2026-08-30T02:00:00.000Z",
   expiresAt: "2026-08-30T14:00:00.000Z",
   models: [
     {
-      model: "d-robotics/qwen3.8-max",
-      catalogModelID: "qwen3.8-max",
-      modelVersion: "qwen3.8-max",
+      model: "d-robotics/deepseek-v4-pro",
+      catalogModelID: "deepseek-v4-pro",
+      modelVersion: "deepseek-v4-pro",
       credentialPresent: true,
       billing: "sponsored",
       trajectoryCapacity: 1,
@@ -33,7 +33,7 @@ describe("experiment preflight gate", () => {
   test("requires fresh metered model capacity and isolated runtime flags", () => {
     expect(parsePreflight(base, { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") })).toMatchObject({
       scope: "canary",
-      models: [{ modelVersion: "qwen3.8-max" }],
+      models: [{ modelVersion: "deepseek-v4-pro" }],
     })
     expect(() =>
       parsePreflight(
@@ -69,17 +69,17 @@ describe("experiment preflight gate", () => {
       "d-robotics": {
         id: "d-robotics",
         models: {
-          "qwen3.8-max": { id: "qwen3.8-max" },
           "deepseek-v4-pro": { id: "deepseek-v4-pro" },
-          "glm-5.3": { id: "glm-5.3" },
+          "qwen3.7-max": { id: "qwen3.7-max" },
+          "deepseek-v4-flash": { id: "deepseek-v4-flash" },
           other: {},
         },
       },
     })
     expect(Object.keys(result.providers["d-robotics"].models)).toEqual([
-      "qwen3.8-max",
       "deepseek-v4-pro",
-      "glm-5.3",
+      "qwen3.7-max",
+      "deepseek-v4-flash",
     ])
     expect(result.resolutions).toContainEqual({
       model: "d-robotics/deepseek-v4-pro",
@@ -94,8 +94,8 @@ describe("experiment preflight gate", () => {
         mkdir(path.join(directory, "metadata"), { recursive: true }),
         mkdir(path.join(directory, "probes"), { recursive: true }),
       ])
-      const metadata = '{"d-robotics":{"models":{"qwen3.8-max":{"id":"qwen3.8-max"}}}}\n'
-      const probe = '{"billing":"sponsored","modelVersion":"qwen3.8-max","trajectoryCapacity":1}\n'
+      const metadata = '{"d-robotics":{"models":{"deepseek-v4-pro":{"id":"deepseek-v4-pro"}}}}\n'
+      const probe = '{"billing":"sponsored","modelVersion":"deepseek-v4-pro","trajectoryCapacity":1}\n'
       const digest = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
       await Promise.all([
         Bun.write(path.join(directory, base.modelMetadata.path), metadata),
@@ -118,7 +118,7 @@ describe("experiment preflight gate", () => {
         loadPreflight(receiptPath, { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") }),
       ).rejects.toThrow("Provider probe artifact hash mismatch")
 
-      const freeProbe = '{"billing":"free","modelVersion":"qwen3.8-max","trajectoryCapacity":1}\n'
+      const freeProbe = '{"billing":"free","modelVersion":"deepseek-v4-pro","trajectoryCapacity":1}\n'
       await Bun.write(path.join(directory, base.models[0].probe.path), freeProbe)
       await Bun.write(
         receiptPath,

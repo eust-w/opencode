@@ -60,7 +60,7 @@ export function buildExperimentConfig(input: {
         "http://autodrive-proxy:8080/worker/v1",
         input.workerModel,
         true,
-        32_000,
+        4_096,
         "@ai-sdk/openai",
         { reasoning: { effort: "low" } },
       ),
