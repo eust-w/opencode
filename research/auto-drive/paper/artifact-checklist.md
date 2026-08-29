@@ -8,6 +8,9 @@
 - [x] Fault-injection invariants
 - [x] Statistics implementations with deterministic tests
 - [x] Secret-shaped content rejection
+- [x] AutoDrive tests, typechecks, codegen, app build, and browser regression
+- [x] Branch diff and secret scan
+- [ ] Repository-wide dependency audit (237 existing findings; see `../reports/verification.md`)
 - [ ] Two independent boundary annotation files and kappa gate
 - [ ] Non-primary pilot accepted
 - [ ] 384 provenance-complete trajectories
