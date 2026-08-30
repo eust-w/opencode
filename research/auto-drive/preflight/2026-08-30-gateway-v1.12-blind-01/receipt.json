@@ -14,7 +14,7 @@
       "trajectoryCapacity": 1,
       "probe": {
         "path": "probes/deepseek-v4-pro.json",
-        "sha256": "a127b0d85ac4352fe0d75bf490877e0e3bf0c5c6c78516e78cfa4d1c447a2eaa"
+        "sha256": "99957d329d02ca83b57c2fd1886aeb6a3ecf54a76fdb74abb63ea1afc0908b13"
       }
     },
     {

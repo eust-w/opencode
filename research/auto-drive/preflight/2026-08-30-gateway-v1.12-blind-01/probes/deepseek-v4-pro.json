@@ -11,14 +11,24 @@
   "blocked": null,
   "credentialExpiresAt": null,
   "localCanarySpendCapUSD": 5,
-  "catalogModelsVerified": ["deepseek-v4-pro", "qwen3.7-max", "deepseek-v4-flash", "qwen3.8-max"],
+  "catalogModelsVerified": [
+    "deepseek-v4-pro",
+    "qwen3.7-max",
+    "deepseek-v4-flash",
+    "qwen3.8-max"
+  ],
   "transport": "openai-responses",
-  "reasoning": { "effort": "low" },
+  "reasoning": {
+    "effort": "low"
+  },
   "maxOutputTokens": 4096,
   "compatibilityProbe": {
     "httpStatus": 200,
     "responseStatus": "completed",
-    "outputTypes": ["reasoning", "message"],
+    "outputTypes": [
+      "reasoning",
+      "message"
+    ],
     "inputTokens": 8,
     "outputTokens": 12,
     "rawSHA256": "acd69151615d1d1a5381ebf34231d13ccf61d845c847c1ce35234d8b27b72c2c"
