@@ -1,0 +1,310 @@
+data: {"type":"response.created","response":{"id":"resp_7wafTI49jz2TLnFSro5WWk6qU9xnp6zHR3AkP2tLSSDVFbja09pZA5YdcAL-5oIghR-V3w6lpbrAye2F2XZqVBaF3313Ps3jIEMRHaMU3Wo9oWYuxX0jnXBgyRnCio7LIYHoMVCWjtwANd3aF_x5nQCUA1udvq6LolBYG77H_FWqDyRhsQ7_1FEAiRfl2W3adW9vrYQQ_DT7_ULvA4OVQsHp4HP--Nh-yXh1eMKSfh9cHUDCaYqjs-IzPPgF6vbaq-1MDAnaIrBjDiu0f9tnzfz5L2b0sgve7AoJnKE72lDzUKrZMsVeEawLu0YVCfFSp12woqXa8TzCW9DtTGHNkvQmD8cxFjCxd1qg0npDBuNcnM9GWzcVln3AVXPwSAL1K4J2PFPeAR2W3ktuD6tbRoweLEu8Gw==","created_at":1788057005,"metadata":{},"model":"deepseek-v4-pro","object":"response","output":[],"parallel_tool_calls":true,"temperature":0.0,"tool_choice":"auto","tools":[{"name":"apply_patch","parameters":{"additionalProperties":false,"properties":{"patchText":{"description":"The full patch text describing add, update, and delete operations","type":"string"}},"required":["patchText"],"type":"object"},"strict":false,"type":"function","description":"Apply one patch containing add, update, and delete file operations. All targets are resolved and approved before target contents are read. Operations apply sequentially; if a later operation fails, earlier operations remain applied and the failure reports them explicitly. Moves and atomic rollback are not supported yet."},{"name":"bash","parameters":{"additionalProperties":false,"properties":{"command":{"description":"Shell command string to execute","type":"string"},"timeout":{"allOf":[{"exclusiveMinimum":0},{"maximum":600000}],"description":"Timeout in milliseconds. Defaults to 120000 and may not exceed 600000.","type":"integer"},"workdir":{"description":"Working directory. Defaults to the active Location; relative paths resolve from that Location.","type":"string"}},"required":["command"],"type":"object"},"strict":false,"type":"function","description":"Execute one shell command string with the host user's filesystem, process, and network authority. The active Location is the default working directory. Relative workdir values resolve from that Location. External workdir values require external_directory approval; best-effort command-argument path warnings are advisory only. Timeout values are milliseconds (default: 120000; maximum: 600000). Uses the configured shell when set; otherwise uses /bin/sh on POSIX and COMSPEC or cmd.exe on Windows."},{"name":"edit","parameters":{"additionalProperties":false,"properties":{"newString":{"description":"Replacement text, which must differ from oldString","type":"string"},"oldString":{"description":"Exact text to replace","type":"string"},"path":{"description":"File path to edit. Relative paths resolve within the active Location. Absolute paths inside that Location are accepted; external absolute paths require external_directory approval.","type":"string"},"replaceAll":{"description":"Replace all exact occurrences of oldString (default false)","type":"boolean"}},"required":["path","oldString","newString"],"type":"object"},"strict":false,"type":"function","description":"Replace exact text in one file. Relative paths resolve within the active Location. Absolute paths inside the Location are accepted. Explicit external absolute paths require external_directory approval before edit approval."},{"name":"glob","parameters":{"additionalProperties":false,"properties":{"limit":{"allOf":[{"exclusiveMinimum":0}],"description":"Maximum results to return","type":"integer"},"path":{"description":"Relative directory to search. Defaults to the active Location.","type":"string"},"pattern":{"description":"Glob pattern to match files against","type":"string"}},"required":["pattern"],"type":"object"},"strict":false,"type":"function","description":"Find files by glob pattern within the active Location. Returns concise relative file resources. Use a relative path to narrow the search and limit to bound the result count."},{"name":"grep","parameters":{"additionalProperties":false,"properties":{"include":{"description":"File glob to include in the search (for example, \"*.js\" or \"*.{ts,tsx}\")","type":"string"},"limit":{"allOf":[{"exclusiveMinimum":0}],"description":"Maximum matches to return","type":"integer"},"path":{"description":"Relative directory to search. Defaults to the active Location.","type":"string"},"pattern":{"description":"Regex pattern to search for in file contents","type":"string"}},"required":["pattern"],"type":"object"},"strict":false,"type":"function","description":"Search file contents by regular expression within the active Location or an absolute managed tool-output file. Use a path to narrow the search, include to filter files by glob, and limit to bound the match count. Returns concise file resources, line numbers, and bounded line previews."},{"name":"read","parameters":{"additionalProperties":false,"properties":{"limit":{"allOf":[{"exclusiveMinimum":0},{"maximum":2000}],"description":"The maximum number of directory entries or text lines to read","type":"integer"},"offset":{"allOf":[{"exclusiveMinimum":0}],"description":"The 1-based directory entry or text line offset to start reading from","type":"integer"},"path":{"type":"string"}},"required":["path"],"type":"object"},"strict":false,"type":"function","description":"Read a text file or supported image, page through a large UTF-8 text file by line offset, or list a directory page. Relative paths resolve from the current location; absolute paths inside it are accepted, while external absolute paths require external_directory approval."},{"name":"skill","parameters":{"additionalProperties":false,"properties":{"name":{"description":"The name of the skill from the available skills list","type":"string"}},"required":["name"],"type":"object"},"strict":false,"type":"function","description":"Load a specialized skill when the task at hand matches one of the available skills in the system context.\n\nUse this tool to inject the skill's instructions and resources into the current conversation. The output may contain detailed workflow guidance as well as references to scripts, files, etc. in the same directory as the skill.\n\nThe skill name must match one of the available skills in the system context."},{"name":"todowrite","parameters":{"$defs":{"Todo":{"additionalProperties":false,"properties":{"content":{"description":"Brief description of the task","type":"string"},"priority":{"description":"Priority level of the task: high, medium, low","type":"string"},"status":{"description":"Current status of the task: pending, in_progress, completed, cancelled","type":"string"}},"required":["content","status","priority"],"type":"object"}},"additionalProperties":false,"properties":{"todos":{"description":"The updated todo list","items":{"$ref":"#/$defs/Todo"},"type":"array"}},"required":["todos"],"type":"object"},"strict":false,"type":"function","description":"Create and maintain a structured task list for the current coding session. Use it to track progress during multi-step work and keep todo statuses current."},{"name":"webfetch","parameters":{"additionalProperties":false,"properties":{"format":{"description":"The format to return the content in. Defaults to markdown.","enum":["text","markdown","html"],"type":"string"},"timeout":{"allOf":[{"exclusiveMinimum":0},{"maximum":120}],"anyOf":[{"type":"number"},{"enum":["NaN"],"type":"string"},{"enum":["Infinity"],"type":"string"},{"enum":["-Infinity"],"type":"string"}],"description":"Optional timeout in seconds (maximum: 120)"},"url":{"description":"The HTTP or HTTPS URL to fetch content from","type":"string"}},"required":["url"],"type":"object"},"strict":false,"type":"function","description":"Fetch content from an HTTP or HTTPS URL and return it as text, markdown, or HTML. Markdown is the default.\n\nUse a more targeted tool when one is available. This tool is read-only. Large text results may be replaced with a preview while the complete output is retained in managed storage."},{"name":"websearch","parameters":{"additionalProperties":false,"properties":{"contextMaxCharacters":{"allOf":[{"exclusiveMinimum":0},{"maximum":50000}],"description":"Maximum characters for context string optimized for models (default: 10000, maximum: 50000)","type":"integer"},"livecrawl":{"description":"Live crawl mode - 'fallback': use live crawling as backup if cached unavailable, 'preferred': prioritize live crawling (default: 'fallback')","enum":["fallback","preferred"],"type":"string"},"numResults":{"allOf":[{"exclusiveMinimum":0},{"maximum":20}],"description":"Number of search results to return (default: 8, maximum: 20)","type":"integer"},"query":{"description":"Websearch query","type":"string"},"type":{"description":"Search type - 'auto': balanced search (default), 'fast': quick results, 'deep': comprehensive search","enum":["auto","fast","deep"],"type":"string"}},"required":["query"],"type":"object"},"strict":false,"type":"function","description":"Search the web using the session's local web search provider. Use this for current information beyond knowledge cutoff.\n\nThis is a provider-independent local tool backed by Exa or Parallel. Provider-hosted web search tools are separate and execute at the model provider.\n\nOptional controls support result count, live crawling ('fallback' or 'preferred'), search type ('auto', 'fast', or 'deep'), and maximum context characters.\n\nThe current year is 2026. Use this year when searching for recent information or current events."},{"name":"write","parameters":{"additionalProperties":false,"properties":{"content":{"description":"Content to write to the file","type":"string"},"path":{"description":"File path to write. Relative paths resolve within the active Location. Absolute paths inside that Location are accepted; external absolute paths require external_directory approval.","type":"string"}},"required":["path","content"],"type":"object"},"strict":false,"type":"function","description":"Write content to one file. Relative paths resolve within the active Location. Absolute paths inside the Location are accepted. Explicit external absolute paths require external_directory approval before edit approval."}],"top_p":1.0,"max_output_tokens":4096,"reasoning":{"effort":"low","summary":null},"status":"in_progress","text":{"format":{"type":"text"}},"truncation":"disabled","store":false,"background":false,"frequency_penalty":0.0,"presence_penalty":0.0,"service_tier":"default","top_logprobs":0},"sequence_number":0,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.in_progress","response":{"id":"resp_7wafTI49jz2TLnFSro5WWk6qU9xnp6zHR3AkP2tLSSDVFbja09pZA5YdcAL-5oIghR-V3w6lpbrAye2F2XZqVBaF3313Ps3jIEMRHaMU3Wo9oWYuxX0jnXBgyRnCio7LIYHoMVCWjtwANd3aF_x5nQCUA1udvq6LolBYG77H_FWqDyRhsQ7_1FEAiRfl2W3adW9vrYQQ_DT7_ULvA4OVQsHp4HP--Nh-yXh1eMKSfh9cHUDCaYqjs-IzPPgF6vbaq-1MDAnaIrBjDiu0f9tnzfz5L2b0sgve7AoJnKE72lDzUKrZMsVeEawLu0YVCfFSp12woqXa8TzCW9DtTGHNkvQmD8cxFjCxd1qg0npDBuNcnM9GWzcVln3AVXPwSAL1K4J2PFPeAR2W3ktuD6tbRoweLEu8Gw==","created_at":1788057005,"metadata":{},"model":"deepseek-v4-pro","object":"response","output":[],"parallel_tool_calls":true,"temperature":0.0,"tool_choice":"auto","tools":[{"name":"apply_patch","parameters":{"additionalProperties":false,"properties":{"patchText":{"description":"The full patch text describing add, update, and delete operations","type":"string"}},"required":["patchText"],"type":"object"},"strict":false,"type":"function","description":"Apply one patch containing add, update, and delete file operations. All targets are resolved and approved before target contents are read. Operations apply sequentially; if a later operation fails, earlier operations remain applied and the failure reports them explicitly. Moves and atomic rollback are not supported yet."},{"name":"bash","parameters":{"additionalProperties":false,"properties":{"command":{"description":"Shell command string to execute","type":"string"},"timeout":{"allOf":[{"exclusiveMinimum":0},{"maximum":600000}],"description":"Timeout in milliseconds. Defaults to 120000 and may not exceed 600000.","type":"integer"},"workdir":{"description":"Working directory. Defaults to the active Location; relative paths resolve from that Location.","type":"string"}},"required":["command"],"type":"object"},"strict":false,"type":"function","description":"Execute one shell command string with the host user's filesystem, process, and network authority. The active Location is the default working directory. Relative workdir values resolve from that Location. External workdir values require external_directory approval; best-effort command-argument path warnings are advisory only. Timeout values are milliseconds (default: 120000; maximum: 600000). Uses the configured shell when set; otherwise uses /bin/sh on POSIX and COMSPEC or cmd.exe on Windows."},{"name":"edit","parameters":{"additionalProperties":false,"properties":{"newString":{"description":"Replacement text, which must differ from oldString","type":"string"},"oldString":{"description":"Exact text to replace","type":"string"},"path":{"description":"File path to edit. Relative paths resolve within the active Location. Absolute paths inside that Location are accepted; external absolute paths require external_directory approval.","type":"string"},"replaceAll":{"description":"Replace all exact occurrences of oldString (default false)","type":"boolean"}},"required":["path","oldString","newString"],"type":"object"},"strict":false,"type":"function","description":"Replace exact text in one file. Relative paths resolve within the active Location. Absolute paths inside the Location are accepted. Explicit external absolute paths require external_directory approval before edit approval."},{"name":"glob","parameters":{"additionalProperties":false,"properties":{"limit":{"allOf":[{"exclusiveMinimum":0}],"description":"Maximum results to return","type":"integer"},"path":{"description":"Relative directory to search. Defaults to the active Location.","type":"string"},"pattern":{"description":"Glob pattern to match files against","type":"string"}},"required":["pattern"],"type":"object"},"strict":false,"type":"function","description":"Find files by glob pattern within the active Location. Returns concise relative file resources. Use a relative path to narrow the search and limit to bound the result count."},{"name":"grep","parameters":{"additionalProperties":false,"properties":{"include":{"description":"File glob to include in the search (for example, \"*.js\" or \"*.{ts,tsx}\")","type":"string"},"limit":{"allOf":[{"exclusiveMinimum":0}],"description":"Maximum matches to return","type":"integer"},"path":{"description":"Relative directory to search. Defaults to the active Location.","type":"string"},"pattern":{"description":"Regex pattern to search for in file contents","type":"string"}},"required":["pattern"],"type":"object"},"strict":false,"type":"function","description":"Search file contents by regular expression within the active Location or an absolute managed tool-output file. Use a path to narrow the search, include to filter files by glob, and limit to bound the match count. Returns concise file resources, line numbers, and bounded line previews."},{"name":"read","parameters":{"additionalProperties":false,"properties":{"limit":{"allOf":[{"exclusiveMinimum":0},{"maximum":2000}],"description":"The maximum number of directory entries or text lines to read","type":"integer"},"offset":{"allOf":[{"exclusiveMinimum":0}],"description":"The 1-based directory entry or text line offset to start reading from","type":"integer"},"path":{"type":"string"}},"required":["path"],"type":"object"},"strict":false,"type":"function","description":"Read a text file or supported image, page through a large UTF-8 text file by line offset, or list a directory page. Relative paths resolve from the current location; absolute paths inside it are accepted, while external absolute paths require external_directory approval."},{"name":"skill","parameters":{"additionalProperties":false,"properties":{"name":{"description":"The name of the skill from the available skills list","type":"string"}},"required":["name"],"type":"object"},"strict":false,"type":"function","description":"Load a specialized skill when the task at hand matches one of the available skills in the system context.\n\nUse this tool to inject the skill's instructions and resources into the current conversation. The output may contain detailed workflow guidance as well as references to scripts, files, etc. in the same directory as the skill.\n\nThe skill name must match one of the available skills in the system context."},{"name":"todowrite","parameters":{"$defs":{"Todo":{"additionalProperties":false,"properties":{"content":{"description":"Brief description of the task","type":"string"},"priority":{"description":"Priority level of the task: high, medium, low","type":"string"},"status":{"description":"Current status of the task: pending, in_progress, completed, cancelled","type":"string"}},"required":["content","status","priority"],"type":"object"}},"additionalProperties":false,"properties":{"todos":{"description":"The updated todo list","items":{"$ref":"#/$defs/Todo"},"type":"array"}},"required":["todos"],"type":"object"},"strict":false,"type":"function","description":"Create and maintain a structured task list for the current coding session. Use it to track progress during multi-step work and keep todo statuses current."},{"name":"webfetch","parameters":{"additionalProperties":false,"properties":{"format":{"description":"The format to return the content in. Defaults to markdown.","enum":["text","markdown","html"],"type":"string"},"timeout":{"allOf":[{"exclusiveMinimum":0},{"maximum":120}],"anyOf":[{"type":"number"},{"enum":["NaN"],"type":"string"},{"enum":["Infinity"],"type":"string"},{"enum":["-Infinity"],"type":"string"}],"description":"Optional timeout in seconds (maximum: 120)"},"url":{"description":"The HTTP or HTTPS URL to fetch content from","type":"string"}},"required":["url"],"type":"object"},"strict":false,"type":"function","description":"Fetch content from an HTTP or HTTPS URL and return it as text, markdown, or HTML. Markdown is the default.\n\nUse a more targeted tool when one is available. This tool is read-only. Large text results may be replaced with a preview while the complete output is retained in managed storage."},{"name":"websearch","parameters":{"additionalProperties":false,"properties":{"contextMaxCharacters":{"allOf":[{"exclusiveMinimum":0},{"maximum":50000}],"description":"Maximum characters for context string optimized for models (default: 10000, maximum: 50000)","type":"integer"},"livecrawl":{"description":"Live crawl mode - 'fallback': use live crawling as backup if cached unavailable, 'preferred': prioritize live crawling (default: 'fallback')","enum":["fallback","preferred"],"type":"string"},"numResults":{"allOf":[{"exclusiveMinimum":0},{"maximum":20}],"description":"Number of search results to return (default: 8, maximum: 20)","type":"integer"},"query":{"description":"Websearch query","type":"string"},"type":{"description":"Search type - 'auto': balanced search (default), 'fast': quick results, 'deep': comprehensive search","enum":["auto","fast","deep"],"type":"string"}},"required":["query"],"type":"object"},"strict":false,"type":"function","description":"Search the web using the session's local web search provider. Use this for current information beyond knowledge cutoff.\n\nThis is a provider-independent local tool backed by Exa or Parallel. Provider-hosted web search tools are separate and execute at the model provider.\n\nOptional controls support result count, live crawling ('fallback' or 'preferred'), search type ('auto', 'fast', or 'deep'), and maximum context characters.\n\nThe current year is 2026. Use this year when searching for recent information or current events."},{"name":"write","parameters":{"additionalProperties":false,"properties":{"content":{"description":"Content to write to the file","type":"string"},"path":{"description":"File path to write. Relative paths resolve within the active Location. Absolute paths inside that Location are accepted; external absolute paths require external_directory approval.","type":"string"}},"required":["path","content"],"type":"object"},"strict":false,"type":"function","description":"Write content to one file. Relative paths resolve within the active Location. Absolute paths inside the Location are accepted. Explicit external absolute paths require external_directory approval before edit approval."}],"top_p":1.0,"max_output_tokens":4096,"reasoning":{"effort":"low","summary":null},"status":"in_progress","text":{"format":{"type":"text"}},"truncation":"disabled","store":false,"background":false,"frequency_penalty":0.0,"presence_penalty":0.0,"service_tier":"default","top_logprobs":0},"sequence_number":1,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_item.added","output_index":0,"item":{"type":"function_call","id":"921af095-0eda-494a-ac10-8d19b0f11d9c","status":"in_progress","arguments":"","call_id":"call_00_ET_lQDsUjTWyHLayLwOwYNY8057","name":"bash"},"sequence_number":2,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"{","sequence_number":3,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\"","sequence_number":4,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"command","sequence_number":5,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\"","sequence_number":6,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":": ","sequence_number":7,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\"","sequence_number":8,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"cd","sequence_number":9,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" /","sequence_number":10,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"tmp","sequence_number":11,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"/re","sequence_number":12,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"pro","sequence_number":13,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" &&","sequence_number":14,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" /","sequence_number":15,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"opt","sequence_number":16,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"/min","sequence_number":17,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"ic","sequence_number":18,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"onda","sequence_number":19,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"3","sequence_number":20,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"/env","sequence_number":21,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"s","sequence_number":22,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"/test","sequence_number":23,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"bed","sequence_number":24,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"/bin","sequence_number":25,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"/python","sequence_number":26,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" -","sequence_number":27,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"c","sequence_number":28,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" \\\"\\n","sequence_number":29,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"from","sequence_number":30,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" d","sequence_number":31,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"vc","sequence_number":32,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":".re","sequence_number":33,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"po","sequence_number":34,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" import","sequence_number":35,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" Rep","sequence_number":36,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"o","sequence_number":37,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\\n","sequence_number":38,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"import","sequence_number":39,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" os","sequence_number":40,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\\n","sequence_number":41,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"#","sequence_number":42,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" create","sequence_number":43,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" a","sequence_number":44,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" repo","sequence_number":45,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" with","sequence_number":46,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" unt","sequence_number":47,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"rack","sequence_number":48,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"ed","sequence_number":49,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" params","sequence_number":50,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" file","sequence_number":51,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\\n","sequence_number":52,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"os","sequence_number":53,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":".m","sequence_number":54,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"aked","sequence_number":55,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"irs","sequence_number":56,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"('","sequence_number":57,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"sub","sequence_number":58,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"',","sequence_number":59,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" exist","sequence_number":60,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"_","sequence_number":61,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"ok","sequence_number":62,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"=True","sequence_number":63,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":")\\n","sequence_number":64,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"with","sequence_number":65,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" open","sequence_number":66,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"('","sequence_number":67,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"params","sequence_number":68,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":".yaml","sequence_number":69,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"',","sequence_number":70,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" '","sequence_number":71,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"w","sequence_number":72,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"')","sequence_number":73,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" as","sequence_number":74,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" f","sequence_number":75,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":":\\n","sequence_number":76,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"   ","sequence_number":77,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" f","sequence_number":78,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":".write","sequence_number":79,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"('","sequence_number":80,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"foo","sequence_number":81,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":":","sequence_number":82,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" ","sequence_number":83,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"1","sequence_number":84,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\\\\n","sequence_number":85,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"')\\n","sequence_number":86,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"with","sequence_number":87,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" open","sequence_number":88,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"('","sequence_number":89,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"unt","sequence_number":90,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"rack","sequence_number":91,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"ed","sequence_number":92,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":".yaml","sequence_number":93,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"',","sequence_number":94,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" '","sequence_number":95,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"w","sequence_number":96,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"')","sequence_number":97,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" as","sequence_number":98,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" f","sequence_number":99,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":":\\n","sequence_number":100,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"   ","sequence_number":101,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" f","sequence_number":102,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":".write","sequence_number":103,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"('","sequence_number":104,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"bar","sequence_number":105,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":":","sequence_number":106,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" ","sequence_number":107,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"2","sequence_number":108,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\\\\n","sequence_number":109,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"')\\n","sequence_number":110,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"repo","sequence_number":111,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" =","sequence_number":112,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" Rep","sequence_number":113,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"o","sequence_number":114,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":".init","sequence_number":115,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"()\\n","sequence_number":116,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"print","sequence_number":117,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"('","sequence_number":118,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"in","sequence_number":119,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"ited","sequence_number":120,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"')\\n","sequence_number":121,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"from","sequence_number":122,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" d","sequence_number":123,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"vc","sequence_number":124,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" import","sequence_number":125,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" api","sequence_number":126,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\\n","sequence_number":127,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"print","sequence_number":128,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"(","sequence_number":129,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"api","sequence_number":130,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":".params","sequence_number":131,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"_","sequence_number":132,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"show","sequence_number":133,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"('","sequence_number":134,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"unt","sequence_number":135,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"rack","sequence_number":136,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"ed","sequence_number":137,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":".yaml","sequence_number":138,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"'))\\n","sequence_number":139,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\\\"","sequence_number":140,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" ","sequence_number":141,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"2","sequence_number":142,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":">&","sequence_number":143,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"1","sequence_number":144,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" |","sequence_number":145,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" tail","sequence_number":146,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":" -","sequence_number":147,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"30","sequence_number":148,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"\"","sequence_number":149,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.delta","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"delta":"}","sequence_number":150,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.function_call_arguments.done","item_id":"921af095-0eda-494a-ac10-8d19b0f11d9c","output_index":0,"arguments":"{\"command\": \"cd /tmp/repro && /opt/miniconda3/envs/testbed/bin/python -c \\\"\\nfrom dvc.repo import Repo\\nimport os\\n# create a repo with untracked params file\\nos.makedirs('sub', exist_ok=True)\\nwith open('params.yaml', 'w') as f:\\n    f.write('foo: 1\\\\n')\\nwith open('untracked.yaml', 'w') as f:\\n    f.write('bar: 2\\\\n')\\nrepo = Repo.init()\\nprint('inited')\\nfrom dvc import api\\nprint(api.params_show('untracked.yaml'))\\n\\\" 2>&1 | tail -30\"}","sequence_number":151,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_item.done","output_index":0,"sequence_number":152,"item":{"type":"function_call","id":"921af095-0eda-494a-ac10-8d19b0f11d9c","status":"completed","arguments":"{\"command\": \"cd /tmp/repro && /opt/miniconda3/envs/testbed/bin/python -c \\\"\\nfrom dvc.repo import Repo\\nimport os\\n# create a repo with untracked params file\\nos.makedirs('sub', exist_ok=True)\\nwith open('params.yaml', 'w') as f:\\n    f.write('foo: 1\\\\n')\\nwith open('untracked.yaml', 'w') as f:\\n    f.write('bar: 2\\\\n')\\nrepo = Repo.init()\\nprint('inited')\\nfrom dvc import api\\nprint(api.params_show('untracked.yaml'))\\n\\\" 2>&1 | tail -30\"}","call_id":"call_00_ET_lQDsUjTWyHLayLwOwYNY8057","name":"bash"},"model":"deepseek-v4-pro"}
+
+data: {"type":"response.completed","response":{"id":"resp_7wafTI49jz2TLnFSro5WWk6qU9xnp6zHR3AkP2tLSSDVFbja09pZA5YdcAL-5oIghR-V3w6lpbrAye2F2XZqVBaF3313Ps3jIEMRHaMU3Wo9oWYuxX0jnXBgyRnCio7LIYHoMVCWjtwANd3aF_x5nQCUA1udvq6LolBYG77H_FWqDyRhsQ7_1FEAiRfl2W3adW9vrYQQ_DT7_ULvA4OVQsHp4HP--Nh-yXh1eMKSfh9cHUDCaYqjs-IzPPgF6vbaq-1MDAnaIrBjDiu0f9tnzfz5L2b0sgve7AoJnKE72lDzUKrZMsVeEawLu0YVCfFSp12woqXa8TzCW9DtTGHNkvQmD8cxFjCxd1qg0npDBuNcnM9GWzcVln3AVXPwSAL1K4J2PFPeAR2W3ktuD6tbRoweLEu8Gw==","created_at":1788057005,"metadata":{},"model":"deepseek-v4-pro","object":"response","output":[{"arguments":"{\"command\": \"cd /tmp/repro && /opt/miniconda3/envs/testbed/bin/python -c \\\"\\nfrom dvc.repo import Repo\\nimport os\\n# create a repo with untracked params file\\nos.makedirs('sub', exist_ok=True)\\nwith open('params.yaml', 'w') as f:\\n    f.write('foo: 1\\\\n')\\nwith open('untracked.yaml', 'w') as f:\\n    f.write('bar: 2\\\\n')\\nrepo = Repo.init()\\nprint('inited')\\nfrom dvc import api\\nprint(api.params_show('untracked.yaml'))\\n\\\" 2>&1 | tail -30\"}","call_id":"call_00_ET_lQDsUjTWyHLayLwOwYNY8057","name":"bash","type":"function_call","id":"921af095-0eda-494a-ac10-8d19b0f11d9c","status":"completed"}],"parallel_tool_calls":true,"temperature":0.0,"tool_choice":"auto","tools":[{"name":"apply_patch","parameters":{"additionalProperties":false,"properties":{"patchText":{"description":"The full patch text describing add, update, and delete operations","type":"string"}},"required":["patchText"],"type":"object"},"strict":false,"type":"function","description":"Apply one patch containing add, update, and delete file operations. All targets are resolved and approved before target contents are read. Operations apply sequentially; if a later operation fails, earlier operations remain applied and the failure reports them explicitly. Moves and atomic rollback are not supported yet."},{"name":"bash","parameters":{"additionalProperties":false,"properties":{"command":{"description":"Shell command string to execute","type":"string"},"timeout":{"allOf":[{"exclusiveMinimum":0},{"maximum":600000}],"description":"Timeout in milliseconds. Defaults to 120000 and may not exceed 600000.","type":"integer"},"workdir":{"description":"Working directory. Defaults to the active Location; relative paths resolve from that Location.","type":"string"}},"required":["command"],"type":"object"},"strict":false,"type":"function","description":"Execute one shell command string with the host user's filesystem, process, and network authority. The active Location is the default working directory. Relative workdir values resolve from that Location. External workdir values require external_directory approval; best-effort command-argument path warnings are advisory only. Timeout values are milliseconds (default: 120000; maximum: 600000). Uses the configured shell when set; otherwise uses /bin/sh on POSIX and COMSPEC or cmd.exe on Windows."},{"name":"edit","parameters":{"additionalProperties":false,"properties":{"newString":{"description":"Replacement text, which must differ from oldString","type":"string"},"oldString":{"description":"Exact text to replace","type":"string"},"path":{"description":"File path to edit. Relative paths resolve within the active Location. Absolute paths inside that Location are accepted; external absolute paths require external_directory approval.","type":"string"},"replaceAll":{"description":"Replace all exact occurrences of oldString (default false)","type":"boolean"}},"required":["path","oldString","newString"],"type":"object"},"strict":false,"type":"function","description":"Replace exact text in one file. Relative paths resolve within the active Location. Absolute paths inside the Location are accepted. Explicit external absolute paths require external_directory approval before edit approval."},{"name":"glob","parameters":{"additionalProperties":false,"properties":{"limit":{"allOf":[{"exclusiveMinimum":0}],"description":"Maximum results to return","type":"integer"},"path":{"description":"Relative directory to search. Defaults to the active Location.","type":"string"},"pattern":{"description":"Glob pattern to match files against","type":"string"}},"required":["pattern"],"type":"object"},"strict":false,"type":"function","description":"Find files by glob pattern within the active Location. Returns concise relative file resources. Use a relative path to narrow the search and limit to bound the result count."},{"name":"grep","parameters":{"additionalProperties":false,"properties":{"include":{"description":"File glob to include in the search (for example, \"*.js\" or \"*.{ts,tsx}\")","type":"string"},"limit":{"allOf":[{"exclusiveMinimum":0}],"description":"Maximum matches to return","type":"integer"},"path":{"description":"Relative directory to search. Defaults to the active Location.","type":"string"},"pattern":{"description":"Regex pattern to search for in file contents","type":"string"}},"required":["pattern"],"type":"object"},"strict":false,"type":"function","description":"Search file contents by regular expression within the active Location or an absolute managed tool-output file. Use a path to narrow the search, include to filter files by glob, and limit to bound the match count. Returns concise file resources, line numbers, and bounded line previews."},{"name":"read","parameters":{"additionalProperties":false,"properties":{"limit":{"allOf":[{"exclusiveMinimum":0},{"maximum":2000}],"description":"The maximum number of directory entries or text lines to read","type":"integer"},"offset":{"allOf":[{"exclusiveMinimum":0}],"description":"The 1-based directory entry or text line offset to start reading from","type":"integer"},"path":{"type":"string"}},"required":["path"],"type":"object"},"strict":false,"type":"function","description":"Read a text file or supported image, page through a large UTF-8 text file by line offset, or list a directory page. Relative paths resolve from the current location; absolute paths inside it are accepted, while external absolute paths require external_directory approval."},{"name":"skill","parameters":{"additionalProperties":false,"properties":{"name":{"description":"The name of the skill from the available skills list","type":"string"}},"required":["name"],"type":"object"},"strict":false,"type":"function","description":"Load a specialized skill when the task at hand matches one of the available skills in the system context.\n\nUse this tool to inject the skill's instructions and resources into the current conversation. The output may contain detailed workflow guidance as well as references to scripts, files, etc. in the same directory as the skill.\n\nThe skill name must match one of the available skills in the system context."},{"name":"todowrite","parameters":{"$defs":{"Todo":{"additionalProperties":false,"properties":{"content":{"description":"Brief description of the task","type":"string"},"priority":{"description":"Priority level of the task: high, medium, low","type":"string"},"status":{"description":"Current status of the task: pending, in_progress, completed, cancelled","type":"string"}},"required":["content","status","priority"],"type":"object"}},"additionalProperties":false,"properties":{"todos":{"description":"The updated todo list","items":{"$ref":"#/$defs/Todo"},"type":"array"}},"required":["todos"],"type":"object"},"strict":false,"type":"function","description":"Create and maintain a structured task list for the current coding session. Use it to track progress during multi-step work and keep todo statuses current."},{"name":"webfetch","parameters":{"additionalProperties":false,"properties":{"format":{"description":"The format to return the content in. Defaults to markdown.","enum":["text","markdown","html"],"type":"string"},"timeout":{"allOf":[{"exclusiveMinimum":0},{"maximum":120}],"anyOf":[{"type":"number"},{"enum":["NaN"],"type":"string"},{"enum":["Infinity"],"type":"string"},{"enum":["-Infinity"],"type":"string"}],"description":"Optional timeout in seconds (maximum: 120)"},"url":{"description":"The HTTP or HTTPS URL to fetch content from","type":"string"}},"required":["url"],"type":"object"},"strict":false,"type":"function","description":"Fetch content from an HTTP or HTTPS URL and return it as text, markdown, or HTML. Markdown is the default.\n\nUse a more targeted tool when one is available. This tool is read-only. Large text results may be replaced with a preview while the complete output is retained in managed storage."},{"name":"websearch","parameters":{"additionalProperties":false,"properties":{"contextMaxCharacters":{"allOf":[{"exclusiveMinimum":0},{"maximum":50000}],"description":"Maximum characters for context string optimized for models (default: 10000, maximum: 50000)","type":"integer"},"livecrawl":{"description":"Live crawl mode - 'fallback': use live crawling as backup if cached unavailable, 'preferred': prioritize live crawling (default: 'fallback')","enum":["fallback","preferred"],"type":"string"},"numResults":{"allOf":[{"exclusiveMinimum":0},{"maximum":20}],"description":"Number of search results to return (default: 8, maximum: 20)","type":"integer"},"query":{"description":"Websearch query","type":"string"},"type":{"description":"Search type - 'auto': balanced search (default), 'fast': quick results, 'deep': comprehensive search","enum":["auto","fast","deep"],"type":"string"}},"required":["query"],"type":"object"},"strict":false,"type":"function","description":"Search the web using the session's local web search provider. Use this for current information beyond knowledge cutoff.\n\nThis is a provider-independent local tool backed by Exa or Parallel. Provider-hosted web search tools are separate and execute at the model provider.\n\nOptional controls support result count, live crawling ('fallback' or 'preferred'), search type ('auto', 'fast', or 'deep'), and maximum context characters.\n\nThe current year is 2026. Use this year when searching for recent information or current events."},{"name":"write","parameters":{"additionalProperties":false,"properties":{"content":{"description":"Content to write to the file","type":"string"},"path":{"description":"File path to write. Relative paths resolve within the active Location. Absolute paths inside that Location are accepted; external absolute paths require external_directory approval.","type":"string"}},"required":["path","content"],"type":"object"},"strict":false,"type":"function","description":"Write content to one file. Relative paths resolve within the active Location. Absolute paths inside the Location are accepted. Explicit external absolute paths require external_directory approval before edit approval."}],"top_p":1.0,"max_output_tokens":4096,"reasoning":{"effort":"low","summary":null},"status":"completed","text":{"format":{"type":"text"}},"truncation":"disabled","usage":{"input_tokens":15672,"input_tokens_details":{"cached_tokens":15488},"output_tokens":182,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":15854},"store":false,"background":false,"completed_at":1788057007,"frequency_penalty":0.0,"presence_penalty":0.0,"service_tier":"default","top_logprobs":0},"sequence_number":153,"model":"deepseek-v4-pro"}
+
+data: [DONE]
+
