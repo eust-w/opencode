@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "provider": "d-robotics-gateway",
+  "gatewaySoftware": "LiteLLM 1.90.0",
+  "billing": "sponsored",
+  "modelVersion": "deepseek-v4-pro",
+  "trajectoryCapacity": 1,
+  "spendEndpoint": "/key/info",
+  "spendAtCaptureUSD": 0.5023197,
+  "providerMaxBudgetUSD": null,
+  "blocked": null,
+  "credentialExpiresAt": null,
+  "localCanarySpendCapUSD": 5,
+  "catalogModelsVerified": [
+    "deepseek-v4-pro",
+    "qwen3.7-max",
+    "deepseek-v4-flash",
+    "qwen3.8-max"
+  ],
+  "transport": "openai-responses",
+  "reasoning": {
+    "effort": "low"
+  },
+  "maxOutputTokens": 4096,
+  "compatibilityProbe": {
+    "httpStatus": 200,
+    "responseStatus": "completed",
+    "outputTypes": [
+      "reasoning",
+      "message"
+    ],
+    "inputTokens": 8,
+    "outputTokens": 11,
+    "rawSHA256": "48fbd31f52eab4a4418c62a766eade0809aabdb47e7829c8e1dc891592c3d538"
+  },
+  "realContextQualification": "research/auto-drive/pilot/2026-08-30-v1.12-dvc-regex-canary",
+  "blockedReason": null
+}

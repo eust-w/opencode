@@ -1,0 +1,8 @@
+timestamp=2026-08-30T01:40:01.469Z level=INFO run=bfd1c87f message=loading path=/autodrive-config/opencode/config.json
+timestamp=2026-08-30T01:40:01.472Z level=INFO run=bfd1c87f message=loading path=/autodrive-config/opencode/opencode.json
+timestamp=2026-08-30T01:40:01.484Z level=INFO run=bfd1c87f message=loading path=/autodrive-config/opencode/opencode.jsonc
+timestamp=2026-08-30T01:40:01.904Z level=INFO run=bfd1c87f message="watcher backend" directory=/testbed platform=linux backend=inotify
+timestamp=2026-08-30T01:40:01.911Z level=INFO run=bfd1c87f message="project copy refresh started" projectID=595ac51b5af753aad17b71bcbd7cd8277d3c2c56
+timestamp=2026-08-30T01:40:01.914Z level=INFO run=bfd1c87f message="project copy refresh done" projectID=595ac51b5af753aad17b71bcbd7cd8277d3c2c56 updated=[] removed=[]
+timestamp=2026-08-30T01:40:01.971Z level=INFO run=bfd1c87f message="booting location services" directory=/testbed workspaceID=undefined
+timestamp=2026-08-30T01:40:07.453Z level=INFO run=bfd1c87f message="downloading ripgrep" url=https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz
