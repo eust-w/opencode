@@ -4,11 +4,13 @@ import { appendFile, chmod, mkdir } from "node:fs/promises"
 import path from "node:path"
 import { z } from "zod"
 import { assertSecretFree, parseTrajectory } from "../src/artifact"
-import { requireCompleteGatewayUsage } from "../src/gateway"
+import { gatewayRequestsSettled, requireCompleteGatewayUsage } from "../src/gateway"
 import {
+  buildAutoDriveUpdate,
   buildExperimentConfig,
   buildTaskPrompt,
   classifyIdleSession,
+  decideExternalContinuation,
   gradePytest,
   parsePytestLog,
   parseTaskInput,
@@ -38,7 +40,6 @@ const opencodeCommit = requireCommit("AUTODRIVE_OPENCODE_COMMIT")
 const gatewayUpstream = Bun.env.AUTODRIVE_GATEWAY_UPSTREAM ?? "https://ai-api.d-robotics.cc"
 
 if (Bun.env.AUTODRIVE_EVAL_PROTOCOL !== protocol.version) fail("Frozen protocol mismatch")
-if (input.run.strategy !== "supervisor") fail("This executor stage accepts only supervisor runs")
 if (input.run.model !== protocol.models.primary) fail("This canary executor accepts only the primary worker")
 if (input.budget.maxCostUSD <= 0) fail("Real execution requires a positive run cost ceiling")
 
@@ -133,6 +134,8 @@ try {
     `AUTODRIVE_GATEWAY_MAX_SPEND_USD=${input.budget.maxCostUSD}`,
     "--env",
     "AUTODRIVE_GATEWAY_HOLD_CONTROLLERS=1",
+    "--env",
+    `AUTODRIVE_GATEWAY_HOLD_WORKERS=${input.run.strategy === "regex" ? "1" : "0"}`,
     "--workdir",
     "/workspace/packages/autodrive-eval",
     "oven/bun:1.4.0",
@@ -223,14 +226,13 @@ try {
   await api(address, `/api/session/${session.id}/auto-drive`, {
     method: "PUT",
     headers,
-    body: JSON.stringify({
-      enabled: true,
-      policy: "supervisor",
-      maxRuns: input.run.maxContinuations,
-      supervisorModel: { providerID: "autodrive-controller", id: controllerModel },
-      contextual: true,
-      memory: true,
-    }),
+    body: JSON.stringify(
+      buildAutoDriveUpdate({
+        strategy: input.run.strategy,
+        maxContinuations: input.run.maxContinuations,
+        controllerModel,
+      }),
+    ),
   })
   await trace({ type: "session-created", sessionID: session.id })
   await api(address, `/api/session/${session.id}/prompt`, {
@@ -239,12 +241,13 @@ try {
     body: JSON.stringify({ prompt: { text: buildTaskPrompt(task) } }),
   })
 
+  const gradeCache = new Map<string, Awaited<ReturnType<typeof gradePatch>>>()
   const drained = await drain(address, session.id, headers)
   const boundaryPatches = drained.patches
   const finalPatch = await capturePatch("final")
   const firstPatch = boundaryPatches[0]?.content ?? finalPatch
-  const firstGrade = await gradePatch("first-boundary", firstPatch)
-  const finalGrade = firstPatch === finalPatch ? firstGrade : await gradePatch("final", finalPatch)
+  const firstGrade = await gradeCached("first-boundary", firstPatch)
+  const finalGrade = firstPatch === finalPatch ? firstGrade : await gradeCached("final", finalPatch)
   const info = await api<{
     autoDrive: { status: { action?: string; continuationCount: number; reason?: string } }
   }>(address, `/api/session/${session.id}`, { headers })
@@ -253,6 +256,7 @@ try {
   await trace({ type: "session-finished", autoDrive: info.autoDrive, messages, context })
   await Bun.write(path.join(patchRoot, "final.diff"), finalPatch)
 
+  await waitForGatewaySettlement()
   const requests = await readJSONL(requestManifest)
   const proxyEvents = await readJSONL(proxyTrace)
   if (!drained.failure) requireCompleteGatewayUsage(proxyEvents)
@@ -283,7 +287,7 @@ try {
     fixRate: finalGrade.fixRate,
     firstBoundaryResolved: firstGrade.resolved,
     firstBoundaryFixRate: firstGrade.fixRate,
-    continuationCount: info.autoDrive.status.continuationCount,
+    continuationCount: drained.externalContinuationCount ?? info.autoDrive.status.continuationCount,
     manualContinuationCount: 0,
     redundantTurns: boundaryPatches.filter((item, index) => index > 0 && item.sha256 === boundaryPatches[index - 1].sha256)
       .length,
@@ -315,33 +319,90 @@ try {
     const released = new Set<number>()
     const patches: { sequence: number; content: string; sha256: string }[] = []
     const deadline = Date.now() + input.run.timeoutMinutes * 60_000 - 60_000
+    let capturedContinuationCount = 0
+    let externalContinuationCount = 0
+    let lastBoundaryWorkerResponses = 0
     let idleSince: number | undefined
     while (Date.now() < deadline) {
       const requests = await readJSONL(requestManifest)
-      for (const request of requests) {
-        if (request.kind !== "controller" || released.has(number(request.sequence))) continue
-        const sequence = number(request.sequence)
-        const content = await capturePatch(`boundary-${String(patches.length).padStart(2, "0")}`)
-        const sha256 = digest(content)
-        patches.push({ sequence, content, sha256 })
-        await Bun.write(path.join(patchRoot, `boundary-${String(patches.length - 1).padStart(2, "0")}.diff`), content)
-        await Bun.write(path.join(controlRoot, `release-${sequence}`), "released\n")
-        released.add(sequence)
-        await trace({ type: "boundary-captured", sequence, sha256 })
-      }
       const active = await api<Record<string, { type: string }>>(address, "/api/session/active", { headers })
-      const info = await api<{ autoDrive: { status: { action?: string } } }>(address, `/api/session/${sessionID}`, {
-        headers,
-      })
+      const info = await api<{ autoDrive: { status: { action?: string; continuationCount: number } } }>(
+        address,
+        `/api/session/${sessionID}`,
+        { headers },
+      )
+      const proxyEvents = await readJSONL(proxyTrace)
+      const successful = proxyEvents.filter(
+        (event) => event.type === "provider-response" && event.status === 200,
+      )
+      const providerFailure = proxyEvents.some(
+        (event) => event.type === "proxy-error" || (event.type === "provider-response" && event.status !== 200),
+      )
+      const workerSequences = new Set(
+        requests.filter((request) => request.kind === "worker").map((request) => number(request.sequence)),
+      )
+      const successfulWorkers = successful.filter((event) => workerSequences.has(number(event.sequence)))
+      for (const request of requests) {
+        const sequence = number(request.sequence)
+        if (released.has(sequence)) continue
+        if (request.kind === "controller") {
+          await recordBoundary(sequence)
+          lastBoundaryWorkerResponses = successfulWorkers.length
+          await release(sequence, request.kind)
+          continue
+        }
+        if (input.run.strategy !== "regex" || sequence === 0) continue
+        if (info.autoDrive.status.continuationCount > capturedContinuationCount) {
+          await recordBoundary(sequence)
+          capturedContinuationCount = info.autoDrive.status.continuationCount
+          lastBoundaryWorkerResponses = successfulWorkers.length
+        }
+        await release(sequence, request.kind)
+      }
       const pendingController = requests.some(
         (request) => request.kind === "controller" && !released.has(number(request.sequence)),
       )
       const idle = !active[sessionID] && !pendingController
       idleSince = idle ? (idleSince ?? Date.now()) : undefined
-      const proxyEvents = await readJSONL(proxyTrace)
-      const successful = proxyEvents.filter(
-        (event) => event.type === "provider-response" && event.status === 200,
-      )
+      if (idle && !providerFailure && successfulWorkers.length > lastBoundaryWorkerResponses) {
+        const sequence = Math.max(...successfulWorkers.map((event) => number(event.sequence)))
+        const boundary = await recordBoundary(sequence)
+        lastBoundaryWorkerResponses = successfulWorkers.length
+        const grade =
+          input.run.strategy === "oracle"
+            ? await gradeCached(`oracle-boundary-${patches.length - 1}`, boundary.content)
+            : undefined
+        const decision = decideExternalContinuation({
+          strategy: input.run.strategy,
+          continuationCount: externalContinuationCount,
+          maxContinuations: input.run.maxContinuations,
+          resolved: grade?.resolved,
+        })
+        if (decision) {
+          await trace({
+            type: "external-continuation-decided",
+            boundary: patches.length,
+            action: decision.action,
+            reason: decision.reason,
+            resolved: grade?.resolved,
+            continuationCount: externalContinuationCount,
+          })
+          if (decision.action === "stop") return { patches, externalContinuationCount }
+          externalContinuationCount++
+          await api(address, `/api/session/${sessionID}/prompt`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ prompt: { text: decision.prompt }, delivery: "queue" }),
+          })
+          await trace({
+            type: "external-continuation-admitted",
+            boundary: patches.length,
+            continuationCount: externalContinuationCount,
+          })
+          idleSince = undefined
+          continue
+        }
+      }
       const classification = classifyIdleSession({
         active: !!active[sessionID],
         pendingController,
@@ -350,14 +411,30 @@ try {
         successfulResponses: successful.length,
         usageComplete: successful.every((event) => event.usageComplete === true),
       })
-      if (classification === "complete") return { patches }
+      if (classification === "complete") return { patches, externalContinuationCount: undefined }
       if (classification) {
         await trace({ type: "session-failed", failure: classification, successfulResponses: successful.length })
-        return { patches, failure: classification }
+        return { patches, externalContinuationCount: undefined, failure: classification }
       }
       await Bun.sleep(200)
     }
     throw new Error("Session exceeded the frozen execution deadline")
+
+    async function recordBoundary(sequence: number) {
+      const content = await capturePatch(`boundary-${String(patches.length).padStart(2, "0")}`)
+      const sha256 = digest(content)
+      const boundary = { sequence, content, sha256 }
+      patches.push(boundary)
+      await Bun.write(path.join(patchRoot, `boundary-${String(patches.length - 1).padStart(2, "0")}.diff`), content)
+      await trace({ type: "boundary-captured", sequence, sha256, strategy: input.run.strategy })
+      return boundary
+    }
+
+    async function release(sequence: number, kind: unknown) {
+      await Bun.write(path.join(controlRoot, `release-${sequence}`), "released\n")
+      released.add(sequence)
+      await trace({ type: "gateway-request-released", sequence, kind })
+    }
   }
 
   async function capturePatch(label: string) {
@@ -381,27 +458,75 @@ try {
     return patch.stdout
   }
 
-  async function gradePatch(label: string, modelPatch: string) {
-    await command(["docker", "exec", taskName, "git", "-C", "/testbed", "reset", "--hard", task.baseCommit])
-    await command(["docker", "exec", taskName, "git", "-C", "/testbed", "clean", "-fd"])
-    if (modelPatch.trim())
-      await command(["docker", "exec", "-i", taskName, "git", "-C", "/testbed", "apply", "--whitespace=nowarn", "-"], {
-        stdin: modelPatch,
-      })
-    await command(["docker", "exec", "-i", taskName, "git", "-C", "/testbed", "apply", "--whitespace=nowarn", "-"], {
-      stdin: task.testPatch,
-    })
-    const test = await command(["docker", "exec", taskName, "bash", "-lc", `cd /testbed && ${task.testCommand}`], {
-      allowFailure: true,
-      timeoutMS: 20 * 60_000,
-    })
-    const content = test.stdout + test.stderr
-    const logPath = path.join(artifactRoot, "grader", input.run.id, `${label}.log`)
-    await mkdir(path.dirname(logPath), { recursive: true })
-    await Bun.write(logPath, content)
-    const grade = gradePytest(task, parsePytestLog(content))
-    await trace({ type: "grader-finished", label, exitCode: test.exitCode, grade, log: relativeArtifact(logPath) })
+  async function gradeCached(label: string, modelPatch: string) {
+    const sha256 = digest(modelPatch)
+    const cached = gradeCache.get(sha256)
+    if (cached) {
+      await trace({ type: "grader-reused", label, sha256, grade: cached })
+      return cached
+    }
+    const grade = await gradePatch(label, modelPatch)
+    gradeCache.set(sha256, grade)
     return grade
+  }
+
+  async function gradePatch(label: string, modelPatch: string) {
+    const graderName = `autodrive-grade-${suffix}-${digest(label).slice(0, 8)}`
+    let graderStarted = false
+    try {
+      await command(["docker", "rm", "--force", graderName], { allowFailure: true })
+      await command([
+        "docker",
+        "run",
+        "--detach",
+        "--rm",
+        "--name",
+        graderName,
+        "--network",
+        "none",
+        "--cpus",
+        "8",
+        "--memory",
+        "32g",
+        "--pids-limit",
+        "4096",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--workdir",
+        "/testbed",
+        "--entrypoint",
+        "sleep",
+        task.image,
+        "infinity",
+      ])
+      graderStarted = true
+      await command(["docker", "exec", graderName, "git", "-C", "/testbed", "reset", "--hard", task.baseCommit])
+      await command(["docker", "exec", graderName, "git", "-C", "/testbed", "clean", "-fd"])
+      if (modelPatch.trim())
+        await command(
+          ["docker", "exec", "-i", graderName, "git", "-C", "/testbed", "apply", "--whitespace=nowarn", "-"],
+          { stdin: modelPatch },
+        )
+      await command(
+        ["docker", "exec", "-i", graderName, "git", "-C", "/testbed", "apply", "--whitespace=nowarn", "-"],
+        { stdin: task.testPatch },
+      )
+      const test = await command(
+        ["docker", "exec", graderName, "bash", "-lc", `cd /testbed && ${task.testCommand}`],
+        { allowFailure: true, timeoutMS: 20 * 60_000 },
+      )
+      const content = test.stdout + test.stderr
+      const logPath = path.join(artifactRoot, "grader", input.run.id, `${label}.log`)
+      await mkdir(path.dirname(logPath), { recursive: true })
+      await Bun.write(logPath, content)
+      const grade = gradePytest(task, parsePytestLog(content))
+      await trace({ type: "grader-finished", label, exitCode: test.exitCode, grade, log: relativeArtifact(logPath) })
+      return grade
+    } finally {
+      if (graderStarted) await command(["docker", "rm", "--force", graderName], { allowFailure: true })
+    }
   }
 
   async function inspectImageDigest() {
@@ -426,6 +551,20 @@ try {
       await Bun.sleep(250)
     }
     throw new Error("Gateway proxy did not become ready")
+  }
+
+  async function waitForGatewaySettlement() {
+    const deadline = Date.now() + 5 * 60_000
+    while (Date.now() < deadline) {
+      const requests = await readJSONL(requestManifest)
+      const events = await readJSONL(proxyTrace)
+      if (gatewayRequestsSettled(events, requests.length)) {
+        await trace({ type: "gateway-settled", requests: requests.length })
+        return
+      }
+      await Bun.sleep(200)
+    }
+    throw new Error("Gateway requests did not settle before the frozen deadline")
   }
 
   async function waitForServer() {

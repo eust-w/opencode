@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test"
 import {
+  BASELINE_CONTINUATION_PROMPT,
+  buildAutoDriveUpdate,
   buildExperimentConfig,
   buildTaskPrompt,
   classifyIdleSession,
+  decideExternalContinuation,
   gradePytest,
   parsePytestLog,
   parseTaskInput,
@@ -25,6 +28,66 @@ const task = {
 }
 
 describe("SWE-EVO host executor", () => {
+  test("maps internal policies without leaking full-system context into the regex baseline", () => {
+    expect(
+      buildAutoDriveUpdate({
+        strategy: "regex",
+        maxContinuations: 5,
+        controllerModel: "qwen3.8-max",
+      }),
+    ).toEqual({ enabled: true, policy: "heuristic", maxRuns: 5, contextual: false, memory: false })
+    expect(
+      buildAutoDriveUpdate({
+        strategy: "supervisor",
+        maxContinuations: 5,
+        controllerModel: "qwen3.8-max",
+      }),
+    ).toEqual({
+      enabled: true,
+      policy: "supervisor",
+      maxRuns: 5,
+      supervisorModel: { providerID: "autodrive-controller", id: "qwen3.8-max" },
+      contextual: true,
+      memory: true,
+    })
+    expect(
+      buildAutoDriveUpdate({
+        strategy: "blind",
+        maxContinuations: 5,
+        controllerModel: "qwen3.8-max",
+      }),
+    ).toEqual({ enabled: false, policy: "supervisor", maxRuns: 5, contextual: false, memory: false })
+  })
+
+  test("continues blind baselines to the cap and oracle baselines only while unresolved", () => {
+    expect(
+      decideExternalContinuation({ strategy: "blind", continuationCount: 0, maxContinuations: 5 }),
+    ).toEqual({
+      action: "continue",
+      reason: "Blind baseline continuation 1 of 5",
+      prompt: BASELINE_CONTINUATION_PROMPT,
+    })
+    expect(
+      decideExternalContinuation({ strategy: "blind", continuationCount: 5, maxContinuations: 5 }),
+    ).toEqual({ action: "stop", reason: "Maximum continuation count reached" })
+    expect(
+      decideExternalContinuation({ strategy: "oracle", continuationCount: 2, maxContinuations: 5, resolved: true }),
+    ).toEqual({ action: "stop", reason: "External validator confirmed completion" })
+    expect(
+      decideExternalContinuation({ strategy: "oracle", continuationCount: 2, maxContinuations: 5, resolved: false }),
+    ).toEqual({
+      action: "continue",
+      reason: "External validator found the task incomplete",
+      prompt: BASELINE_CONTINUATION_PROMPT,
+    })
+    expect(() =>
+      decideExternalContinuation({ strategy: "oracle", continuationCount: 0, maxContinuations: 5 }),
+    ).toThrow("Oracle continuation requires an external validator result")
+    expect(
+      decideExternalContinuation({ strategy: "regex", continuationCount: 0, maxContinuations: 5 }),
+    ).toBeUndefined()
+  })
+
   test("routes workers through OpenAI Responses while keeping the controller chat-compatible", () => {
     const config = buildExperimentConfig({
       controllerModel: "qwen3.8-max",

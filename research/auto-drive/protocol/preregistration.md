@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.11
+# AutoDrive Preregistration v1.12
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -65,6 +65,14 @@ Version 1.10 changes only the gateway worker normalizer from 32,000 to 4,096 out
 The first v1.10 request passed its normalized-body gate. DeepSeek completed six worker responses with complete usage of 20,286 input and 957 output tokens, the executor captured the first boundary, and the real supervisor request was held at sequence 6. Although the executor wrote `release-6` and the file was visible inside the proxy container, the controller was never sent upstream: Bun 1.4.0 cached the initially missing state on the single `BunFile` used by the polling loop, which timed out after 60 seconds. No controller response, decision, continuation, grade, trajectory, boundary example, or ledger row was accepted.
 
 A zero-provider-cost reproduction observed `false` before creation, `false` from the same `BunFile` after creation, and `true` from a fresh `BunFile`. Version 1.11 reconstructs the file handle on every release poll and adds a delayed-creation regression test. No policy logic, model, prompt, task, generation parameter, run limit, statistic, or budget changes. Because v1.10 worker calls were charged, every run ID is regenerated and no v1.10 ID is reused.
+
+## Four-policy executor amendment (v1.12)
+
+The first accepted v1.11 paid pilot exercised the complete supervisor path on one DVC task. It persisted one `continue` decision and automatically resumed the worker, but produced no patch and remained unresolved. A second supervisor response completed after the frozen controller deadline and was correctly ignored in favor of the timeout fallback. This trajectory is retained only as mechanism and error-analysis evidence; it is not admitted to the formal four-policy matrix.
+
+That pilot also confirmed that the host executor still rejected the three preregistered non-supervisor strategies. Version 1.12 implements the already frozen policy definitions before any comparative result is accepted. `regex` uses the Session heuristic with contextual goal and memory disabled. The proxy temporarily gates post-initial regex worker requests so the executor can seal an exact patch at an automatically continued boundary before the next worker response changes the checkout. `blind` and `oracle` run with Session AutoDrive disabled and admit the same static queue prompt at a safe idle boundary; blind continues until the five-continuation cap, while oracle continues only when the official external task verifier reports unresolved. Oracle grading runs in a separate no-network task-image container and memoizes identical patch hashes, so validation cannot mutate the worker checkout. Every strategy records the first-boundary prefix, and the executor waits for one terminal proxy event per sealed provider request before acceptance.
+
+The supervisor prompt, regex rules, static baseline prompt, models, task inputs, temperature, output limits, six-step segment size, five-continuation cap, metrics, statistics, and budget are unchanged. The amendment completes missing executor coverage and strengthens artifact isolation; it is not selected based on a favorable pilot outcome. All v1.12 deterministic run IDs are regenerated, and the v1.11 pilot remains outside comparative estimates.
 
 ## Claim boundary
 

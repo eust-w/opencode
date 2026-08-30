@@ -11,9 +11,49 @@ import {
   proxyGatewayRequest,
   requireCompleteGatewayUsage,
   requireGatewayBudget,
+  gatewayRequestsSettled,
+  shouldHoldGatewayRequest,
 } from "../src/gateway"
 
 describe("gateway experiment transport", () => {
+  test("requires one terminal proxy event for every sealed request", () => {
+    expect(
+      gatewayRequestsSettled(
+        [
+          { type: "provider-raw-response", sequence: 0 },
+          { type: "provider-response", sequence: 0, status: 200 },
+          { type: "proxy-error", sequence: 1 },
+        ],
+        2,
+      ),
+    ).toBe(true)
+    expect(gatewayRequestsSettled([{ type: "provider-response", sequence: 0, status: 200 }], 2)).toBe(false)
+    expect(
+      gatewayRequestsSettled(
+        [
+          { type: "provider-response", sequence: 0, status: 200 },
+          { type: "provider-response", sequence: 0, status: 200 },
+        ],
+        2,
+      ),
+    ).toBe(false)
+  })
+
+  test("holds every post-initial regex worker request so boundaries can be sealed", () => {
+    expect(
+      shouldHoldGatewayRequest({ kind: "worker", sequence: 0, holdControllers: true, holdWorkers: true }),
+    ).toBe(false)
+    expect(
+      shouldHoldGatewayRequest({ kind: "worker", sequence: 1, holdControllers: false, holdWorkers: true }),
+    ).toBe(true)
+    expect(
+      shouldHoldGatewayRequest({ kind: "controller", sequence: 0, holdControllers: true, holdWorkers: false }),
+    ).toBe(true)
+    expect(
+      shouldHoldGatewayRequest({ kind: "controller", sequence: 0, holdControllers: false, holdWorkers: true }),
+    ).toBe(false)
+  })
+
   test("observes a controller release created after polling starts", async () => {
     const gateway: Record<string, unknown> = await import("../src/gateway")
     expect(gateway.waitForControllerRelease).toBeFunction()

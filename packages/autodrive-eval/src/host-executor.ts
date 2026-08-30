@@ -1,4 +1,7 @@
 import { z } from "zod"
+import type { Strategy } from "./protocol"
+
+export const BASELINE_CONTINUATION_PROMPT = "Please proceed with the next step."
 
 export const TaskInput = z
   .object({
@@ -35,6 +38,63 @@ export function buildTaskPrompt(task: TaskInput) {
     "",
     task.problemStatement,
   ].join("\n")
+}
+
+export function buildAutoDriveUpdate(input: {
+  strategy: Strategy
+  maxContinuations: number
+  controllerModel: string
+}) {
+  if (input.strategy === "regex")
+    return {
+      enabled: true,
+      policy: "heuristic" as const,
+      maxRuns: input.maxContinuations,
+      contextual: false,
+      memory: false,
+    }
+  if (input.strategy === "supervisor")
+    return {
+      enabled: true,
+      policy: "supervisor" as const,
+      maxRuns: input.maxContinuations,
+      supervisorModel: { providerID: "autodrive-controller", id: input.controllerModel },
+      contextual: true,
+      memory: true,
+    }
+  return {
+    enabled: false,
+    policy: "supervisor" as const,
+    maxRuns: input.maxContinuations,
+    contextual: false,
+    memory: false,
+  }
+}
+
+export function decideExternalContinuation(input: {
+  strategy: Strategy
+  continuationCount: number
+  maxContinuations: number
+  resolved?: boolean
+}):
+  | { action: "continue"; reason: string; prompt: string }
+  | { action: "stop"; reason: string }
+  | undefined {
+  if (input.strategy === "regex" || input.strategy === "supervisor") return undefined
+  if (input.continuationCount >= input.maxContinuations)
+    return { action: "stop" as const, reason: "Maximum continuation count reached" }
+  if (input.strategy === "oracle" && input.resolved === undefined)
+    throw new Error("Oracle continuation requires an external validator result")
+  if (input.strategy === "oracle" && input.resolved)
+    return { action: "stop" as const, reason: "External validator confirmed completion" }
+  return {
+    action: "continue" as const,
+    reason:
+      input.strategy === "blind"
+        ? `Blind baseline continuation ${input.continuationCount + 1} of ${input.maxContinuations}`
+        : "External validator found the task incomplete",
+    prompt: BASELINE_CONTINUATION_PROMPT,
+  }
 }
 
 export function buildExperimentConfig(input: {
@@ -84,9 +144,9 @@ export function classifyIdleSession(input: {
   successfulResponses: number
   usageComplete: boolean
 }) {
-  if (input.active || input.pendingController) return
+  if (input.active || input.pendingController) return undefined
   if (input.action === "stop" || input.action === "defer") return "complete" as const
-  if (input.idleMS < 5_000 || input.successfulResponses === 0) return
+  if (input.idleMS < 5_000 || input.successfulResponses === 0) return undefined
   return input.usageComplete ? ("non-retryable-provider" as const) : ("retryable-provider" as const)
 }
 

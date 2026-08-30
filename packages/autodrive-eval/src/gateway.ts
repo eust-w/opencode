@@ -171,6 +171,34 @@ export function requireCompleteGatewayUsage(events: readonly unknown[]) {
   if (incomplete) throw new Error("Successful provider response has incomplete usage accounting")
 }
 
+export function gatewayRequestsSettled(events: readonly unknown[], requestCount: number) {
+  if (!Number.isInteger(requestCount) || requestCount < 0) throw new Error("Gateway request count is invalid")
+  const terminal = new Set(
+    events.flatMap((event) => {
+      const parsed = z
+        .object({ type: z.string(), sequence: z.number().int().nonnegative() })
+        .loose()
+        .safeParse(event)
+      if (!parsed.success || !new Set(["provider-response", "proxy-error"]).has(parsed.data.type)) return []
+      return [parsed.data.sequence]
+    }),
+  )
+  return (
+    terminal.size === requestCount &&
+    Array.from({ length: requestCount }, (_, sequence) => terminal.has(sequence)).every(Boolean)
+  )
+}
+
+export function shouldHoldGatewayRequest(input: {
+  kind: "worker" | "controller"
+  sequence: number
+  holdControllers: boolean
+  holdWorkers: boolean
+}) {
+  if (input.kind === "controller") return input.holdControllers
+  return input.holdWorkers && input.sequence > 0
+}
+
 export async function waitForControllerRelease(input: { path: string; timeoutMS: number; pollMS: number }) {
   const deadline = Date.now() + input.timeoutMS
   while (!(await Bun.file(input.path).exists())) {

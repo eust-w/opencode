@@ -6,7 +6,7 @@ import { createModelMetadataSnapshot, loadPreflight, parsePreflight } from "../s
 
 const base = {
   schemaVersion: 1,
-  protocol: "auto-drive-swe-evo-v1.11",
+  protocol: "auto-drive-swe-evo-v1.12",
   scope: "canary",
   capturedAt: "2026-08-30T02:00:00.000Z",
   expiresAt: "2026-08-30T14:00:00.000Z",

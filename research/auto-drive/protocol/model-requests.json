@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "protocol": "auto-drive-swe-evo-v1.11",
+  "protocol": "auto-drive-swe-evo-v1.12",
   "worker": {
     "models": ["d-robotics/deepseek-v4-pro", "d-robotics/qwen3.7-max", "d-robotics/deepseek-v4-flash"],
     "temperature": 0,

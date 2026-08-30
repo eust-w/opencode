@@ -3,7 +3,12 @@
 import { appendFile, mkdir, stat } from "node:fs/promises"
 import path from "node:path"
 import { assertSecretFree } from "../src/artifact"
-import { proxyGatewayRequest, requireGatewayBudget, waitForControllerRelease } from "../src/gateway"
+import {
+  proxyGatewayRequest,
+  requireGatewayBudget,
+  shouldHoldGatewayRequest,
+  waitForControllerRelease,
+} from "../src/gateway"
 
 const keyFile = requireAbsolute("AUTODRIVE_GATEWAY_KEY_FILE")
 const artifactRoot = requireAbsolute("AUTODRIVE_EVAL_ARTIFACT_ROOT")
@@ -64,14 +69,22 @@ Bun.serve({
           await writeTrace({ type: "provider-request", ...JSON.parse(record) })
         },
         beforeUpstream: async (request) => {
-          if (request.kind !== "controller" || Bun.env.AUTODRIVE_GATEWAY_HOLD_CONTROLLERS !== "1") return
-          await writeTrace({ type: "controller-held", sequence: request.sequence })
+          if (
+            !shouldHoldGatewayRequest({
+              kind: request.kind,
+              sequence: request.sequence,
+              holdControllers: Bun.env.AUTODRIVE_GATEWAY_HOLD_CONTROLLERS === "1",
+              holdWorkers: Bun.env.AUTODRIVE_GATEWAY_HOLD_WORKERS === "1",
+            })
+          )
+            return
+          await writeTrace({ type: `${request.kind}-held`, sequence: request.sequence })
           await waitForControllerRelease({
             path: path.join(runRoot, "control", `release-${request.sequence}`),
             timeoutMS: 60_000,
             pollMS: 100,
           })
-          await writeTrace({ type: "controller-released", sequence: request.sequence })
+          await writeTrace({ type: `${request.kind}-released`, sequence: request.sequence })
         },
         onRawResponse: async (response) => {
           assertSecretFree(response.content)
