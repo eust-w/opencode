@@ -42,14 +42,67 @@ The expected status is `accepted` with `mode: dry-run` and `costUSD: 0`. The gen
 
 ## 4. Pilot and execute
 
-Run a non-primary pilot inside the USD 50 category before selecting any frozen task. The four accepted v1.13 canaries validate historical mechanism execution but do not satisfy the v1.14 capacity or formal-result gates. If a new protocol canary is required for infrastructure qualification, execute exactly one paid canary against a sealed canary receipt:
+Inspect the frozen non-primary task without provider access:
+
+```bash
+cd packages/autodrive-eval
+bun run pilot:plan
+```
+
+The plan must resolve SWE-bench Verified `psf__requests-1142`, dataset revision `c104f840`, the pinned harness commit, task-input SHA-256, and AMD64 image digest. Execute it inside the USD 50 category only after a fresh sealed canary-scope receipt exists:
+
+```bash
+cd packages/autodrive-eval
+bun run pilot -- --execute --executor /absolute/path/to/host-executor --preflight /artifact-root/preflight/pilot.json --artifact-root /artifact-root
+```
+
+The command copies the manifest and task input into `/artifact-root/pilot/protocol/`, enforces the frozen image digest, and writes only `/artifact-root/pilot/{trajectories.jsonl,ledger.jsonl,receipt.json}` plus content-addressed raw artifacts. Its outcome never enters an RQ estimate. The four accepted v1.13 canaries validate historical mechanism execution but do not satisfy this v1.14 non-primary pilot gate.
+
+If a new protocol canary is required for infrastructure qualification, execute exactly one paid canary against a sealed canary receipt:
 
 ```bash
 cd packages/autodrive-eval
 bun run canary -- --execute --executor /absolute/path/to/host-executor --preflight /artifact-root/preflight/canary.json --artifact-root /artifact-root --run-id adr_...
 ```
 
-The canary command rejects `--all`, requires the frozen primary model, uses the pilot budget category, and writes only under `/artifact-root/canary/`. After the canary is independently accepted and the annotation set is frozen, formal execution may use explicit run IDs. `--all` remains supported by the formal runner but should be used only after those gates.
+The canary command rejects `--all`, requires the frozen primary model, uses the pilot budget category, and writes only under `/artifact-root/canary/`.
+
+## 5. Collect, extract, and freeze boundary annotations
+
+Generate the deterministic source plan before any boundary outcome is observed:
+
+```bash
+cd packages/autodrive-eval
+bun run boundary:plan -- --output /artifact-root/boundary/plan.jsonl
+```
+
+The output must contain 96 unique supervisor-only rows: every SWE-EVO task twice, with no run ID present in the formal 384-row plan. Paid collection requires a fresh `boundary`-scope receipt proving capacity for the primary worker and fixed controller. Dispatch explicit run IDs in frozen order and at most two concurrently; `--all` is available only after the operator has verified the pilot and capacity receipt:
+
+```bash
+bun run preflight -- --scope boundary --receipt /artifact-root/preflight/boundary.json
+bun run boundary:run -- --execute --executor /absolute/path/to/host-executor --preflight /artifact-root/preflight/boundary.json --artifact-root /artifact-root --run-id adr_...
+```
+
+The runner reserves at most USD 102/96 per source trajectory and writes only `/artifact-root/boundary/{trajectories.jsonl,ledger.jsonl}` plus content-addressed artifacts. These rows are excluded from the formal result validator and every RQ2 estimate.
+
+Extract only from accepted, artifact-verifiable trajectories. The command checks the trajectory, request, trace, patch, model metadata, and preflight hashes; drops reasoning and prior supervisor decisions; and emits deterministic `adb_...` IDs:
+
+```bash
+cd packages/autodrive-eval
+bun run annotations:extract -- --results /artifact-root/boundary/trajectories.jsonl --artifact-root /artifact-root --output /artifact-root/annotations/candidates.jsonl
+bun run annotations:prepare -- --candidates /artifact-root/annotations/candidates.jsonl --output /artifact-root/annotations/annotator-a --annotator annotator-a
+bun run annotations:prepare -- --candidates /artifact-root/annotations/candidates.jsonl --output /artifact-root/annotations/annotator-b --annotator annotator-b
+```
+
+Annotators edit only `labels.csv`. Required columns are `boundary_id,annotator_id,label,confidence,reason,next_action,timestamp`; `CONTINUE` and `DEFER` require a non-empty next action or missing decision. After both files are sealed and disagreements are adjudicated by a distinct identity:
+
+```bash
+bun run annotations:freeze -- --candidates /artifact-root/annotations/candidates.jsonl --first /artifact-root/annotations/annotator-a/labels.csv --second /artifact-root/annotations/annotator-b/labels.csv --adjudicated /artifact-root/annotations/adjudicated.csv --output /artifact-root/annotations/frozen
+```
+
+Freeze fails unless all 180 IDs are covered, kappa is at least 0.75, adjudicated counts are 60/60/60, and a base trajectory stays entirely within the 54-item development or 126-item test split. The two boundaries extracted from the historical v1.13 canary are a smoke test only and cannot enter this v1.14 corpus.
+
+After the non-primary pilot is independently accepted, the annotation set is frozen, and a full-scope receipt passes, formal execution may use explicit run IDs. `--all` remains supported by the formal runner but should be used only after those gates.
 
 ```bash
 cd packages/autodrive-eval
@@ -58,7 +111,7 @@ bun run run-eval -- --execute --executor /absolute/path/to/host-executor --prefl
 
 The harness permits at most two concurrent tasks and one identical retry for a predefined, zero-cost infrastructure failure.
 
-## 5. Analyze and build
+## 6. Analyze and build
 
 ```bash
 cd packages/autodrive-eval

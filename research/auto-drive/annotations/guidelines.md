@@ -37,11 +37,13 @@ Choose `DEFER` when continuation needs any of:
 
 Each label must include:
 
-- `boundary_id` and `base_trajectory_id`;
+- `boundary_id`; `base_trajectory_id` is sealed in the paired blinded JSONL example;
 - label and confidence (`high | medium | low`);
 - one concise evidence statement tied to the visible goal/trace;
-- the next action for `CONTINUE`, or the missing decision/information for `DEFER`;
+- `next_action`: the next action for `CONTINUE`, the missing decision/information for `DEFER`, or blank for `STOP`;
 - annotator ID and timestamp.
+
+The exact CSV header is `boundary_id,annotator_id,label,confidence,reason,next_action,timestamp`. Do not add, remove, or reorder columns. Quote fields containing commas, quotes, or newlines.
 
 ## Procedure
 
@@ -53,4 +55,4 @@ Each label must include:
 6. Freeze 54 grouped development and 126 grouped test items. A base trajectory may appear in only one split.
 7. Do not tune prompts or regexes on the frozen test labels.
 
-The final corpus must contain exactly 60 examples for each class. Synthetic or inferred labels are not acceptable substitutes for two human annotations.
+The final corpus must contain exactly 60 examples for each class. Synthetic or inferred labels are not acceptable substitutes for two human annotations. Reasoning content and supervisor predictions are excluded from the blinded packet.

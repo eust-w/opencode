@@ -1,8 +1,4 @@
-\ifdefined\AutoDriveAnonymous
-  \documentclass[sigconf,review,anonymous,nonacm]{acmart}
-\else
-  \documentclass[sigconf,review,nonacm]{acmart}
-\fi
+\documentclass[sigconf,nonacm]{acmart}
 
 \setcopyright{none}
 \settopmatter{printacmref=false,printfolios=true}
@@ -31,14 +27,14 @@
 
 \ifdefined\AutoDriveAnonymous
   \author{Anonymous Author(s)}
-  \affiliation{\institution{Anonymous Institution}}
+  \affiliation{%
+    \institution{Anonymous Institution}
+    \country{Anonymous Country}}
 \else
   \author{Author Name Placeholder}
   \affiliation{%
     \institution{Affiliation Placeholder}
-    \city{City Placeholder}
     \country{Country Placeholder}}
-  \email{author@example.invalid}
 \fi
 
 \begin{document}
@@ -252,6 +248,8 @@ The primary worker is \path{d-robotics/deepseek-v4-pro}. The twelve-task subset 
 
 Each run uses a pinned image digest and base commit, temperature zero, six worker steps per segment, five automatic continuations, 45 minutes, and at most two concurrent tasks. Exact provider model versions and normalized request hashes are mandatory trajectory fields. The host executor holds provider credentials; task containers do not receive them.
 
+Before either corpus collection or formal dispatch, a separately budgeted non-primary pilot must pass on SWE-bench Verified task \texttt{psf\_\_requests-1142}. The pilot pins dataset revision \texttt{c104f840}, the Parquet and task-input hashes, the official harness commit, and the public AMD64 image digest. It writes only to an isolated pilot index and never contributes to an RQ estimate. The protocol is frozen; the paid pilot remains pending.
+
 \subsection{Execution and isolation}
 
 The harness treats the host executor as a narrow trust boundary. Before dispatch it reserves the run's maximum category charge and passes a frozen run object containing the task, worker, controller, strategy, repeat, timeout, and expected repository provenance. The executor creates the pinned task container without provider credentials. Model requests leave through the host; repository commands run inside the task container. The returned record is accepted only when its run and attempt identities match the reservation and all mandatory provenance fields parse.
@@ -261,12 +259,13 @@ A trace preserves every provider request and response, tool invocation, boundary
 The oracle policy does not inspect a hidden reference patch. It invokes the same external task verifier used for final grading at a worker boundary and injects the frozen continuation string only when that verifier reports incomplete. Oracle therefore estimates the opportunity created by better boundary timing under an expensive verifier; it is not an upper bound on worker capability. Blind, regex, and supervisor policies do not receive intermediate test labels from this verifier.
 
 \subsection{Boundary corpus}
+The source sampling frame is independent of the 384 formal rows: 96 supervisor-only trajectories, comprising all 48 SWE-EVO tasks with two repeats. A dedicated source marker in the deterministic run key prevents identity overlap. A boundary-scope capacity receipt, at most two concurrent tasks, a USD 102 category cap, and an external \path{boundary/} index are mandatory. Source outcomes cannot enter RQ2 or the formal cost ledger.
 
-We sample 180 real worker boundaries, balanced as 60 per class. Base trajectories are grouped into 54 development and 126 frozen test items. Two independent annotators receive the admitted goal, boundary trace, repository summary, and permission state. They provide a class, evidence sentence, and next action or missing input. The corpus freezes only after Cohen's $\kappa \geq 0.75$~\cite{cohen1960kappa}. Prompt or regex tuning on frozen test labels is prohibited.
+From this frame we sample 180 real worker boundaries, balanced as 60 per class. Base trajectories are grouped into 54 development and 126 frozen test items. Extraction first verifies the trajectory, request, trace, model-metadata, preflight, and captured-patch hashes; it then removes hidden reasoning and the supervisor's observed decision. Two independent annotators receive a blinded packet and identity-bound CSV. They provide a class, evidence sentence, and next action or missing input; a distinct adjudicator resolves disagreements only after both files are sealed. The corpus freezes only after Cohen's $\kappa \geq 0.75$~\cite{cohen1960kappa}. Prompt or regex tuning on frozen test labels is prohibited.
 
 The cumulative ablation sequence is: regex; supervisor with last output only; plus initial goal; plus trajectory summary; plus within-session memory. This order separates model supervision from progressively richer state. The primary boundary metric is macro-F1, with classwise F1 and STOP/DEFER unsafe-continuation rates.
 
-Boundary sampling occurs after base trajectories are collected and before controller evaluation. A boundary may enter the pool only when it has a complete admitted goal, the terminal worker response, a repository-state summary, permission state, and a stable base-trajectory identifier. Sampling is stratified iteratively until each target class contains 60 independently agreed examples; class balancing is reported and is not used to estimate population frequency. RQ1 therefore uses the unbalanced first-boundary sample from the base trajectories, whereas RQ3 uses the balanced classification set. Conflating these two estimands would bias the reported handoff frequency toward one third.
+Boundary sampling occurs after source trajectories are collected and before controller evaluation or formal dispatch. A boundary may enter the pool only when it has a complete admitted goal, the terminal worker response, a repository-state summary, permission state, and a stable base-trajectory identifier. Sampling is stratified iteratively until each target class contains 60 independently agreed examples; class balancing is reported and is not used to estimate population frequency. RQ1 therefore uses the unbalanced first-boundary sample from all accepted source trajectories, including trajectories with no usable later boundary, whereas RQ3 uses the balanced classification set. Conflating these two estimands would bias the reported handoff frequency toward one third.
 
 \subsection{Fault injection}
 
@@ -286,7 +285,7 @@ For RQ2, the primary estimand is the task-averaged supervisor-minus-off differen
 
 \subsection{Budget and artifact gates}
 
-The hard cap is USD 800: 50 pilot, 360 primary, 288 cross-model, and 102 boundary/recovery. Before dispatch, the runner reserves no more than USD 1.25 per primary trace or USD 3.00 per cross-model trace. It stops before a reservation could exceed a category or total cap. Each accepted trajectory includes the resolved model, request hash, image digest, code commit, trace hash, tokens, and cost. Secret-shaped material fails validation.
+The hard cap is USD 800: 50 pilot, 360 primary, 288 cross-model, and 102 boundary/recovery. Before dispatch, the runner reserves no more than USD 1.25 per primary trace, USD 3.00 per cross-model trace, or USD $102/96$ per boundary-source trace. It stops before a reservation could exceed a category or total cap. Each accepted trajectory includes the resolved model, request hash, image digest, code commit, trace hash, tokens, and cost. Secret-shaped material fails validation.
 
 \section{RQ1: Premature Handoff Frequency}
 
@@ -368,10 +367,6 @@ The single-task canary is especially vulnerable to this threat: its policy rows 
 \section{Conclusion}
 
 Provider turn completion and software task completion are different events. \system{} makes that distinction explicit with a three-state boundary controller and durable, bounded, exactly-once follow-up admission. The implementation unifies API, UI, and slash-command control; preserves human priority; avoids implicit worktree memory; and fails closed on conflicting recovery state. A frozen evaluation will determine whether these mechanisms improve long-horizon coding outcomes at acceptable safety and cost. Until those runs and independent annotations complete, this paper claims a tested system and a reproducible protocol---not an empirical gain.
-
-\begin{acks}
-Acknowledgements are intentionally withheld until author and disclosure metadata are approved.
-\end{acks}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}

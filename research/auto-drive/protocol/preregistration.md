@@ -107,6 +107,8 @@ The paper is completed whether results are positive, null, or negative. Signific
 
 The primary benchmark is all 48 SWE-EVO tasks at the exact upstream commit and Arrow digest in `swe-evo-48.json`. SWE-Bench Pro is excluded from primary conclusions because the official OpenAI audit reported substantial broken-task rates. The twelve cross-model tasks are frozen in package code and cover all seven repositories while sampling low and high values of the upstream PR and FAIL_TO_PASS complexity proxies.
 
+The separately budgeted non-primary pilot is frozen in `pilot-swe-bench-verified.json`. It uses SWE-bench Verified task `psf__requests-1142`, which is outside the SWE-EVO manifest, and pins the dataset revision and Parquet SHA-256, the official harness commit current when the public image was built, the task-input SHA-256, and the AMD64 image digest. Its deterministic v1.14 run uses the primary worker and complete supervisor policy. Pilot output is isolated below `pilot/` and is never admitted to the 384-row matrix or an RQ estimate.
+
 ## Policies
 
 1. `oracle`: after a worker boundary, an external task verifier injects the same static continuation instruction only if the task is incomplete.
@@ -129,7 +131,11 @@ Every run uses the pinned task image and base commit, temperature zero, worker r
 
 ## Boundary corpus and ablations
 
-The corpus contains 180 real boundaries: 60 `CONTINUE`, 60 `STOP`, and 60 `DEFER`. It is grouped by base trajectory into an exact 54-item development set and a 126-item frozen test set. Two annotators label independently using `annotations/guidelines.md`; disagreements are adjudicated only after independent labels are sealed. Freeze requires Cohen's kappa at least 0.75. If the threshold is missed, the guide may be clarified and all affected examples re-annotated before one final freeze; the frozen test set is not prompt-tuned.
+The frozen corpus target is 180 real boundaries: 60 `CONTINUE`, 60 `STOP`, and 60 `DEFER`. It is grouped by base trajectory into an exact 54-item development set and a 126-item frozen test set. Two annotators label independently using `annotations/guidelines.md`; disagreements are adjudicated by a distinct identity only after independent labels are sealed. Freeze requires Cohen's kappa at least 0.75. If the threshold is missed, the guide may be clarified and all affected examples re-annotated before one final freeze; the frozen test set is not prompt-tuned.
+
+Candidate acquisition uses a separately frozen source plan of 96 supervisor-only trajectories: all 48 SWE-EVO tasks with repeats 0 and 1. Its deterministic IDs include `boundary-corpus` in the run key and are disjoint from all 384 formal IDs. Source rows require a fresh `boundary`-scope capacity receipt, run at concurrency at most two, reserve at most USD 102/96 each, and are stored only below the external artifact root's `boundary/` directory. They cannot enter RQ2 outcomes or the formal ledger. The source plan is dispatched in its frozen order; all accepted source trajectories remain in the released sampling frame, including trajectories that yield no usable boundary.
+
+Candidate extraction accepts only artifact-verified source trajectories. It binds each boundary to the canonical controller request, final Session transcript, request sequence, and captured patch hash; removes hidden reasoning and the supervisor's actual decision; and assigns a deterministic `adb_...` identifier. The identity-bound CSV records label, confidence, reason, actionable next step or missing decision, and timestamp. Freeze rejects incomplete 180-ID coverage, reused annotator identities, unbalanced adjudication, or cross-split base trajectories. A replay over the historical v1.13 supervisor canary extracted two boundaries and detected no reasoning metadata leakage; those items are pipeline qualification only and cannot enter the v1.14 corpus.
 
 Boundary ablations are evaluated cumulatively: regex; supervisor only; plus initial goal; plus trajectory summary; plus within-session memory. They report three-class macro-F1 and classwise F1, with STOP and DEFER unsafe-continuation rates shown separately.
 

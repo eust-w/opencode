@@ -47,7 +47,9 @@ Every task record additionally pins the start and end version, base commit, envi
 
 \continueaction{} requires an incomplete admitted goal, a concrete next action, existing scope and permission, no material missing preference, and a routine or reversible engineering action. \stopaction{} requires proportionate completion evidence or absence of useful in-scope work. \deferaction{} applies to subjective choices, credentials or missing requirements, expanded permission, destructive/external/monetary action, or uncertainty only the user can resolve. \deferaction{} takes precedence over \continueaction.
 
-The final corpus has 60 items per label. Independent label files include a confidence level, evidence sentence, and next action or missing information. No supervisor prediction is visible to annotators. Base trajectories cannot cross development and test sets.
+The final corpus will contain 60 items per label. Independent label files include a confidence level, evidence sentence, and next action or missing information. No supervisor prediction is visible to annotators. Base trajectories cannot cross development and test sets.
+
+Candidate acquisition has its own 96-run plan: all 48 SWE-EVO tasks, two repeats, the primary worker, and the full supervisor. A literal \texttt{boundary-corpus} component in the deterministic run key makes every source identity disjoint from the formal matrix. A fresh boundary-scope receipt must attest capacity 96 for both logical worker and controller. The command writes trajectories and its append-only ledger below external \path{boundary/}, never below the formal result path, and applies the USD $102/96$ per-run ceiling. Every accepted source trajectory remains in the released sampling frame even when it produces no selectable item.
 
 \subsection{Annotation instrument and freeze}
 
@@ -100,21 +102,21 @@ Each trajectory index row contains four groups of fields:
   \item \emph{provenance}: resolved model version, normalized request SHA-256, image digest, task base and implementation commits, and content-addressed trace path.
 \end{itemize}
 
-A successful record cannot carry a failure class, and a failed record must carry one. A run ID must belong to the frozen matrix and match its task, worker, controller, strategy, and repeat. The request hash is computed after defaults are normalized but before credentials are attached. Trace hashes are checked before analysis so that replacing a raw trace invalidates the index.
+A successful record cannot carry a failure class, and a failed record must carry one. A formal run ID must belong to the 384-row matrix; a boundary-source ID must belong to the separate 96-row plan. Either must match its task, worker, controller, strategy, and repeat. The request hash is computed after defaults are normalized but before credentials are attached. Trace hashes are checked before analysis so that replacing a raw trace invalidates the index.
 
 The cost ledger is append-only. The validator rejects unknown run IDs, duplicate task matrix identities, category or total overrun, missing provenance, secret-shaped content, and analysis over an empty result set.
 
 \subsection{Budget reservation and failure accounting}
 
-The USD 800 cap is enforced before dispatch, not audited only after completion. The harness calculates current committed spend plus outstanding reservations. A primary run reserves at most USD 1.25 and a cross-model run at most USD 3.00; dispatch is denied if either the category or total cap would be crossed. Actual provider usage replaces the reservation when the record is appended. A mismatch between result index and ledger pauses subsequent execution for reconciliation.
+The USD 800 cap is enforced before dispatch, not audited only after completion. The harness calculates current committed spend plus outstanding reservations. A primary run reserves at most USD 1.25, a cross-model run at most USD 3.00, and a boundary-source run at most USD $102/96$; dispatch is denied if either the category or total cap would be crossed. Actual provider usage replaces the reservation when the record is appended. A mismatch between result index and ledger pauses subsequent execution for reconciliation.
 
 Only a predefined, zero-charge infrastructure exit can consume the single rerun allowance. Examples include container creation failure before a request, corrupted task-image transfer before startup, or host interruption before provider dispatch. Model timeout, context exhaustion, controller loop, rate-limited provider attempts that incurred usage, verifier failure after execution, and budget exhaustion remain failed outcomes. This rule prevents selectively rerunning difficult or unfavorable trajectories.
 
-The USD 50 pilot pool is gated separately. Its purpose is to validate container isolation, trace completeness, model identity capture, grader invocation, secret rejection, and cost reconciliation on a non-primary task set. Pilot outcomes never enter RQ estimates. Main dispatch stays disabled until the pilot report is accepted and the executor's normalized request matches the frozen request contract.
+The USD 50 pilot pool is gated separately. Its frozen paid task is SWE-bench Verified \texttt{psf\_\_requests-1142}, outside the 48 SWE-EVO instances. The manifest pins dataset revision \texttt{c104f840}, Parquet and task-input SHA-256 values, the official harness commit current at image creation, the \texttt{pytest -rA} test command, and AMD64 image digest prefix \texttt{sha256:66a8b693}. Its purpose is to validate container isolation, trace completeness, model identity capture, grader invocation, secret rejection, and cost reconciliation without selecting on a primary-benchmark outcome. Pilot output is isolated below \path{pilot/}, never enters RQ estimates, and remains pending. Main dispatch stays disabled until its report is accepted and the executor's normalized request matches the frozen request contract.
 
 An engineering preflight on 2026-08-30 deviated from the intended non-primary pilot by using the smallest locally feasible official image, task \texttt{iterative\_\_dvc\_0.30.0\_0.30.1}, under a host disk constraint. No normal handoff boundary or code change was obtained, and the traces were rejected from the result index. The preflight exposed an invalid final-step model-role construction and a 20-request free-tier quota. Main dispatch therefore remains disabled. If the study proceeds, the unchanged all-48 estimate is accompanied by a sensitivity analysis excluding this canary-contaminated task.
 
-After transport, request-routing, output-limit, controller-release, and grader amendments, the v1.13 D-Robotics canary completed one accepted trajectory for each of oracle, blind, regex, and supervisor policies on \texttt{iterative\_\_dvc\_2.21.1\_2.21.2}. All four first boundaries were unresolved; oracle and blind eventually resolved, regex stopped immediately, and supervisor resumed once before a 15-second controller timeout invoked the historical v1.13 regex fallback. The four rows are retained only as a single-task, unpaired paid canary and do not enter RQ estimates. Before any formal row was accepted, v1.14 changed supervisor timeout, unavailable-model, provider-error, empty-response, and malformed-output handling to DEFER, retained the 15-second bound and model matrix, and regenerated all 384 run IDs. Formal dispatch remains disabled until the annotation set and a fresh full-capacity v1.14 receipt are frozen. The unchanged all-48 estimate will also be accompanied by the preregistered canary-contamination sensitivity analysis.
+After transport, request-routing, output-limit, controller-release, and grader amendments, the v1.13 D-Robotics canary completed one accepted trajectory for each of oracle, blind, regex, and supervisor policies on \texttt{iterative\_\_dvc\_2.21.1\_2.21.2}. All four first boundaries were unresolved; oracle and blind eventually resolved, regex stopped immediately, and supervisor resumed once before a 15-second controller timeout invoked the historical v1.13 regex fallback. The four rows are retained only as a single-task, unpaired paid canary and do not enter RQ estimates. Before any formal row was accepted, v1.14 changed supervisor timeout, unavailable-model, provider-error, empty-response, and malformed-output handling to DEFER, retained the 15-second bound and model matrix, and regenerated all 384 run IDs. Formal dispatch remains disabled until the non-primary pilot, 96-run source collection, annotation freeze, and fresh full-capacity v1.14 receipt are accepted. The unchanged all-48 estimate will also be accompanied by the preregistered canary-contamination sensitivity analysis.
 
 \subsection{Model and continuation request contract}
 
@@ -155,24 +157,7 @@ The public API is also versioned behavior. V2 accepts a Session-level update and
 
 \section{Implementation Verification Map}
 
-\begin{table*}[t]
-  \caption{Mechanism-to-evidence mapping in the repository.}
-  \centering
-  \begin{tabular}{p{0.28\textwidth}p{0.63\textwidth}}
-    \toprule
-    Mechanism & Test evidence \\
-    \midrule
-    Three-state parse and safety priority & Core AutoDrive decision tests \\
-    Config precedence and legacy mapping & Core AutoDrive state/config tests \\
-    Event persistence and exact admission & Controller and projector integration tests \\
-    Queue source metadata & Input admission/promotion tests \\
-    User priority and concurrent resume & Session runner integration tests \\
-    V2 endpoint and V1 rejection & Server HTTP API/OpenAPI tests \\
-    New and legacy Session controls & Chromium end-to-end regression tests \\
-    Matrix, statistics, budget, provenance & Independent AutoDrive evaluation package tests \\
-    \bottomrule
-  \end{tabular}
-\end{table*}
+\textbf{Evidence map.} Core decision tests cover tri-state parsing and safety priority; state/config tests cover precedence and legacy mapping; controller/projector integration covers persistence and exact admission; input promotion covers source metadata; Session runner tests cover user priority and concurrent resume; Server tests cover V2 and V1 behavior; Chromium tests cover controls; and the independent evaluation package covers matrices, statistics, budget, and provenance.
 
 \section{Analysis and Release Procedure}
 

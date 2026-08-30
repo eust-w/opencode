@@ -24,7 +24,7 @@ The evaluator launches one executable with a JSON object on standard input:
   },
   "attempt": 1,
   "budget": {
-    "category": "pilot | primary | cross-model",
+    "category": "pilot | primary | cross-model | boundary",
     "maxCostUSD": 1.25,
     "remainingUSD": 798.75
   }
@@ -56,7 +56,7 @@ Every reference is relative to the supplied artifact root and is verified by rec
 
 The task container receives the repository checkout, task metadata, and declared test commands only. It must not receive host keychains, provider environment variables, model auth files, arbitrary home-directory mounts, or the formal result directories. User input and steering remain higher priority than AutoDrive continuation in system tests.
 
-The paid canary accepts exactly one frozen primary-model run, uses one process, consumes only the remaining USD 50 pilot allocation, and writes to `canary/trajectories.jsonl` plus `canary/ledger.jsonl` under the external artifact root. It cannot write the formal index. Formal execution continues to enforce at most two concurrent tasks and the preregistered per-run primary/cross-model ceilings.
+The paid canary accepts exactly one frozen primary-model run, uses one process, consumes only the remaining USD 50 pilot allocation, and writes to `canary/trajectories.jsonl` plus `canary/ledger.jsonl` under the external artifact root. The non-primary pilot instead uses the hash-sealed SWE-bench Verified manifest, verifies its pinned image digest, and writes only below `pilot/`. The 96-run boundary source plan requires a boundary-scope receipt, reserves at most USD 102/96 per run, and writes only below `boundary/`. None of these paths can write the formal index. Formal execution continues to enforce at most two concurrent tasks and the preregistered per-run primary/cross-model ceilings.
 
 ## Acceptance sequence
 

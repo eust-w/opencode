@@ -4,7 +4,8 @@
 - [x] Upstream SWE-EVO commit and Arrow SHA-256
 - [x] Exact 48-task manifest and deterministic 384-run v1.14 matrix
 - [x] D-Robotics model request, 15-second DEFER fallback, and budget contracts
-- [x] Boundary annotation guide and grouped split code
+- [x] Disjoint 96-run boundary source plan, scoped capacity gate, and budget isolation
+- [x] Hash-verified boundary extraction, blinded packet, annotation guide, and grouped split code
 - [x] Fault-injection invariants
 - [x] Statistics implementations with deterministic tests
 - [x] Secret-shaped content rejection
@@ -13,8 +14,11 @@
 - [x] Branch diff, source archive, and secret scans
 - [ ] Repository-wide dependency audit (237 advisories; see `../reports/verification.md`)
 - [ ] Fresh full-capacity v1.14 provider receipt
-- [ ] Two independent boundary annotation files and kappa gate
-- [ ] Non-primary pilot accepted
+- [x] Frozen non-primary pilot manifest, task input, dataset, harness, and image provenance
+- [ ] Paid non-primary pilot accepted
+- [ ] 96 provenance-complete boundary source trajectories
+- [ ] Selected 180-item candidate packet
+- [ ] Two independent boundary annotation files, distinct adjudication, and kappa gate
 - [ ] 384 provenance-complete v1.14 trajectories
 - [ ] Frozen derived CSV, JSON, tables, and figures
 - [ ] Error-analysis adjudication
