@@ -49,9 +49,9 @@ AutoDrive 面向一种具体失败：编码智能体完成了当前模型回合�
 
 预算上限为 800 美元，分类上限分别为 pilot 50、主实验 360、跨模型 288、边界与恢复 102。仅零费用、预定义的基础设施故障允许同配置重跑一次；模型超时、循环、预算耗尽和 provider 错误均计入失败。
 
-本轮 r4 首次尝试发现只读 `OPENCODE_CONFIG_DIR` 缺少 OpenCode 启动时需要创建的 `.gitignore`；r5 的唯一重跑发现 Bun 已解码响应体后 relay 仍保留 `content-encoding: gzip`，导致二次解压。用户随后前瞻性批准一次不可重跑的 r6 偏差。r6 越过前两道门并创建 Session，但 V2 runner 在内置插件原子批次提交前读取 Location catalog，因而把已配置的 `openai/deepseek-v4-pro` 误报为不可用。三次运行的 key spend 都保持 1.9453748 美元，网关活动时间未前移，且均无 provider 请求或有效轨迹。
+本轮 r4 首次尝试发现只读 `OPENCODE_CONFIG_DIR` 缺少 OpenCode 启动时需要创建的 `.gitignore`；r5 的唯一重跑发现 Bun 已解码响应体后 relay 仍保留 `content-encoding: gzip`，导致二次解压；r6 发现 V2 runner 在内置插件提交前读取 Location catalog。用户随后前瞻性批准一次不可重跑的 r7 偏差。r7 只启动一次，公开 provider 投影确认两个冻结模型均存在，并创建 Session、持久化和提升 prompt，但 executor 的 V1 `options.apiKey` 只迁移到了 Authorization header，没有投影到 V2 runner 的私有凭证字段，因此 worker 在 provider 调用前仍被误判为不可用。r4 至 r7 的 key spend 都保持 1.9453748 美元，网关活动时间未前移，且均无 provider 请求或有效轨迹。
 
-对应修复提交为 `55cc676f72`、`5efa37aa89` 和 `6f141c3e00`。第三个修复增加内置插件 bootstrap readiness barrier 与“Location 启动后立即解析配置模型”的回归测试；插件与 Location 相关 232 项测试、Core/OpenCode 类型检查通过。完整 Core 套件为 1129/1130，通过项之外只有一个无关 PTY 固定 5 秒测试超时，该文件单独重跑 7/7 通过。重建后的 Linux AMD64 二进制在冻结任务镜像中成功创建 Session、持久化 prompt 并解析 worker model，随后仅因诊断刻意未启动本地 proxy 而报 HTTP transport failure；该 smoke 没有接触网关，不是 r6 重跑。r6 授权已经消耗，再执行 pilot 必须获得新的前瞻性授权并使用全新外部 artifact root。
+对应修复提交为 `55cc676f72`、`5efa37aa89`、`6f141c3e00` 和 `8e4359a39a`。第四个修复由 r7 真实配置形状的红灯回归驱动：修复前重现同一 `ModelUnavailableError`，修复后 Config 与 Location 共 22 项测试、host-executor 13 项测试及两个包的类型检查全部通过。重建后的 Linux AMD64 二进制 SHA-256 为 `3cdc37c0...3128f`；它在冻结任务镜像中挂载 r7 原始配置，在没有 proxy、key、外部路由或宿主端口的 internal network 上同时解析出 worker/controller，创建 Session、提升 prompt 并解析 worker，随后只在预期的 HTTP transport 边界失败。Session cost/token 和网关 spend/activity 都保持不变。该 smoke 没有接触网关，不是 r7 重跑。r7 授权已经消耗，再执行 pilot 必须获得新的前瞻性授权并使用全新外部 artifact root。
 
 ## 当前结论
 
