@@ -1,0 +1,5 @@
+strategy,first_boundary_resolved,final_resolved,resolved_gain,continuations,redundant_turns,worker_requests,controller_requests,prompt_tokens,completion_tokens,total_tokens,cost_usd,latency_ms,unsafe_continuations
+oracle,false,true,1,5,4,36,0,490042,15633,505675,0.5665449,1173062,0
+blind,false,true,1,5,4,34,0,426177,12085,438262,0.4756896,1040552,0
+regex,false,false,0,0,0,6,0,22909,980,23889,0.0483909,436072,0
+supervisor,false,false,0,1,1,12,2,90815,5362,96177,0.2836797,532908,0
