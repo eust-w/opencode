@@ -120,6 +120,12 @@ Post-r8 implementation hardening in commit `13f6ea79f7` moves failure evidence c
 
 The hardening used no provider request and is not an r8 replay, protocol result, or authorization for a new run. Its focused host-executor suite passes 18 tests with 100% function and 99.69% line coverage; the complete evaluation package passes 89 tests and 351 assertions plus type checking. Any future paid execution still requires a separate prospective authorization and fresh artifact root.
 
+## Failure-settlement pilot deviation (v1.14-r9)
+
+After reviewing the r8 charged exclusion and the zero-provider exception-path hardening, the user explicitly authorized exactly one additional pilot attempt from a fresh r9 artifact root based on fix commit `13f6ea79f7`. This authorization does not reinterpret or retry r8: r8 remains an excluded charged evaluation failure with no accepted trajectory or ledger row.
+
+The r9 attempt keeps the deterministic pilot run ID, SWE-bench Verified task and image, primary worker, controller, supervisor policy, prompts, temperature, reasoning effort, token limits, six-step segment size, five-continuation cap, 45-minute timeout, and USD 5 per-run ceiling unchanged. It does not modify the 384 formal run IDs, boundary source plan, outcomes, statistics, concurrency, category caps, or USD 800 total budget. r9 may start once and is not retryable under this deviation regardless of outcome; any further attempt requires another separate, prospective authorization.
+
 ## Claim boundary
 
 AutoDrive targets **premature conversational handoff** by a coding agent: the worker ends a provider turn while safe, in-scope, actionable work toward the admitted user goal remains. The claimed mechanism combines safe turn-boundary evaluation, a `continue | stop | defer` decision, and durable exactly-once continuation admission. It does not claim the first supervisor, memory mechanism, agent termination rule, abstention method, or loop bound.
