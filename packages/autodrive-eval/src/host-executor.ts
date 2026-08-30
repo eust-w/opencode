@@ -3,6 +3,10 @@ import type { Strategy } from "./protocol"
 
 export const BASELINE_CONTINUATION_PROMPT = "Please proceed with the next step."
 
+export function dockerPortPublish(containerPort: number) {
+  return `127.0.0.1:0:${containerPort}`
+}
+
 export const TaskInput = z
   .object({
     schemaVersion: z.literal(1),

@@ -7,6 +7,7 @@ import {
   classifyTestPatch,
   classifyIdleSession,
   decideExternalContinuation,
+  dockerPortPublish,
   gradePytest,
   parsePytestLog,
   parseTaskInput,
@@ -29,6 +30,10 @@ const task = {
 }
 
 describe("SWE-EVO host executor", () => {
+  test("requests an explicit random loopback port from Docker", () => {
+    expect(dockerPortPublish(4_096)).toBe("127.0.0.1:0:4096")
+  })
+
   test("maps internal policies without leaking full-system context into the regex baseline", () => {
     expect(
       buildAutoDriveUpdate({
