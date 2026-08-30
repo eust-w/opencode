@@ -96,6 +96,12 @@ This deviation permits exactly one fresh r6 artifact root for the same determini
 
 The authorized r6 attempt started once and crossed the r4/r5 qualification gates, but stopped before its first provider request. The V2 Session runner resolved `openai/deepseek-v4-pro` before the asynchronous built-in plugin bootstrap had committed the configured provider into the Location catalog. The attempt recorded zero proxy events, unchanged cumulative spend of USD 1.9453748, no ledger row, and no accepted trajectory. It remains non-retryable under this deviation. Commit `6f141c3e00` adds an explicit built-in-plugin readiness barrier plus a first-resolution regression test; a Linux AMD64 diagnostic in the frozen task image reached prompt admission and the intentionally absent local proxy, proving model resolution without contacting the gateway. That diagnostic is implementation evidence only and is not an r6 retry.
 
+## Post-fix pilot qualification deviation (v1.14-r7)
+
+After reviewing the r6 evidence and the zero-provider Linux regression, the user explicitly classified r6 as a zero-cost pre-provider qualification failure and prospectively authorized exactly one additional pilot attempt from a fresh r7 artifact root based on fix commit `6f141c3e00`. This authorization does not reinterpret or retry r6: r4, r5, and r6 remain excluded qualification evidence with no accepted trajectory or ledger row.
+
+The r7 attempt keeps the deterministic pilot run ID, SWE-bench Verified task and image, primary worker, controller, supervisor policy, prompts, temperature, reasoning effort, token limits, six-step segment size, five-continuation cap, 45-minute timeout, and USD 5 per-run ceiling unchanged. It does not modify the 384 formal run IDs, boundary source plan, outcomes, statistics, concurrency, category caps, or USD 800 total budget. r7 may start once and is not retryable under this deviation regardless of outcome; any further attempt requires another separate, prospective authorization.
+
 ## Claim boundary
 
 AutoDrive targets **premature conversational handoff** by a coding agent: the worker ends a provider turn while safe, in-scope, actionable work toward the admitted user goal remains. The claimed mechanism combines safe turn-boundary evaluation, a `continue | stop | defer` decision, and durable exactly-once continuation admission. It does not claim the first supervisor, memory mechanism, agent termination rule, abstention method, or loop bound.
