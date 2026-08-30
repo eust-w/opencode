@@ -66,7 +66,7 @@ Coding agents often end a conversational turn before the admitted software task 
 \maketitle
 
 \begin{center}
-\fbox{\parbox{0.94\columnwidth}{\small\textbf{Draft status.} The implementation and v1.14 protocol are available, and four v1.13 paid canary trajectories are reported descriptively. The formal matrix and two-person boundary annotations are not complete. Every red \ResultStatus{} field is generated from an explicit result macro and is not an empirical claim.}}
+\fbox{\parbox{0.94\columnwidth}{\small\textbf{Draft status.} The implementation and v1.14 protocol are available. Four v1.13 paid canaries and one accepted negative v1.14 non-primary pilot are descriptive only. The formal matrix and two-person boundary annotations are incomplete. Every red \ResultStatus{} field is generated from an explicit result macro and is not an empirical claim.}}
 \end{center}
 
 \section{Introduction}
@@ -248,7 +248,7 @@ The primary worker is \path{d-robotics/deepseek-v4-pro}. The twelve-task subset 
 
 Each run uses a pinned image digest and base commit, temperature zero, six worker steps per segment, five automatic continuations, 45 minutes, and at most two concurrent tasks. Exact provider model versions and normalized request hashes are mandatory trajectory fields. The host executor holds provider credentials; task containers do not receive them.
 
-Before either corpus collection or formal dispatch, a separately budgeted non-primary pilot must pass on SWE-bench Verified task \texttt{psf\_\_requests-1142}. The pilot pins dataset revision \texttt{c104f840}, the Parquet and task-input hashes, the official harness commit, and the public AMD64 image digest. It writes only to an isolated pilot index and never contributes to an RQ estimate. The protocol is frozen; the paid pilot remains pending.
+Before either corpus collection or formal dispatch, a separately budgeted non-primary pilot must pass on SWE-bench Verified task \texttt{psf\_\_requests-1142}. The pilot pins dataset revision \texttt{c104f840}, the Parquet and task-input hashes, the official harness commit, and the public AMD64 image digest. It writes only to an isolated pilot index and never contributes to an RQ estimate. One v1.14 run was accepted as a negative pilot: it remained unresolved with F2P 0/1, P2P 5/5, Fix Rate zero, no automatic continuation, 20,014 total tokens, and USD 0.121062 cost. Formal dispatch remains separately gated.
 
 \subsection{Execution and isolation}
 
@@ -338,6 +338,8 @@ After the frozen run, two reviewers will assign one primary failure category and
 
 The v1.13 canary already supplies two observed cases without changing the frozen taxonomy. Regex produced a missed continuation: it persisted STOP on an empty patch even though the worker listed unfinished implementation and validation and the F2P test failed. The full supervisor correctly recovered that boundary and durably admitted one queue continuation. At the next boundary, its eventual semantic action was again CONTINUE, but the streamed response completed 16.839 seconds after release and missed the 15-second deadline; the v1.13 regex fallback then persisted STOP. The extra segment produced no patch and is counted as redundant. This is classified as a provider/runtime latency failure with a secondary wrong fallback decision, not as evidence that supervision generally harms utility. Before any formal row was accepted, v1.14 changed failure handling to \deferaction{} while preserving the 15-second deadline and all experimental factors.
 
+The accepted v1.14 non-primary pilot exposes the corresponding abstention path. Its controller produced valid \continueaction{} JSON 30.241 seconds after request release, but the 15-second deadline had already persisted \deferaction{}. No continuation occurred, the task remained unresolved, and all seven provider responses plus usage and settled cost were retained. We classify this as provider/runtime latency rather than a semantic policy error. It is a single descriptive pilot, not an ablation row or evidence of treatment effect.
+
 We will sample both false continuations and missed continuations, preserving task and worker strata. Error categories are descriptive and cannot remove a failure from quantitative analysis. Suspected benchmark defects are reported with evidence and sensitivity analyses, but the primary frozen result remains intact.
 
 \section{Threats to Validity}\label{sec:threats}
@@ -347,6 +349,8 @@ We will sample both false continuations and missed continuations, preserving tas
 \textbf{Internal validity.} Provider services may be nondeterministic at temperature zero, and model aliases may move. We therefore record resolved model versions and request hashes, repeat the primary worker on a stratified subset, and pair each off prefix with its own trace. The same Qwen 3.8 Max controller across workers isolates one source of variation but may favor outputs it understands better. The gateway aliases do not reveal direct upstream revisions, limiting reproducibility outside the sealed gateway snapshot.
 
 The single-task canary is especially vulnerable to this threat: its policy rows are independent trajectories, not counterfactual replays. We therefore report its costs, continuations, and outcomes descriptively and do not include it in McNemar tests, bootstrap intervals, or Holm correction.
+
+The non-primary task image also contained untracked \path{build/} before worker execution. Consequently, the pilot's identical first and final build-only patch hashes preserve repository provenance but their byte and file counts cannot be attributed to the model. The official tests and unresolved classification remain usable; formal collection requires a startup-baseline patch-hygiene gate.
 
 \textbf{Benchmark validity.} SWE-EVO is public, Python-only, and uneven across repositories; DVC contributes many tasks. Public histories may be contaminated in model training. The benchmark's tests can still be incomplete or implementation-specific. We publish task-level results and do not generalize to all software development.
 
