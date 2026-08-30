@@ -55,7 +55,11 @@ AutoDrive 面向一种具体失败：编码智能体完成了当前模型回合�
 
 r8 只启动一次，产生 18 次 worker 和 3 次 controller 请求，捕获三个边界。Session 依次持久化 `continue`、`continue`、超时安全的 `defer`，两条自动 queue input 均只 admission 和 promotion 一次。首边界官方评分为 F2P 0/1、P2P 5/5；最终模型补丁与冻结测试补丁都修改 `test_requests.py`，forward/reverse applicability 检查均失败，因此评分在运行最终测试前 fail-closed。该冲突是真实的部分补丁冲突，不能为了获得结果而放宽门禁。
 
-本地完整保存了前 20 个 HTTP 200 响应及 123,052 prompt、4,856 completion tokens；第 21 个 controller 请求在 Session 超时后缺少 terminal response，因为随后评分异常触发 proxy 清理，而上游请求仍在执行。八次稳定账单读取为累计 2.1923892 美元，相对 r8 基线的账户窗口增量为 0.2470144 美元；由于缺少最后响应的本地 usage，它不能被表述为完整逐请求归因。r8 没有 trajectory 或 ledger 行，正式结果仍是 0/384，授权已消耗且不可重跑。下一次执行必须先前瞻性授权新 artifact root，并应先补齐异常路径的结算证据，但不能弱化冲突门禁。
+本地完整保存了前 20 个 HTTP 200 响应及 123,052 prompt、4,856 completion tokens；第 21 个 controller 请求在 Session 超时后缺少 terminal response，因为随后评分异常触发 proxy 清理，而上游请求仍在执行。八次稳定账单读取为累计 2.1923892 美元，相对 r8 基线的账户窗口增量为 0.2470144 美元；由于缺少最后响应的本地 usage，它不能被表述为完整逐请求归因。r8 没有 trajectory 或 ledger 行，正式结果仍是 0/384，授权已消耗且不可重跑。下一次执行必须先前瞻性授权新 artifact root；本次缺口不能通过弱化冲突门禁规避。
+
+提交 `13f6ea79f7` 已以零费用方式补齐异常路径。executor 启动后的任意错误会先保留原始阶段和错误，保持 proxy 存活并在既有五分钟上限内等待所有 sealed 请求产生 terminal 事件，随后重新读取 usage、有限采样结算费用，并用严格 schema 写入 `failures/<run>/attempt-<n>.json`；该 schema 强制 trajectory 和 ledger 接纳均为 `false`。即使结算等待自身失败，也只作为回执字段记录，不能覆盖原始 grader 错误。零 provider 请求的失败会跳过结算与费用轮询。冻结补丁冲突仍然 fail-closed。
+
+定向 host-executor 测试为 18/18，函数覆盖率 100%、行覆盖率 99.69%；评测包完整回归为 89/89、351 个断言，类型检查通过。本次没有调用 provider，不是 r8 重跑，也没有产生新的实验或消融数据。新的付费执行仍需单独前瞻性授权和全新 artifact root。
 
 ## 当前结论
 
