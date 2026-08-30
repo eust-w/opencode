@@ -4,7 +4,7 @@
 
 AutoDrive 面向一种具体失败：编码智能体完成了当前模型回合，却在用户任务尚未完成时过早把会话交还给用户，导致用户反复输入“继续”。系统只在安全回合边界决策，并输出 `continue | stop | defer`。其中，涉及主观选择、缺失信息、权限扩大、危险操作或外部副作用时必须 `defer`。
 
-当前交付已完成系统实现、持久化恢复、V2 接口、客户端/UI、浏览器回归、v1.14 冻结评测协议和论文草稿，并完成同一 SWE-EVO 任务的四策略 v1.13 付费 canary。独立的非主数据集 pilot 已冻结为 SWE-bench Verified `psf__requests-1142`。2026-08-30 的 r4、r5 以及经单独授权的 r6 都在首次 provider 请求前被基础设施门拦截，没有费用增量、ledger 行或可接受轨迹；三次分别暴露只读配置、压缩中继和 V2 Location catalog 启动就绪问题，均已有针对性修复与零费用验证。正式 384 条 v1.14 矩阵和双人标注尚未执行；canary 数字只用于验证机制和暴露失效模式，不作为总体效果估计。
+当前交付已完成系统实现、持久化恢复、V2 接口、客户端/UI、浏览器回归、v1.14 冻结评测协议和论文草稿，并完成同一 SWE-EVO 任务的四策略 v1.13 付费 canary。独立的非主数据集 pilot 已冻结为 SWE-bench Verified `psf__requests-1142`。2026-08-30 的 r4 至 r7 都在 provider admission 前失败并已有针对性修复；随后单独授权的 r8 首次贯通真实 worker/controller 与两次自动续推，但在最终评分的冻结测试补丁冲突门失败，归类为已计费、不可重跑的评测排除，不是可接受轨迹。正式 384 条 v1.14 矩阵和双人标注尚未执行；canary 与 r8 数字只用于验证机制和暴露失效模式，不作为总体效果估计。
 
 ## 创新边界
 
@@ -49,9 +49,13 @@ AutoDrive 面向一种具体失败：编码智能体完成了当前模型回合�
 
 预算上限为 800 美元，分类上限分别为 pilot 50、主实验 360、跨模型 288、边界与恢复 102。仅零费用、预定义的基础设施故障允许同配置重跑一次；模型超时、循环、预算耗尽和 provider 错误均计入失败。
 
-本轮 r4 首次尝试发现只读 `OPENCODE_CONFIG_DIR` 缺少 OpenCode 启动时需要创建的 `.gitignore`；r5 的唯一重跑发现 Bun 已解码响应体后 relay 仍保留 `content-encoding: gzip`，导致二次解压；r6 发现 V2 runner 在内置插件提交前读取 Location catalog。用户随后前瞻性批准一次不可重跑的 r7 偏差。r7 只启动一次，公开 provider 投影确认两个冻结模型均存在，并创建 Session、持久化和提升 prompt，但 executor 的 V1 `options.apiKey` 只迁移到了 Authorization header，没有投影到 V2 runner 的私有凭证字段，因此 worker 在 provider 调用前仍被误判为不可用。r4 至 r7 的 key spend 都保持 1.9453748 美元，网关活动时间未前移，且均无 provider 请求或有效轨迹。
+本轮 r4 首次尝试发现只读 `OPENCODE_CONFIG_DIR` 缺少 OpenCode 启动时需要创建的 `.gitignore`；r5 发现 Bun 已解码响应体后 relay 仍保留 `content-encoding: gzip`，导致二次解压；r6 发现 V2 runner 在内置插件提交前读取 Location catalog；r7 发现 executor 的 V1 `options.apiKey` 未投影到 V2 runner 的私有凭证字段。r4 至 r7 都在 provider admission 前停止，key spend 保持 1.9453748 美元，没有 provider 请求或有效轨迹。
 
-对应修复提交为 `55cc676f72`、`5efa37aa89`、`6f141c3e00` 和 `8e4359a39a`。第四个修复由 r7 真实配置形状的红灯回归驱动：修复前重现同一 `ModelUnavailableError`，修复后 Config 与 Location 共 22 项测试、host-executor 13 项测试及两个包的类型检查全部通过。重建后的 Linux AMD64 二进制 SHA-256 为 `3cdc37c0...3128f`；它在冻结任务镜像中挂载 r7 原始配置，在没有 proxy、key、外部路由或宿主端口的 internal network 上同时解析出 worker/controller，创建 Session、提升 prompt 并解析 worker，随后只在预期的 HTTP transport 边界失败。Session cost/token 和网关 spend/activity 都保持不变。该 smoke 没有接触网关，不是 r7 重跑。r7 授权已经消耗，再执行 pilot 必须获得新的前瞻性授权并使用全新外部 artifact root。
+对应修复提交为 `55cc676f72`、`5efa37aa89`、`6f141c3e00` 和 `8e4359a39a`。第四个修复由 r7 真实配置形状的红灯回归驱动；修复后完整 Config/Location、host-executor 和类型检查均通过。基于该修复重建的 r8 Linux AMD64 二进制 SHA-256 为 `3d0170df...fa98`。
+
+r8 只启动一次，产生 18 次 worker 和 3 次 controller 请求，捕获三个边界。Session 依次持久化 `continue`、`continue`、超时安全的 `defer`，两条自动 queue input 均只 admission 和 promotion 一次。首边界官方评分为 F2P 0/1、P2P 5/5；最终模型补丁与冻结测试补丁都修改 `test_requests.py`，forward/reverse applicability 检查均失败，因此评分在运行最终测试前 fail-closed。该冲突是真实的部分补丁冲突，不能为了获得结果而放宽门禁。
+
+本地完整保存了前 20 个 HTTP 200 响应及 123,052 prompt、4,856 completion tokens；第 21 个 controller 请求在 Session 超时后缺少 terminal response，因为随后评分异常触发 proxy 清理，而上游请求仍在执行。八次稳定账单读取为累计 2.1923892 美元，相对 r8 基线的账户窗口增量为 0.2470144 美元；由于缺少最后响应的本地 usage，它不能被表述为完整逐请求归因。r8 没有 trajectory 或 ledger 行，正式结果仍是 0/384，授权已消耗且不可重跑。下一次执行必须先前瞻性授权新 artifact root，并应先补齐异常路径的结算证据，但不能弱化冲突门禁。
 
 ## 当前结论
 
