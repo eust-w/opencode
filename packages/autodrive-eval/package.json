@@ -16,6 +16,8 @@
     "annotations:extract": "bun src/cli.ts annotations-extract",
     "annotations:prepare": "bun src/cli.ts annotations-prepare",
     "annotations:freeze": "bun src/cli.ts annotations-freeze",
+    "boundary:plan": "bun src/cli.ts boundary-plan",
+    "boundary:run": "bun src/cli.ts boundary-run",
     "verify-executor": "bun src/cli.ts verify-executor",
     "gateway-proxy": "bun scripts/gateway-proxy.ts",
     "gateway-host-executor": "bun scripts/gateway-host-executor.ts",

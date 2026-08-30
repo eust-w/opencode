@@ -116,6 +116,31 @@ export function createRunPlan(manifest: Manifest) {
     .parse([...primary, ...repeats, ...replication])
 }
 
+export function createBoundaryRunPlan(manifest: Manifest) {
+  return z
+    .array(Run)
+    .length(96)
+    .parse(
+      manifest.tasks.flatMap((task) =>
+        [0, 1].map((repeat) => {
+          const key = [protocol.version, "boundary-corpus", task.instanceID, repeat].join("\0")
+          return Run.parse({
+            id: `adr_${createHash("sha256").update(key).digest("hex").slice(0, 20)}`,
+            taskID: task.instanceID,
+            model: protocol.models.primary,
+            controllerModel: protocol.models.controller,
+            strategy: "supervisor",
+            repeat,
+            temperature: protocol.temperature,
+            segmentSteps: protocol.segmentSteps,
+            maxContinuations: protocol.maxContinuations,
+            timeoutMinutes: protocol.timeoutMinutes,
+          })
+        }),
+      ),
+    )
+}
+
 function makeRun(taskID: string, model: string, strategy: Strategy, repeat: number) {
   const key = [protocol.version, taskID, model, strategy, repeat].join("\0")
   return Run.parse({

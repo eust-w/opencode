@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import manifest from "../../../research/auto-drive/protocol/swe-evo-48.json"
-import { createRunPlan, parseManifest, protocol } from "../src/protocol"
+import { createBoundaryRunPlan, createRunPlan, parseManifest, protocol } from "../src/protocol"
 
 describe("frozen AutoDrive protocol", () => {
   test("records all pre-execution protocol amendments", async () => {
@@ -68,6 +68,19 @@ describe("frozen AutoDrive protocol", () => {
     expect(runs.filter((run) => run.model === protocol.models.primary)).toHaveLength(288)
     expect(runs.filter((run) => run.model !== protocol.models.primary)).toHaveLength(96)
     expect(runs.filter((run) => run.repeat > 0)).toHaveLength(96)
+  })
+
+  test("keeps 96 boundary-source trajectories outside the formal matrix", () => {
+    const parsed = parseManifest(manifest)
+    const formal = createRunPlan(parsed)
+    const boundary = createBoundaryRunPlan(parsed)
+    expect(boundary).toHaveLength(96)
+    expect(new Set(boundary.map((run) => run.id)).size).toBe(96)
+    expect(boundary.every((run) => run.model === protocol.models.primary && run.strategy === "supervisor")).toBeTrue()
+    expect(new Set(boundary.map((run) => run.taskID)).size).toBe(48)
+    expect(boundary.filter((run) => run.repeat === 0)).toHaveLength(48)
+    expect(boundary.filter((run) => run.repeat === 1)).toHaveLength(48)
+    expect(boundary.some((run) => formal.some((item) => item.id === run.id))).toBeFalse()
   })
 
   test("uses four continuation strategies and derives off from the first-boundary prefix", () => {

@@ -16,16 +16,17 @@ import {
   verifyTrajectoryArtifacts,
   type Trajectory,
 } from "./artifact"
-import { summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
+import { caps, summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
 import { renderTaskManifest } from "./paper"
 import { createPilotRun, loadPilotManifest } from "./pilot"
 import { createModelMetadataSnapshot, loadPreflight, PreflightScope } from "./preflight"
-import { createRunPlan, parseManifest, protocol, type Run } from "./protocol"
+import { createBoundaryRunPlan, createRunPlan, parseManifest, protocol, type Run } from "./protocol"
 import { executeRuns, InfrastructureFailure, type ExecutionContext } from "./runner"
 
 const root = path.resolve(import.meta.dir, "../../..")
 const manifest = parseManifest(manifestInput)
 const plan = createRunPlan(manifest)
+const boundaryPlan = createBoundaryRunPlan(manifest)
 const command = Bun.argv[2] ?? "validate"
 const args = Bun.argv.slice(3)
 
@@ -38,6 +39,8 @@ if (command === "analyze") await analyze()
 if (command === "annotations-extract") await annotationsExtract()
 if (command === "annotations-prepare") await annotationsPrepare()
 if (command === "annotations-freeze") await annotationsFreeze()
+if (command === "boundary-plan") await printBoundaryPlan()
+if (command === "boundary-run") await boundaryRun()
 if (command === "verify-executor") await verifyExecutor()
 if (command === "canary") await canary()
 if (command === "pilot-plan") await pilotPlan()
@@ -54,6 +57,8 @@ if (
     "annotations-extract",
     "annotations-prepare",
     "annotations-freeze",
+    "boundary-plan",
+    "boundary-run",
     "verify-executor",
     "canary",
     "pilot-plan",
@@ -73,6 +78,18 @@ async function printPlan() {
   await mkdir(path.dirname(path.resolve(output)), { recursive: true })
   await Bun.write(path.resolve(output), content)
   console.log(JSON.stringify({ output: path.resolve(output), trajectories: plan.length }))
+}
+
+async function printBoundaryPlan() {
+  const content = boundaryPlan.map((run) => JSON.stringify(run)).join("\n") + "\n"
+  const output = option("output")
+  if (!output) {
+    process.stdout.write(content)
+    return
+  }
+  await mkdir(path.dirname(path.resolve(output)), { recursive: true })
+  await Bun.write(path.resolve(output), content)
+  console.log(JSON.stringify({ output: path.resolve(output), trajectories: boundaryPlan.length }))
 }
 
 async function paperProtocol() {
@@ -114,7 +131,7 @@ async function checkPreflight() {
   const receipt = option("receipt")
   if (!receipt) fail("--receipt PATH is required")
   const scope = PreflightScope.safeParse(option("scope") ?? "canary")
-  if (!scope.success) fail("--scope must be canary or full")
+  if (!scope.success) fail("--scope must be canary, boundary, or full")
   const loaded = await loadPreflight(path.resolve(receipt), {
     scope: scope.data,
   })
@@ -610,6 +627,76 @@ async function pilot() {
       mode: "paid-non-primary-pilot",
       runID: records[0].runID,
       costUSD: records[0].costUSD,
+    }),
+  )
+}
+
+async function boundaryRun() {
+  if (!flag("execute"))
+    fail("Paid boundary-source execution is disabled; pass --execute after validating the executor and pilot")
+  const preflightPath = option("preflight")
+  if (!preflightPath) fail("--preflight PATH is required")
+  const artifactRoot = option("artifact-root")
+  if (!artifactRoot) fail("--artifact-root PATH is required")
+  const executorPath = option("executor")
+  if (!executorPath) fail("--executor PATH is required")
+  const requested = values("run-id")
+  if (!requested.length && !flag("all")) fail("Select --run-id ID (repeatable) or explicitly pass --all")
+  const unknown = requested.filter((runID) => !boundaryPlan.some((run) => run.id === runID))
+  if (unknown.length) fail(`Run IDs are outside the frozen boundary plan: ${unknown.join(", ")}`)
+  const resolvedArtifactRoot = path.resolve(artifactRoot)
+  const resolvedPreflightPath = path.resolve(preflightPath)
+  assertInside(resolvedArtifactRoot, resolvedPreflightPath, "Preflight receipt")
+  const preflight = await loadPreflight(resolvedPreflightPath, { scope: "boundary" })
+  const resultsPath = path.join(resolvedArtifactRoot, "boundary", "trajectories.jsonl")
+  const ledgerPath = path.join(resolvedArtifactRoot, "boundary", "ledger.jsonl")
+  const existing = await readJSONL(resultsPath, parseTrajectory)
+  const completed = new Set(existing.map((record) => record.runID))
+  const selected = boundaryPlan.filter(
+    (run) => !completed.has(run.id) && (!requested.length || requested.includes(run.id)),
+  )
+  if (!selected.length) fail("No pending frozen boundary runs match the selection")
+  const ledger = await readJSONL(ledgerPath, parseLedger)
+  await Promise.all([
+    mkdir(path.dirname(resultsPath), { recursive: true }),
+    mkdir(path.dirname(ledgerPath), { recursive: true }),
+  ])
+  const records = await executeRuns(
+    selected,
+    createExecutor(path.resolve(executorPath), {
+      artifactRoot: resolvedArtifactRoot,
+      preflight,
+      preflightPath: resolvedPreflightPath,
+    }),
+    {
+      concurrency: protocol.concurrency,
+      ledger,
+      budget: () => ({ category: "boundary", maxCostUSD: caps.boundary / boundaryPlan.length }),
+      onRecord: async (record, entry) => {
+        const serialized = JSON.stringify(record)
+        assertSecretFree(serialized)
+        await appendFile(resultsPath, serialized + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
+        await appendFile(
+          ledgerPath,
+          JSON.stringify({
+            timestamp: record.endedAt,
+            runID: record.runID,
+            category: entry.category,
+            amountUSD: entry.amountUSD,
+            promptTokens: record.promptTokens,
+            completionTokens: record.completionTokens,
+          }) + "\n",
+          { encoding: "utf8", flag: "a", mode: 0o600 },
+        )
+      },
+    },
+  )
+  console.log(
+    JSON.stringify({
+      completed: records.length,
+      remaining: boundaryPlan.length - completed.size - records.length,
+      results: resultsPath,
+      category: "boundary",
     }),
   )
 }

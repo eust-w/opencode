@@ -71,6 +71,22 @@ describe("experiment preflight gate", () => {
         { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") },
       ),
     ).toThrow()
+
+    const boundary = {
+      ...base,
+      scope: "boundary",
+      models: base.models.map((model) => ({ ...model, trajectoryCapacity: 96 })),
+    }
+    expect(parsePreflight(boundary, { scope: "boundary", now: new Date("2026-08-30T03:00:00.000Z") })).toMatchObject({
+      scope: "boundary",
+      models: [{ trajectoryCapacity: 96 }, { trajectoryCapacity: 96 }],
+    })
+    expect(() =>
+      parsePreflight(
+        { ...boundary, models: [{ ...boundary.models[0], trajectoryCapacity: 95 }, boundary.models[1]] },
+        { scope: "boundary", now: new Date("2026-08-30T03:00:00.000Z") },
+      ),
+    ).toThrow("capacity")
   })
 
   test("creates a minimal cache with explicit logical-to-catalog resolutions", () => {

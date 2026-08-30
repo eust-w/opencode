@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
-import { createRunPlan, parseManifest } from "../src/protocol"
+import { createBoundaryRunPlan, createRunPlan, parseManifest } from "../src/protocol"
 
 describe("paid experiment CLI gates", () => {
   test("requires indexed trajectories before extracting boundary candidates", async () => {
@@ -152,6 +152,38 @@ describe("paid experiment CLI gates", () => {
       imageDigest: expect.stringMatching(/^sha256:[a-f0-9]{64}$/),
       runID: expect.stringMatching(/^adr_[a-f0-9]{20}$/),
     })
+  })
+
+  test("prints the isolated boundary-source plan without provider access", async () => {
+    const child = Bun.spawn([Bun.which("bun")!, "src/cli.ts", "boundary-plan"], {
+      cwd: import.meta.dir + "/..",
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ])
+    expect(exitCode, stderr).toBe(0)
+    const runs = stdout
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line))
+    const formal = new Set(createRunPlan(parseManifest(manifestInput)).map((run) => run.id))
+    expect(runs).toHaveLength(96)
+    expect(runs.every((run) => run.strategy === "supervisor" && !formal.has(run.id))).toBeTrue()
+  })
+
+  test("requires a sealed boundary preflight before loading its paid executor", async () => {
+    const run = createBoundaryRunPlan(parseManifest(manifestInput))[0]
+    const child = Bun.spawn(
+      [Bun.which("bun")!, "src/cli.ts", "boundary-run", "--execute", "--executor", "/usr/bin/true", "--run-id", run.id],
+      { cwd: import.meta.dir + "/..", stdout: "pipe", stderr: "pipe" },
+    )
+    const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
+    expect(exitCode).toBe(1)
+    expect(stderr).toContain("--preflight PATH is required")
   })
 
   test("keeps the non-primary pilot fail-closed without explicit execution", async () => {
