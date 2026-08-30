@@ -8,6 +8,8 @@ import { gatewayRequestsSettled, requireCompleteGatewayUsage } from "../src/gate
 import {
   buildAutoDriveUpdate,
   buildTaskPrompt,
+  capturePatchFromBaseline,
+  captureRepositoryBaseline,
   captureGatewayFailureEvidence,
   classifyExecutorFailure,
   classifyIdleSession,
@@ -68,6 +70,8 @@ const requestManifest = path.join(gatewayRoot, "requests.jsonl")
 const proxyTrace = path.join(gatewayRoot, "proxy.jsonl")
 const controlRoot = path.join(gatewayRoot, "control")
 const failurePath = path.join(artifactRoot, "failures", input.run.id, `attempt-${input.attempt}.json`)
+const baselineManifestPath = path.join(patchRoot, "startup-baseline.json")
+const baselinePatchPath = path.join(patchRoot, "startup-baseline.diff")
 const startedAt = new Date()
 
 await Promise.all([
@@ -236,6 +240,38 @@ try {
       }),
     ),
   })
+  execution.stage = "startup-baseline"
+  const taskGit = (args: string[]) => command(["docker", "exec", taskName, "git", "-C", "/testbed", ...args])
+  const startupBaseline = await captureRepositoryBaseline(taskGit, task.baseCommit)
+  const baselineManifest =
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        head: startupBaseline.head,
+        tree: startupBaseline.tree,
+        trackedClean: true,
+        untrackedPaths: startupBaseline.untrackedPaths,
+        untrackedRoots: startupBaseline.untrackedRoots,
+      },
+      null,
+      2,
+    ) + "\n"
+  assertSecretFree(baselineManifest)
+  assertSecretFree(startupBaseline.content)
+  await Promise.all([
+    Bun.write(baselineManifestPath, baselineManifest),
+    Bun.write(baselinePatchPath, startupBaseline.content),
+  ])
+  await trace({
+    type: "startup-baseline-captured",
+    head: startupBaseline.head,
+    tree: startupBaseline.tree,
+    trackedClean: true,
+    untrackedPathCount: startupBaseline.untrackedPaths.length,
+    untrackedRootCount: startupBaseline.untrackedRoots.length,
+    manifest: { path: relativeArtifact(baselineManifestPath), sha256: digest(baselineManifest) },
+    patch: { path: relativeArtifact(baselinePatchPath), sha256: digest(startupBaseline.content) },
+  })
   await trace({ type: "session-created", sessionID: session.id })
   await api(address, `/api/session/${session.id}/prompt`, {
     method: "POST",
@@ -279,7 +315,7 @@ try {
   const endedAt = new Date()
   execution.stage = "trajectory-finalization"
   const trajectory = parseTrajectory({
-    schemaVersion: 3,
+    schemaVersion: 4,
     runID: input.run.id,
     taskID: input.run.taskID,
     model: input.run.model,
@@ -297,8 +333,9 @@ try {
     firstBoundaryFixRate: firstGrade.fixRate,
     continuationCount: drained.externalContinuationCount ?? info.autoDrive.status.continuationCount,
     manualContinuationCount: 0,
-    redundantTurns: boundaryPatches.filter((item, index) => index > 0 && item.sha256 === boundaryPatches[index - 1].sha256)
-      .length,
+    redundantTurns: boundaryPatches.filter(
+      (item, index) => index > 0 && item.sha256 === boundaryPatches[index - 1].sha256,
+    ).length,
     promptTokens: usage.reduce((sum, event) => sum + number(event.promptTokens), 0),
     completionTokens: usage.reduce((sum, event) => sum + number(event.completionTokens), 0),
     usageComplete,
@@ -315,6 +352,14 @@ try {
       modelMetadata: {
         path: relativeArtifact(modelMetadataPath),
         sha256: digest(await Bun.file(modelMetadataPath).text()),
+      },
+      startupBaseline: {
+        head: startupBaseline.head,
+        tree: startupBaseline.tree,
+        trackedClean: true,
+        untrackedPathCount: startupBaseline.untrackedPaths.length,
+        manifest: { path: relativeArtifact(baselineManifestPath), sha256: digest(baselineManifest) },
+        patch: { path: relativeArtifact(baselinePatchPath), sha256: digest(startupBaseline.content) },
       },
     },
     preflight: { path: relativeArtifact(preflightPath), sha256: preflightSHA256 },
@@ -340,9 +385,7 @@ try {
         { headers },
       )
       const proxyEvents = await readJSONL(proxyTrace)
-      const successful = proxyEvents.filter(
-        (event) => event.type === "provider-response" && event.status === 200,
-      )
+      const successful = proxyEvents.filter((event) => event.type === "provider-response" && event.status === 200)
       const providerFailure = proxyEvents.some(
         (event) => event.type === "proxy-error" || (event.type === "provider-response" && event.status !== 200),
       )
@@ -446,24 +489,16 @@ try {
   }
 
   async function capturePatch(label: string) {
-    await command(["docker", "exec", taskName, "git", "-C", "/testbed", "add", "-A"])
-    const patch = await command([
-      "docker",
-      "exec",
-      taskName,
-      "git",
-      "-C",
-      "/testbed",
-      "diff",
-      "--cached",
-      "--binary",
-      "--no-ext-diff",
-      "HEAD",
-      "--",
-    ])
-    await command(["docker", "exec", taskName, "git", "-C", "/testbed", "reset", "--mixed", "HEAD"])
-    await trace({ type: "patch-captured", label, sha256: digest(patch.stdout), bytes: patch.stdout.length })
-    return patch.stdout
+    const patch = await capturePatchFromBaseline(taskGit, startupBaseline)
+    await trace({
+      type: "patch-captured",
+      label,
+      sha256: digest(patch.content),
+      bytes: patch.content.length,
+      changedPaths: patch.changedPaths,
+      excludedPaths: patch.excludedPaths,
+    })
+    return patch.content
   }
 
   async function gradeCached(label: string, modelPatch: string) {
@@ -518,19 +553,7 @@ try {
           { stdin: modelPatch },
         )
       const forward = await command(
-        [
-          "docker",
-          "exec",
-          "-i",
-          graderName,
-          "git",
-          "-C",
-          "/testbed",
-          "apply",
-          "--check",
-          "--whitespace=nowarn",
-          "-",
-        ],
+        ["docker", "exec", "-i", graderName, "git", "-C", "/testbed", "apply", "--check", "--whitespace=nowarn", "-"],
         { allowFailure: true, stdin: task.testPatch },
       )
       const reverse =
@@ -563,10 +586,10 @@ try {
           { stdin: task.testPatch },
         )
       await trace({ type: "test-patch-prepared", label, disposition })
-      const test = await command(
-        ["docker", "exec", graderName, "bash", "-lc", `cd /testbed && ${task.testCommand}`],
-        { allowFailure: true, timeoutMS: 20 * 60_000 },
-      )
+      const test = await command(["docker", "exec", graderName, "bash", "-lc", `cd /testbed && ${task.testCommand}`], {
+        allowFailure: true,
+        timeoutMS: 20 * 60_000,
+      })
       const content = test.stdout + test.stderr
       const logPath = path.join(artifactRoot, "grader", input.run.id, `${label}.log`)
       await mkdir(path.dirname(logPath), { recursive: true })
@@ -580,7 +603,7 @@ try {
   }
 
   async function inspectImageDigest() {
-    const result = await command(["docker", "image", "inspect", task.image, "--format", "{{join .RepoDigests \"\\n\"}}"])
+    const result = await command(["docker", "image", "inspect", task.image, "--format", '{{join .RepoDigests "\\n"}}'])
     const value = result.stdout
       .split("\n")
       .map((item) => item.trim())
@@ -594,7 +617,14 @@ try {
     const deadline = Date.now() + 30_000
     while (Date.now() < deadline) {
       const result = await command(
-        ["docker", "exec", proxyName, "bun", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"],
+        [
+          "docker",
+          "exec",
+          proxyName,
+          "bun",
+          "-e",
+          "fetch('http://127.0.0.1:8080/healthz').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))",
+        ],
         { allowFailure: true },
       )
       if (result.exitCode === 0) return
@@ -621,7 +651,6 @@ try {
     }
     throw new Error("OpenCode server did not become ready")
   }
-
 } catch (error) {
   const captured = await Promise.allSettled([recordExecutorFailure(error)])
   if (captured[0].status === "rejected") {
@@ -726,16 +755,14 @@ async function api<T = unknown>(address: string, pathname: string, init: Request
   })
   const content = await response.text()
   assertSecretFree(content)
-  if (!response.ok) throw new Error(`OpenCode API ${pathname} failed with HTTP ${response.status}: ${content.slice(0, 500)}`)
+  if (!response.ok)
+    throw new Error(`OpenCode API ${pathname} failed with HTTP ${response.status}: ${content.slice(0, 500)}`)
   if (!content.trim()) return undefined as T
   const body = JSON.parse(content)
   return (body.data ?? body) as T
 }
 
-async function command(
-  args: string[],
-  options: { allowFailure?: boolean; stdin?: string; timeoutMS?: number } = {},
-) {
+async function command(args: string[], options: { allowFailure?: boolean; stdin?: string; timeoutMS?: number } = {}) {
   const child = Bun.spawn(args, {
     stdin: options.stdin === undefined ? "ignore" : "pipe",
     stdout: "pipe",

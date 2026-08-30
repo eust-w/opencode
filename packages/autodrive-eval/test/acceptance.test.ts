@@ -9,6 +9,14 @@ const manifest = parseManifest(manifestInput)
 const run = createRunPlan(manifest)[0]
 const task = manifest.tasks.find((item) => item.instanceID === run.taskID)!
 const metadata = { path: "metadata/models.json", sha256: "b".repeat(64) }
+const startupBaseline = {
+  head: task.baseCommit,
+  tree: "1".repeat(40),
+  trackedClean: true,
+  untrackedPathCount: 0,
+  manifest: { path: "patches/startup-baseline.json", sha256: "2".repeat(64) },
+  patch: { path: "patches/startup-baseline.diff", sha256: "3".repeat(64) },
+} as const
 const preflight = {
   receipt: parsePreflight(
     {
@@ -48,8 +56,8 @@ const preflight = {
   ),
   sha256: "0".repeat(64),
 }
-const trajectory = parseTrajectory({
-  schemaVersion: 3,
+const trajectory = currentTrajectory({
+  schemaVersion: 4,
   runID: run.id,
   taskID: run.taskID,
   model: run.model,
@@ -93,14 +101,48 @@ const trajectory = parseTrajectory({
     baseCommit: task.baseCommit,
     opencodeCommit: "e".repeat(40),
     modelMetadata: metadata,
+    startupBaseline,
   },
   preflight: { path: "preflight/receipt.json", sha256: preflight.sha256 },
   trace: { path: `raw/${run.id}.jsonl`, sha256: "f".repeat(64) },
 })
 
+function currentTrajectory(input: unknown) {
+  const parsed = parseTrajectory(input)
+  if (parsed.schemaVersion !== 4) throw new Error("Expected current trajectory")
+  return parsed
+}
+
 describe("frozen trajectory acceptance", () => {
   test("matches the run, task and sealed preflight provenance", async () => {
     expect(() => assertTrajectoryProvenance(trajectory, { run, task, preflight })).not.toThrow()
+  })
+
+  test("requires a clean startup baseline for formal acceptance", () => {
+    const legacy = parseTrajectory({
+      ...trajectory,
+      schemaVersion: 3,
+      environment: {
+        image: trajectory.environment.image,
+        imageDigest: trajectory.environment.imageDigest,
+        baseCommit: trajectory.environment.baseCommit,
+        opencodeCommit: trajectory.environment.opencodeCommit,
+        modelMetadata: trajectory.environment.modelMetadata,
+      },
+    })
+    expect(() => assertTrajectoryProvenance(legacy, { run, task, preflight })).toThrow("schema version 4")
+    expect(() =>
+      assertTrajectoryProvenance(
+        {
+          ...trajectory,
+          environment: {
+            ...trajectory.environment,
+            startupBaseline: { ...trajectory.environment.startupBaseline, head: "f".repeat(40) },
+          },
+        },
+        { run, task, preflight },
+      ),
+    ).toThrow("startup baseline HEAD")
   })
 
   test("rejects mismatched model versions, task images and preflight hashes", async () => {

@@ -56,11 +56,7 @@ export function buildTaskPrompt(task: TaskInput) {
   ].join("\n")
 }
 
-export function buildAutoDriveUpdate(input: {
-  strategy: Strategy
-  maxContinuations: number
-  controllerModel: string
-}) {
+export function buildAutoDriveUpdate(input: { strategy: Strategy; maxContinuations: number; controllerModel: string }) {
   if (input.strategy === "regex")
     return {
       enabled: true,
@@ -92,10 +88,7 @@ export function decideExternalContinuation(input: {
   continuationCount: number
   maxContinuations: number
   resolved?: boolean
-}):
-  | { action: "continue"; reason: string; prompt: string }
-  | { action: "stop"; reason: string }
-  | undefined {
+}): { action: "continue"; reason: string; prompt: string } | { action: "stop"; reason: string } | undefined {
   if (input.strategy === "regex" || input.strategy === "supervisor") return undefined
   if (input.continuationCount >= input.maxContinuations)
     return { action: "stop" as const, reason: "Maximum continuation count reached" }
@@ -132,14 +125,9 @@ export function buildExperimentConfig(input: {
       },
     },
     provider: {
-      openai: provider(
-        "http://autodrive-proxy:8080/worker/v1",
-        input.workerModel,
-        true,
-        4_096,
-        "@ai-sdk/openai",
-        { reasoningEffort: "low" },
-      ),
+      openai: provider("http://autodrive-proxy:8080/worker/v1", input.workerModel, true, 4_096, "@ai-sdk/openai", {
+        reasoningEffort: "low",
+      }),
       "autodrive-controller": provider(
         "http://autodrive-proxy:8080/controller/v1",
         input.controllerModel,
@@ -152,10 +140,7 @@ export function buildExperimentConfig(input: {
   }
 }
 
-export async function prepareExperimentConfig(
-  directory: string,
-  input: Parameters<typeof buildExperimentConfig>[0],
-) {
+export async function prepareExperimentConfig(directory: string, input: Parameters<typeof buildExperimentConfig>[0]) {
   await Promise.all([
     Bun.write(path.join(directory, "opencode.json"), JSON.stringify(buildExperimentConfig(input), null, 2) + "\n"),
     Bun.write(
@@ -183,6 +168,68 @@ export function classifyTestPatch(input: { forwardApplies: boolean; reverseAppli
   if (input.forwardApplies) return "apply" as const
   if (input.reverseApplies) return "already-applied" as const
   throw new Error("Model patch conflicts with the frozen test patch")
+}
+
+export async function captureRepositoryBaseline(
+  command: (args: string[]) => Promise<{ exitCode: number; stdout: string; stderr: string }>,
+  expectedHead?: string,
+) {
+  const head = parseGitObject((await command(["rev-parse", "HEAD"])).stdout, "HEAD")
+  if (expectedHead && head !== expectedHead) throw new Error("Task image baseline HEAD does not match the frozen task")
+  const tracked = await command(["diff", "--binary", "--no-ext-diff", "HEAD", "--"])
+  if (tracked.stdout) throw new Error("Task image has tracked startup changes")
+  const [untracked, roots] = await Promise.all([
+    command(["ls-files", "--others", "--exclude-standard", "-z"]),
+    command(["ls-files", "--others", "--exclude-standard", "--directory", "--no-empty-directory", "-z"]),
+  ])
+  const untrackedPaths = parseNullPaths(untracked.stdout)
+  const untrackedRoots = parseNullPaths(roots.stdout)
+  await command(["add", "-A"])
+  try {
+    const tree = parseGitObject((await command(["write-tree"])).stdout, "startup tree")
+    const content = (await command(["diff", "--cached", "--binary", "--no-ext-diff", "HEAD", "--"])).stdout
+    return { head, tree, untrackedPaths, untrackedRoots, content }
+  } finally {
+    await command(["reset", "--mixed", "HEAD"])
+  }
+}
+
+export async function capturePatchFromBaseline(
+  command: (args: string[]) => Promise<{ exitCode: number; stdout: string; stderr: string }>,
+  baseline: Awaited<ReturnType<typeof captureRepositoryBaseline>>,
+) {
+  await command(["add", "-A"])
+  try {
+    const stagedPaths = parseNullPaths(
+      (await command(["diff", "--cached", "--name-only", "-z", baseline.tree, "--"])).stdout,
+    )
+    const excludedPaths = stagedPaths.filter(
+      (item) =>
+        baseline.untrackedPaths.includes(item) ||
+        baseline.untrackedRoots.some((root) => (root.endsWith("/") ? item.startsWith(root) : item === root)),
+    )
+    if (excludedPaths.length) await command(["reset", baseline.tree, "--", ...excludedPaths])
+    const changedPaths = parseNullPaths(
+      (await command(["diff", "--cached", "--name-only", "-z", baseline.tree, "--"])).stdout,
+    )
+    const content = (await command(["diff", "--cached", "--binary", "--no-ext-diff", baseline.tree, "--"])).stdout
+    return { content, changedPaths, excludedPaths }
+  } finally {
+    await command(["reset", "--mixed", "HEAD"])
+  }
+}
+
+function parseNullPaths(input: string) {
+  return input
+    .split("\0")
+    .filter((item) => item.length > 0)
+    .sort()
+}
+
+function parseGitObject(input: string, label: string) {
+  const value = input.trim()
+  if (!/^[a-f0-9]{40,64}$/.test(value)) throw new Error(`Invalid Git ${label}`)
+  return value
 }
 
 const FailureGatewayEvent = z
@@ -231,9 +278,7 @@ const ExecutorFailureReceipt = z
         captureErrors: z.array(z.string().min(1)).optional(),
       })
       .strict(),
-    acceptance: z
-      .object({ trajectoryAccepted: z.literal(false), ledgerRowWritten: z.literal(false) })
-      .strict(),
+    acceptance: z.object({ trajectoryAccepted: z.literal(false), ledgerRowWritten: z.literal(false) }).strict(),
     artifacts: z.array(
       z
         .object({
@@ -364,16 +409,14 @@ const statuses = new Set(["PASSED", "FAILED", "SKIPPED", "ERROR", "XFAIL"])
 
 export function parsePytestLog(content: string) {
   return Object.fromEntries(
-    content
-      .split("\n")
-      .flatMap((line) => {
-        const status = line.split(/\s+/, 1)[0]
-        if (!statuses.has(status)) return []
-        const normalized = status === "FAILED" ? line.replaceAll(" - ", " ") : line
-        const fields = normalized.split(/\s+/)
-        if (fields.length <= 1) return []
-        return [[fields[1], fields[0]]]
-      }),
+    content.split("\n").flatMap((line) => {
+      const status = line.split(/\s+/, 1)[0]
+      if (!statuses.has(status)) return []
+      const normalized = status === "FAILED" ? line.replaceAll(" - ", " ") : line
+      const fields = normalized.split(/\s+/)
+      if (fields.length <= 1) return []
+      return [[fields[1], fields[0]]]
+    }),
   )
 }
 

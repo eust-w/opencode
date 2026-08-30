@@ -73,6 +73,28 @@ const base = {
 } as const
 
 describe("trajectory artifact contract", () => {
+  test("requires startup-baseline provenance for current trajectories", () => {
+    const current = {
+      ...base,
+      schemaVersion: 4,
+      environment: {
+        ...base.environment,
+        startupBaseline: {
+          head: base.environment.baseCommit,
+          tree: "1".repeat(40),
+          trackedClean: true,
+          untrackedPathCount: 1,
+          manifest: { path: "patches/startup-baseline.json", sha256: "2".repeat(64) },
+          patch: { path: "patches/startup-baseline.diff", sha256: "3".repeat(64) },
+        },
+      },
+    }
+
+    expect(parseTrajectory(current)).toMatchObject({ schemaVersion: 4, environment: current.environment })
+    expect(() => parseTrajectory({ ...current, environment: base.environment })).toThrow()
+    expect(parseTrajectory(base).schemaVersion).toBe(3)
+  })
+
   test("requires exact model, request, container and trace provenance", () => {
     expect(parseTrajectory(base)).toMatchObject({ resolved: true, modelRequests: [{ temperature: 0 }] })
     expect(() =>
@@ -144,22 +166,40 @@ describe("trajectory artifact contract", () => {
         metadata: '{"google":{"models":{}}}\n',
         preflight: '{"protocol":"auto-drive-swe-evo-v1.2"}\n',
         trace: '{"type":"step-finish"}\n',
+        baselineManifest:
+          JSON.stringify(
+            {
+              schemaVersion: 1,
+              head: base.environment.baseCommit,
+              tree: "1".repeat(40),
+              trackedClean: true,
+              untrackedPaths: ["build/cache.bin"],
+              untrackedRoots: ["build/"],
+            },
+            null,
+            2,
+          ) + "\n",
+        baselinePatch: "diff --git a/build/cache.bin b/build/cache.bin\n",
       }
       await Promise.all([
         mkdir(path.join(directory, "requests"), { recursive: true }),
         mkdir(path.join(directory, "metadata"), { recursive: true }),
         mkdir(path.join(directory, "preflight"), { recursive: true }),
         mkdir(path.join(directory, "raw"), { recursive: true }),
+        mkdir(path.join(directory, "patches"), { recursive: true }),
       ])
       await Promise.all([
         Bun.write(path.join(directory, base.modelRequests[0].normalizedRequest.path), files.request),
         Bun.write(path.join(directory, base.environment.modelMetadata.path), files.metadata),
         Bun.write(path.join(directory, base.preflight.path), files.preflight),
         Bun.write(path.join(directory, base.trace.path), files.trace),
+        Bun.write(path.join(directory, "patches/startup-baseline.json"), files.baselineManifest),
+        Bun.write(path.join(directory, "patches/startup-baseline.diff"), files.baselinePatch),
       ])
       const digest = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
-      const record = parseTrajectory({
+      const record = currentTrajectory({
         ...base,
+        schemaVersion: 4,
         modelRequests: [
           {
             ...base.modelRequests[0],
@@ -170,11 +210,50 @@ describe("trajectory artifact contract", () => {
         environment: {
           ...base.environment,
           modelMetadata: { ...base.environment.modelMetadata, sha256: digest(files.metadata) },
+          startupBaseline: {
+            head: base.environment.baseCommit,
+            tree: "1".repeat(40),
+            trackedClean: true,
+            untrackedPathCount: 1,
+            manifest: { path: "patches/startup-baseline.json", sha256: digest(files.baselineManifest) },
+            patch: { path: "patches/startup-baseline.diff", sha256: digest(files.baselinePatch) },
+          },
         },
         preflight: { ...base.preflight, sha256: digest(files.preflight) },
         trace: { ...base.trace, sha256: digest(files.trace) },
       })
       await expect(verifyTrajectoryArtifacts(record, directory)).resolves.toBeUndefined()
+      const mismatchedManifest =
+        JSON.stringify(
+          {
+            schemaVersion: 1,
+            head: base.environment.baseCommit,
+            tree: "4".repeat(40),
+            trackedClean: true,
+            untrackedPaths: ["build/cache.bin"],
+            untrackedRoots: ["build/"],
+          },
+          null,
+          2,
+        ) + "\n"
+      await Bun.write(path.join(directory, record.environment.startupBaseline.manifest.path), mismatchedManifest)
+      const mismatched = currentTrajectory({
+        ...record,
+        environment: {
+          ...record.environment,
+          startupBaseline: {
+            ...record.environment.startupBaseline,
+            manifest: { ...record.environment.startupBaseline.manifest, sha256: digest(mismatchedManifest) },
+          },
+        },
+      })
+      await expect(verifyTrajectoryArtifacts(mismatched, directory)).rejects.toThrow("Startup baseline tree mismatch")
+      await Bun.write(path.join(directory, record.environment.startupBaseline.manifest.path), files.baselineManifest)
+      await Bun.write(path.join(directory, record.environment.startupBaseline.manifest.path), '{"tampered":true}\n')
+      await expect(verifyTrajectoryArtifacts(record, directory)).rejects.toThrow(
+        "Startup baseline manifest artifact hash mismatch",
+      )
+      await Bun.write(path.join(directory, record.environment.startupBaseline.manifest.path), files.baselineManifest)
       await Bun.write(path.join(directory, record.trace.path), '{"type":"tampered"}\n')
       await expect(verifyTrajectoryArtifacts(record, directory)).rejects.toThrow("Trace artifact hash mismatch")
     } finally {
@@ -202,3 +281,9 @@ describe("trajectory artifact contract", () => {
     expect(analysis.off).toMatchObject({ prefixes: 2, resolvedRate: 0, meanFixRate: 0.3125 })
   })
 })
+
+function currentTrajectory(input: unknown) {
+  const parsed = parseTrajectory(input)
+  if (parsed.schemaVersion !== 4) throw new Error("Expected current trajectory")
+  return parsed
+}

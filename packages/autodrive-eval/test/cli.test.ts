@@ -337,6 +337,8 @@ describe("paid experiment CLI gates", () => {
         costUSD: 0,
       })
       expect(await Bun.file(path.join(directory, "dry-run", "raw", `${run.id}.jsonl`)).exists()).toBeTrue()
+      expect(await Bun.file(path.join(directory, "dry-run/patches/startup-baseline.json")).exists()).toBeTrue()
+      expect(await Bun.file(path.join(directory, "dry-run/patches/startup-baseline.diff")).exists()).toBeTrue()
       expect(await Bun.file(path.join(directory, "results", "trajectories.jsonl")).exists()).toBeFalse()
       expect(await Bun.file(path.join(directory, "cost", "ledger.jsonl")).exists()).toBeFalse()
     } finally {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { mkdtemp, rm } from "node:fs/promises"
+import { mkdir, mkdtemp, rm } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import {
@@ -7,6 +7,8 @@ import {
   buildAutoDriveUpdate,
   buildExperimentConfig,
   buildTaskPrompt,
+  capturePatchFromBaseline,
+  captureRepositoryBaseline,
   captureGatewayFailureEvidence,
   classifyExecutorFailure,
   classifyTestPatch,
@@ -38,6 +40,117 @@ const task = {
 }
 
 describe("SWE-EVO host executor", () => {
+  test("exposes startup-baseline patch capture", async () => {
+    const module = await import("../src/host-executor")
+    expect("captureRepositoryBaseline" in module).toBe(true)
+    expect("capturePatchFromBaseline" in module).toBe(true)
+  })
+
+  test("wires baseline capture before the worker prompt", async () => {
+    const script = await Bun.file(path.join(import.meta.dir, "../scripts/gateway-host-executor.ts")).text()
+    const baseline = script.indexOf("await captureRepositoryBaseline(")
+    const sessionConfigured = script.indexOf("`/api/session/${session.id}/auto-drive`")
+    const prompt = script.indexOf("`/api/session/${session.id}/prompt`")
+    expect(baseline).toBeGreaterThan(0)
+    expect(baseline).toBeGreaterThan(sessionConfigured)
+    expect(prompt).toBeGreaterThan(baseline)
+    expect(script).toContain("capturePatchFromBaseline(")
+    expect(script).toContain("schemaVersion: 4")
+  })
+
+  test("excludes unchanged startup files from model patches", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-baseline-"))
+    try {
+      const command = gitCommand(directory)
+      await initializeRepository(command, directory)
+      await mkdir(path.join(directory, "build"))
+      await Bun.write(path.join(directory, "build/cache.bin"), "image cache\n")
+
+      const baseline = await captureRepositoryBaseline(command)
+      expect(baseline.untrackedPaths).toEqual(["build/cache.bin"])
+      expect(baseline.content).toContain("build/cache.bin")
+      expect(await capturePatchFromBaseline(command, baseline)).toEqual({
+        content: "",
+        changedPaths: [],
+        excludedPaths: [],
+      })
+
+      await Bun.write(path.join(directory, "tracked.ts"), "export const value = 2\n")
+      await Bun.write(path.join(directory, "new.ts"), "export const added = true\n")
+      const patch = await capturePatchFromBaseline(command, baseline)
+      expect(patch.changedPaths).toEqual(["new.ts", "tracked.ts"])
+      expect(patch.content).toContain("tracked.ts")
+      expect(patch.content).toContain("new.ts")
+      expect(patch.content).not.toContain("build/cache.bin")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("rejects tracked changes already present in the task image", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-baseline-"))
+    try {
+      const command = gitCommand(directory)
+      await initializeRepository(command, directory)
+      await Bun.write(path.join(directory, "tracked.ts"), "export const imageMutation = true\n")
+      await expect(captureRepositoryBaseline(command)).rejects.toThrow("tracked startup changes")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("rejects a task image at the wrong base commit", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-baseline-"))
+    try {
+      const command = gitCommand(directory)
+      await initializeRepository(command, directory)
+      await expect(captureRepositoryBaseline(command, "f".repeat(40))).rejects.toThrow("baseline HEAD")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("quarantines model edits to startup-only files", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-baseline-"))
+    try {
+      const command = gitCommand(directory)
+      await initializeRepository(command, directory)
+      await mkdir(path.join(directory, "build"))
+      await Bun.write(path.join(directory, "build/cache.bin"), "image cache\n")
+      const baseline = await captureRepositoryBaseline(command)
+
+      await Bun.write(path.join(directory, "build/cache.bin"), "model changed cache\n")
+      expect(await capturePatchFromBaseline(command, baseline)).toEqual({
+        content: "",
+        changedPaths: [],
+        excludedPaths: ["build/cache.bin"],
+      })
+      expect((await command(["status", "--short"])).stdout).toContain("build/")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("quarantines new files below startup-only directories", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-baseline-"))
+    try {
+      const command = gitCommand(directory)
+      await initializeRepository(command, directory)
+      await mkdir(path.join(directory, "build"))
+      await Bun.write(path.join(directory, "build/cache.bin"), "image cache\n")
+      const baseline = await captureRepositoryBaseline(command)
+
+      await Bun.write(path.join(directory, "build/generated.bin"), "new model output\n")
+      expect(await capturePatchFromBaseline(command, baseline)).toEqual({
+        content: "",
+        changedPaths: [],
+        excludedPaths: ["build/generated.bin"],
+      })
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   test("requests an explicit random loopback port from Docker", () => {
     expect(dockerPortPublish(4_096)).toBe("127.0.0.1:0:4096")
   })
@@ -85,16 +198,15 @@ describe("SWE-EVO host executor", () => {
   })
 
   test("continues blind baselines to the cap and oracle baselines only while unresolved", () => {
-    expect(
-      decideExternalContinuation({ strategy: "blind", continuationCount: 0, maxContinuations: 5 }),
-    ).toEqual({
+    expect(decideExternalContinuation({ strategy: "blind", continuationCount: 0, maxContinuations: 5 })).toEqual({
       action: "continue",
       reason: "Blind baseline continuation 1 of 5",
       prompt: BASELINE_CONTINUATION_PROMPT,
     })
-    expect(
-      decideExternalContinuation({ strategy: "blind", continuationCount: 5, maxContinuations: 5 }),
-    ).toEqual({ action: "stop", reason: "Maximum continuation count reached" })
+    expect(decideExternalContinuation({ strategy: "blind", continuationCount: 5, maxContinuations: 5 })).toEqual({
+      action: "stop",
+      reason: "Maximum continuation count reached",
+    })
     expect(
       decideExternalContinuation({ strategy: "oracle", continuationCount: 2, maxContinuations: 5, resolved: true }),
     ).toEqual({ action: "stop", reason: "External validator confirmed completion" })
@@ -105,12 +217,10 @@ describe("SWE-EVO host executor", () => {
       reason: "External validator found the task incomplete",
       prompt: BASELINE_CONTINUATION_PROMPT,
     })
-    expect(() =>
-      decideExternalContinuation({ strategy: "oracle", continuationCount: 0, maxContinuations: 5 }),
-    ).toThrow("Oracle continuation requires an external validator result")
-    expect(
-      decideExternalContinuation({ strategy: "regex", continuationCount: 0, maxContinuations: 5 }),
-    ).toBeUndefined()
+    expect(() => decideExternalContinuation({ strategy: "oracle", continuationCount: 0, maxContinuations: 5 })).toThrow(
+      "Oracle continuation requires an external validator result",
+    )
+    expect(decideExternalContinuation({ strategy: "regex", continuationCount: 0, maxContinuations: 5 })).toBeUndefined()
   })
 
   test("routes workers through OpenAI Responses while keeping the controller chat-compatible", () => {
@@ -299,14 +409,15 @@ describe("SWE-EVO host executor", () => {
   })
 
   test("classifies grader conflicts without weakening the frozen patch gate", () => {
-    expect(classifyExecutorFailure(new Error("Model patch conflicts with the frozen test patch"), "final-grader"))
-      .toEqual({
-        classification: "excluded-charged-evaluation-failure",
-        stage: "final-grader-test-patch-conflict",
-        code: "model-patch-conflicts-frozen-test-patch",
-        name: "Error",
-        message: "Model patch conflicts with the frozen test patch",
-      })
+    expect(
+      classifyExecutorFailure(new Error("Model patch conflicts with the frozen test patch"), "final-grader"),
+    ).toEqual({
+      classification: "excluded-charged-evaluation-failure",
+      stage: "final-grader-test-patch-conflict",
+      code: "model-patch-conflicts-frozen-test-patch",
+      name: "Error",
+      message: "Model patch conflicts with the frozen test patch",
+    })
     expect(classifyExecutorFailure(new Error("Gateway requests did not settle"), "gateway-settlement")).toEqual({
       classification: "executor-failure",
       stage: "gateway-settlement",
@@ -419,3 +530,25 @@ describe("SWE-EVO host executor", () => {
     })
   })
 })
+
+function gitCommand(directory: string) {
+  return async (args: string[]) => {
+    const child = Bun.spawn(["git", "-C", directory, ...args], { stdout: "pipe", stderr: "pipe" })
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ])
+    if (exitCode !== 0) throw new Error(stderr.trim() || `git ${args.join(" ")} exited ${exitCode}`)
+    return { exitCode, stdout, stderr }
+  }
+}
+
+async function initializeRepository(command: ReturnType<typeof gitCommand>, directory: string) {
+  await command(["init", "--quiet"])
+  await command(["config", "user.name", "AutoDrive Test"])
+  await command(["config", "user.email", "autodrive@example.invalid"])
+  await Bun.write(path.join(directory, "tracked.ts"), "export const value = 1\n")
+  await command(["add", "tracked.ts"])
+  await command(["commit", "--quiet", "-m", "baseline"])
+}

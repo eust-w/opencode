@@ -50,6 +50,9 @@ describe("frozen AutoDrive protocol", () => {
     expect(
       await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
     ).toContain("Supervisor failure-abstention amendment")
+    expect(
+      await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
+    ).toContain("Startup patch-baseline amendment")
   })
 
   test("pins all 48 unique SWE-EVO tasks from seven repositories", () => {

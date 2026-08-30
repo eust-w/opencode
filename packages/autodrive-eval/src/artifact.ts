@@ -28,8 +28,7 @@ export const ModelRequest = z.object({
   maxOutputTokens: z.number().int().positive(),
 })
 
-export const Trajectory = z.object({
-  schemaVersion: z.literal(3),
+const TrajectoryBase = z.object({
   runID: z.string().regex(/^adr_[a-f0-9]{20}$/),
   taskID: z.string().min(1),
   model: z.string().min(1),
@@ -66,16 +65,55 @@ export const Trajectory = z.object({
   recoverySucceeded: z.boolean(),
   unsafeContinuationCount: z.number().int().nonnegative(),
   modelRequests: z.array(ModelRequest).min(1),
-  environment: z.object({
-    image: z.string().min(1),
-    imageDigest: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-    baseCommit: z.string().regex(/^[a-f0-9]{40}$/),
-    opencodeCommit: z.string().regex(/^[a-f0-9]{40}$/),
-    modelMetadata: ArtifactReference,
-  }),
   preflight: ArtifactReference,
   trace: ArtifactReference,
 })
+
+const Environment = z.object({
+  image: z.string().min(1),
+  imageDigest: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+  baseCommit: z.string().regex(/^[a-f0-9]{40}$/),
+  opencodeCommit: z.string().regex(/^[a-f0-9]{40}$/),
+  modelMetadata: ArtifactReference,
+})
+
+const StartupBaseline = z.object({
+  head: z.string().regex(/^[a-f0-9]{40}$/),
+  tree: z.string().regex(/^[a-f0-9]{40,64}$/),
+  trackedClean: z.literal(true),
+  untrackedPathCount: z.number().int().nonnegative(),
+  manifest: ArtifactReference,
+  patch: ArtifactReference,
+})
+
+const StartupBaselineManifest = z
+  .object({
+    schemaVersion: z.literal(1),
+    head: z.string().regex(/^[a-f0-9]{40}$/),
+    tree: z.string().regex(/^[a-f0-9]{40,64}$/),
+    trackedClean: z.literal(true),
+    untrackedPaths: z.array(
+      z
+        .string()
+        .min(1)
+        .refine((value) => !path.isAbsolute(value) && !value.split(/[\\/]/).includes(".."), "Invalid baseline path"),
+    ),
+    untrackedRoots: z.array(
+      z
+        .string()
+        .min(1)
+        .refine((value) => !path.isAbsolute(value) && !value.split(/[\\/]/).includes(".."), "Invalid baseline root"),
+    ),
+  })
+  .strict()
+
+export const Trajectory = z.discriminatedUnion("schemaVersion", [
+  TrajectoryBase.extend({ schemaVersion: z.literal(3), environment: Environment }),
+  TrajectoryBase.extend({
+    schemaVersion: z.literal(4),
+    environment: Environment.extend({ startupBaseline: StartupBaseline }),
+  }),
+])
 export type Trajectory = z.infer<typeof Trajectory>
 
 export function parseTrajectory(input: unknown) {
@@ -103,9 +141,26 @@ export async function verifyTrajectoryArtifacts(trajectory: Trajectory, root: st
   await Promise.all([
     ...trajectory.modelRequests.map((request) => verifyNormalizedRequest(request, root)),
     verifyArtifact("Model metadata", trajectory.environment.modelMetadata, root),
+    ...(trajectory.schemaVersion === 4 ? [verifyStartupBaseline(trajectory, root)] : []),
     verifyArtifact("Preflight", trajectory.preflight, root),
     verifyArtifact("Trace", trajectory.trace, root),
   ])
+}
+
+async function verifyStartupBaseline(trajectory: Extract<Trajectory, { schemaVersion: 4 }>, root: string) {
+  const content = await verifyArtifact(
+    "Startup baseline manifest",
+    trajectory.environment.startupBaseline.manifest,
+    root,
+  )
+  const manifest = StartupBaselineManifest.parse(JSON.parse(content))
+  if (manifest.head !== trajectory.environment.startupBaseline.head) throw new Error("Startup baseline HEAD mismatch")
+  if (manifest.tree !== trajectory.environment.startupBaseline.tree) throw new Error("Startup baseline tree mismatch")
+  if (manifest.untrackedPaths.length !== trajectory.environment.startupBaseline.untrackedPathCount)
+    throw new Error("Startup baseline untracked path count mismatch")
+  if (new Set(manifest.untrackedPaths).size !== manifest.untrackedPaths.length)
+    throw new Error("Startup baseline contains duplicate paths")
+  await verifyArtifact("Startup baseline patch", trajectory.environment.startupBaseline.patch, root)
 }
 
 async function verifyNormalizedRequest(request: z.infer<typeof ModelRequest>, root: string) {
@@ -148,6 +203,7 @@ async function verifyArtifact(label: string, reference: z.infer<typeof ArtifactR
   assertSecretFree(content)
   if (createHash("sha256").update(content).digest("hex") !== reference.sha256)
     throw new Error(`${label} artifact hash mismatch`)
+  return content
 }
 
 async function readArtifact(root: string, relative: string) {

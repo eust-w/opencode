@@ -10,6 +10,9 @@ export function assertTrajectoryProvenance(
     preflight: { receipt: Preflight; sha256: string }
   },
 ) {
+  if (trajectory.schemaVersion !== 4) throw new Error("Formal trajectories require schema version 4")
+  if (trajectory.environment.startupBaseline.head !== context.task.baseCommit)
+    throw new Error("Trajectory startup baseline HEAD does not match the frozen task")
   if (trajectory.runID !== context.run.id) throw new Error("Trajectory does not match the frozen run ID")
   if (trajectory.taskID !== context.run.taskID || trajectory.taskID !== context.task.instanceID)
     throw new Error("Trajectory does not match the frozen task")

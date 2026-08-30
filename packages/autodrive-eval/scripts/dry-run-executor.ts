@@ -52,13 +52,25 @@ const preflight =
     protocol: Bun.env.AUTODRIVE_EVAL_PROTOCOL,
   }) + "\n"
 const trace = JSON.stringify({ mode: "dry-run-contract", type: "executor-verified" }) + "\n"
+const baselinePatch = ""
+const baselineManifest =
+  JSON.stringify({
+    schemaVersion: 1,
+    head: task.baseCommit,
+    tree: "0".repeat(40),
+    trackedClean: true,
+    untrackedPaths: [],
+    untrackedRoots: [],
+  }) + "\n"
 const requestPath = `dry-run/requests/${input.run.id}-000.json`
 const metadataPath = "dry-run/metadata/models.json"
 const preflightPath = "dry-run/preflight/contract.json"
 const tracePath = `dry-run/raw/${input.run.id}.jsonl`
+const baselineManifestPath = "dry-run/patches/startup-baseline.json"
+const baselinePatchPath = "dry-run/patches/startup-baseline.diff"
 
 await Promise.all(
-  [requestPath, metadataPath, preflightPath, tracePath].map((relative) =>
+  [requestPath, metadataPath, preflightPath, tracePath, baselineManifestPath, baselinePatchPath].map((relative) =>
     mkdir(path.dirname(path.join(artifactRoot, relative)), { recursive: true }),
   ),
 )
@@ -67,12 +79,14 @@ await Promise.all([
   Bun.write(path.join(artifactRoot, metadataPath), metadata),
   Bun.write(path.join(artifactRoot, preflightPath), preflight),
   Bun.write(path.join(artifactRoot, tracePath), trace),
+  Bun.write(path.join(artifactRoot, baselineManifestPath), baselineManifest),
+  Bun.write(path.join(artifactRoot, baselinePatchPath), baselinePatch),
 ])
 
 const startedAt = new Date().toISOString()
 const modelSeparator = input.run.model.indexOf("/")
 const record = parseTrajectory({
-  schemaVersion: 3,
+  schemaVersion: 4,
   runID: input.run.id,
   taskID: input.run.taskID,
   model: input.run.model,
@@ -117,6 +131,14 @@ const record = parseTrajectory({
     baseCommit: task.baseCommit,
     opencodeCommit: "0".repeat(40),
     modelMetadata: { path: metadataPath, sha256: digest(metadata) },
+    startupBaseline: {
+      head: task.baseCommit,
+      tree: "0".repeat(40),
+      trackedClean: true,
+      untrackedPathCount: 0,
+      manifest: { path: baselineManifestPath, sha256: digest(baselineManifest) },
+      patch: { path: baselinePatchPath, sha256: digest(baselinePatch) },
+    },
   },
   preflight: { path: preflightPath, sha256: digest(preflight) },
   trace: { path: tracePath, sha256: digest(trace) },

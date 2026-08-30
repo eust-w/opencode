@@ -871,6 +871,7 @@ function dryRunEnvironment(artifactRoot: string) {
 }
 
 function assertDryRunTrajectory(record: Trajectory, run: Run) {
+  if (record.schemaVersion !== 4) throw new Error("Dry-run executor must prove startup-baseline provenance")
   if (record.runID !== run.id || record.attempt !== 1)
     throw new Error("Dry-run executor returned mismatched provenance")
   if (
@@ -901,6 +902,8 @@ function assertDryRunTrajectory(record: Trajectory, run: Run) {
   const references = [
     ...record.modelRequests.map((request) => request.normalizedRequest.path),
     record.environment.modelMetadata.path,
+    record.environment.startupBaseline.manifest.path,
+    record.environment.startupBaseline.patch.path,
     record.preflight.path,
     record.trace.path,
   ]
