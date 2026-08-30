@@ -14,15 +14,15 @@ External artifact root: `/root/autodrive-artifacts/2026-08-31-v1.14-boundary-r1`
 - Boundary preflight receipt SHA-256: `3e4c8a84eda216c10ea88c699d236fa8bd9804e10a7415f95cc77e9923dcdb12`
 - Execution is sequential, below the frozen maximum of two concurrent tasks.
 
-## Snapshot after row eight
+## Snapshot after row nine
 
 | Disposition                         | Rows | Boundary ledger USD |
 | ----------------------------------- | ---: | ------------------: |
-| Accepted empirical trajectory       |    6 |           1.6284871 |
+| Accepted empirical trajectory       |    7 |           1.8062932 |
 | Excluded charged evaluation failure |    2 |           0.5044983 |
-| Total                               |    8 |           2.1329854 |
+| Total                               |    9 |           2.3107915 |
 
-The boundary preflight cost is USD 0.0900565, so total campaign spend at this snapshot is USD 2.2230419. There is no accepted row for either excluded run.
+The boundary preflight cost is USD 0.0900565, so total campaign spend at this snapshot is USD 2.4008480. There is no accepted row for either excluded run.
 
 ## Exclusion evidence
 
@@ -33,8 +33,8 @@ The attempt-one receipt SHA-256 remains `fac69b3cd006310a2e821958f0d8ae1cdbbae51
 
 ## Resumption
 
-The namespace fix passed 117/117 evaluation tests, type checking, validation, formatting, targeted lint, diff checks, secret scanning, remote replay, and a zero-provider attempt-two namespace canary. Runner v3 resumed from frozen row eight, `adr_270c032aeb168dee0342`, at `2026-08-30T22:10:13Z`. That row was accepted at `2026-08-30T22:23:31Z`: it is unresolved with an empty patch, contains seven complete requests including one controller request, records 32,339 prompt and 4,928 completion tokens, and costs USD 0.1613832. The runner then entered frozen row nine, `adr_1eaf02988d68d35a96a3`. This log records acquisition integrity only; it is not an RQ or ablation result.
+The namespace fix passed 117/117 evaluation tests, type checking, validation, formatting, targeted lint, diff checks, secret scanning, remote replay, and a zero-provider attempt-two namespace canary. Runner v3 resumed from frozen row eight, `adr_270c032aeb168dee0342`, at `2026-08-30T22:10:13Z`. That row was accepted at `2026-08-30T22:23:31Z`: it is unresolved with an empty patch, contains seven complete requests including one controller request, records 32,339 prompt and 4,928 completion tokens, and costs USD 0.1613832. Row nine, `adr_1eaf02988d68d35a96a3`, was accepted at `2026-08-30T22:40:21Z`: it is also unresolved with an empty patch, contains seven complete requests including one controller request, records 27,889 prompt and 4,462 completion tokens, and costs USD 0.1778061. Its first-boundary grader recorded 44 failed, 11,175 passed, and 25 collection errors in 731.07 seconds. The runner then entered frozen row ten, `adr_c2d54fb9ac4f296d9e92`. This log records acquisition integrity only; it is not an RQ or ablation result.
 
 ## Candidate pipeline preview
 
-The six accepted trajectories produce nine blinded boundary candidates after complete trajectory artifact, patch, and Session transcript verification. They cover six base trajectories and four tasks; one trajectory contains four boundaries and the other five contain one each. The preview SHA-256 is `13b872b84126352226f53b01a261c44b43e59d12355eeccd3d4dcdb8bd6fcc37`. These examples are unlabelled previews, not the frozen 180-example boundary dataset.
+The seven accepted trajectories produce ten blinded boundary candidates after complete trajectory artifact, patch, and Session transcript verification. They cover seven base trajectories and five tasks; one trajectory contains four boundaries and the other six contain one each. The preview SHA-256 is `d43e41aa2ea9a170d13672e0368c0f30c4d19f609dd3da1fa4cfc93ea4010b39`. These examples are unlabelled previews, not the frozen 180-example boundary dataset.
