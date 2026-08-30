@@ -7,7 +7,6 @@ import { assertSecretFree, parseTrajectory } from "../src/artifact"
 import { gatewayRequestsSettled, requireCompleteGatewayUsage } from "../src/gateway"
 import {
   buildAutoDriveUpdate,
-  buildExperimentConfig,
   buildTaskPrompt,
   classifyIdleSession,
   classifyTestPatch,
@@ -17,6 +16,7 @@ import {
   hasExperimentModels,
   parsePytestLog,
   parseTaskInput,
+  prepareExperimentConfig,
 } from "../src/host-executor"
 import { protocol, Run } from "../src/protocol"
 
@@ -81,19 +81,12 @@ let taskStarted = false
 let networkCreated = false
 
 try {
-  await Bun.write(
-    path.join(opencodeConfigRoot, "opencode.json"),
-    JSON.stringify(
-      buildExperimentConfig({
-        workerModel,
-        controllerModel,
-        segmentSteps: input.run.segmentSteps,
-        temperature: input.run.temperature,
-      }),
-      null,
-      2,
-    ) + "\n",
-  )
+  await prepareExperimentConfig(opencodeConfigRoot, {
+    workerModel,
+    controllerModel,
+    segmentSteps: input.run.segmentSteps,
+    temperature: input.run.temperature,
+  })
   await Bun.write(path.join(configRoot, "models.json"), await Bun.file(modelMetadataPath).text())
   await command(["docker", "pull", task.image], { timeoutMS: 20 * 60_000 })
   const imageDigest = await inspectImageDigest()

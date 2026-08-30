@@ -1,3 +1,4 @@
+import path from "node:path"
 import { z } from "zod"
 import type { Strategy } from "./protocol"
 
@@ -149,6 +150,19 @@ export function buildExperimentConfig(input: {
       ),
     },
   }
+}
+
+export async function prepareExperimentConfig(
+  directory: string,
+  input: Parameters<typeof buildExperimentConfig>[0],
+) {
+  await Promise.all([
+    Bun.write(path.join(directory, "opencode.json"), JSON.stringify(buildExperimentConfig(input), null, 2) + "\n"),
+    Bun.write(
+      path.join(directory, ".gitignore"),
+      ["node_modules", "package.json", "package-lock.json", "bun.lock", ".gitignore"].join("\n") + "\n",
+    ),
+  ])
 }
 
 export function classifyIdleSession(input: {

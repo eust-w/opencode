@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test"
+import { mkdtemp, rm } from "node:fs/promises"
+import os from "node:os"
+import path from "node:path"
 import {
   BASELINE_CONTINUATION_PROMPT,
   buildAutoDriveUpdate,
@@ -12,6 +15,7 @@ import {
   hasExperimentModels,
   parsePytestLog,
   parseTaskInput,
+  prepareExperimentConfig,
 } from "../src/host-executor"
 
 const task = {
@@ -123,6 +127,25 @@ describe("SWE-EVO host executor", () => {
     expect(config.provider.openai.options.baseURL).toBe("http://autodrive-proxy:8080/worker/v1")
     expect(config.provider["autodrive-controller"].npm).toBe("@ai-sdk/openai-compatible")
     expect(config).not.toHaveProperty("providers")
+  })
+
+  test("prepares every file required before the config directory becomes read-only", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-config-"))
+    try {
+      await prepareExperimentConfig(directory, {
+        controllerModel: "qwen3.8-max",
+        segmentSteps: 6,
+        temperature: 0,
+        workerModel: "deepseek-v4-pro",
+      })
+
+      expect(await Bun.file(path.join(directory, "opencode.json")).json()).toMatchObject({
+        model: "openai/deepseek-v4-pro",
+      })
+      expect(await Bun.file(path.join(directory, ".gitignore")).text()).toContain(".gitignore")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
   })
 
   test("bounds idle sessions and classifies incomplete provider streams", () => {
