@@ -15,7 +15,8 @@
 - [ ] Repository-wide dependency audit (237 advisories; see `../reports/verification.md`)
 - [ ] Fresh full-capacity v1.14 provider receipt
 - [x] Frozen non-primary pilot manifest, task input, dataset, harness, and image provenance
-- [ ] Paid non-primary pilot accepted
+- [x] Paid non-primary pilot accepted as a negative descriptive result
+- [x] Schema-v4 startup baseline and model-relative patch gate
 - [ ] 96 provenance-complete boundary source trajectories
 - [ ] Selected 180-item candidate packet
 - [ ] Two independent boundary annotation files, distinct adjudication, and kappa gate
