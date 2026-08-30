@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "runID": "adr_0e7af04e70cdbd2c8884",
+  "source": {
+    "persistedEventType": "session.next.auto-drive.decided.1",
+    "sessionDatabaseIncluded": false,
+    "note": "The source Session database was queried read-only before export and then excluded from the sanitized research artifact. The final projected message and provider response remain in the raw and gateway traces."
+  },
+  "decisions": [
+    {
+      "boundary": 1,
+      "eventSequence": 44,
+      "decidedAt": "2026-08-30T00:36:15.626Z",
+      "action": "stop",
+      "reason": "No continuation cues found",
+      "chainID": "msg_050187689001apzVeN7f6l6oKT",
+      "continuationCount": 0,
+      "workerRequestSequence": 5,
+      "workerCompletedAt": "2026-08-30T00:36:15.620Z",
+      "providerResultApplied": true,
+      "autoInputAdmitted": false,
+      "heuristicEvidence": {
+        "assistantTextLength": 2222,
+        "tailLength": 1500,
+        "tailStartOffset": 722,
+        "maximumStepsCueOffset": 0,
+        "maximumStepsCuePresentInTail": false,
+        "remainingTasksMarkdownHeaderPresentInTail": true,
+        "recommendedNextStepsMarkdownHeaderPresentInTail": true,
+        "isolatedMaximumStepsCueDecision": "continue",
+        "integratedFullMessageDecision": "stop",
+        "interpretation": "The frozen heuristic checks only the trailing 1500 characters. This removed the opening maximum-steps cue, while its section patterns did not accept the Markdown headings '## Remaining tasks' or '## Recommended next steps'."
+      }
+    }
+  ]
+}
