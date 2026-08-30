@@ -35,14 +35,14 @@ Validate the process and artifact envelope without credentials or provider traff
 
 ```bash
 cd packages/autodrive-eval
-bun run verify-executor -- --executor "$PWD/scripts/dry-run-executor.ts" --artifact-root /tmp/autodrive-executor-contract --run-id adr_790a41b7e674b65c6fa7
+bun run verify-executor -- --executor "$PWD/scripts/dry-run-executor.ts" --artifact-root /tmp/autodrive-executor-contract --run-id adr_ccb456e5c84417810dc3
 ```
 
 The expected status is `accepted` with `mode: dry-run` and `costUSD: 0`. The generated trajectory is deliberately marked as an infrastructure outcome with model version `dry-run-contract-v1`; it is not an experiment observation and is never appended to the formal result or cost files. See `research/auto-drive/host-executor.md` for the complete boundary.
 
 ## 4. Pilot and execute
 
-Run a non-primary pilot inside the USD 50 category before selecting any frozen task. Once isolation, trace completeness, grading, and billing agree, execute exactly one paid canary against a sealed canary receipt:
+Run a non-primary pilot inside the USD 50 category before selecting any frozen task. The four accepted v1.13 canaries validate historical mechanism execution but do not satisfy the v1.14 capacity or formal-result gates. If a new protocol canary is required for infrastructure qualification, execute exactly one paid canary against a sealed canary receipt:
 
 ```bash
 cd packages/autodrive-eval

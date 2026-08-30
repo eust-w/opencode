@@ -4,13 +4,15 @@ import { createRunPlan, parseManifest, protocol } from "../src/protocol"
 
 describe("frozen AutoDrive protocol", () => {
   test("records all pre-execution protocol amendments", async () => {
-    expect(protocol.version).toBe("auto-drive-swe-evo-v1.13")
+    expect(protocol.version).toBe("auto-drive-swe-evo-v1.14")
     expect(protocol.models.primary).toBe("d-robotics/deepseek-v4-pro")
     expect(protocol.models.replication).toEqual(["d-robotics/qwen3.7-max", "d-robotics/deepseek-v4-flash"])
     expect(protocol.models.controller).toBe("d-robotics/qwen3.8-max")
     expect(protocol.workerMaxOutputTokens).toBe(4_096)
     expect(protocol.workerReasoningEffort).toBe("low")
     expect(protocol.controllerMaxOutputTokens).toBe(1_024)
+    expect(protocol.controllerTimeoutSeconds).toBe(15)
+    expect(protocol.controllerFailureAction).toBe("defer")
     expect(protocol.gateway.canaryMaxSpendUSD).toBe(5)
     expect(
       await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
@@ -45,6 +47,9 @@ describe("frozen AutoDrive protocol", () => {
     expect(
       await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
     ).toContain("Overlapping test-patch amendment")
+    expect(
+      await Bun.file(new URL("../../../research/auto-drive/protocol/preregistration.md", import.meta.url)).text(),
+    ).toContain("Supervisor failure-abstention amendment")
   })
 
   test("pins all 48 unique SWE-EVO tasks from seven repositories", () => {
@@ -79,5 +84,30 @@ describe("frozen AutoDrive protocol", () => {
     const tasks = parsed.tasks.filter((task) => replicationTaskIDs.has(task.instanceID))
     expect(tasks).toHaveLength(12)
     expect(new Set(tasks.map((task) => task.repo)).size).toBe(7)
+  })
+
+  test("keeps the request and fault contracts aligned with supervisor abstention", async () => {
+    const requests = await Bun.file(
+      new URL("../../../research/auto-drive/protocol/model-requests.json", import.meta.url),
+    ).json()
+    const faults = await Bun.file(
+      new URL("../../../research/auto-drive/protocol/fault-injection.json", import.meta.url),
+    ).json()
+
+    expect(requests).toMatchObject({
+      protocol: protocol.version,
+      worker: { models: [protocol.models.primary, ...protocol.models.replication] },
+      supervisor: {
+        model: protocol.models.controller,
+        timeoutSeconds: protocol.controllerTimeoutSeconds,
+        fallback: protocol.controllerFailureAction,
+      },
+    })
+    expect(
+      faults.scenarios.find((scenario: { id: string }) => scenario.id === "supervisor-timeout")?.invariant,
+    ).toContain("defer")
+    expect(
+      faults.scenarios.find((scenario: { id: string }) => scenario.id === "supervisor-invalid-json")?.invariant,
+    ).toContain("defer")
   })
 })

@@ -31,13 +31,13 @@ The evaluator launches one executable with a JSON object on standard input:
 }
 ```
 
-The executable writes exactly one trajectory schema-v2 JSON object to standard output. Diagnostic text belongs on standard error and must not contain credentials. Exit code `75` means a predefined zero-cost infrastructure failure and permits one identical retry. Every other nonzero exit is final. Model timeout, loop, provider failure, grader failure, and budget exhaustion must be returned as classified trajectory outcomes rather than disguised as retryable infrastructure.
+The executable writes exactly one trajectory schema-v3 JSON object to standard output. Diagnostic text belongs on standard error and must not contain credentials. Exit code `75` means a predefined zero-cost infrastructure failure and permits one identical retry. Every other nonzero exit is final. Model timeout, loop, provider failure, grader failure, and budget exhaustion must be returned as classified trajectory outcomes rather than disguised as retryable infrastructure.
 
 ## Environment
 
 Real execution receives the artifact root, sealed preflight path and SHA-256, frozen protocol version, pinned model-metadata path, and isolation flags. Provider credentials may exist in the host process, but they must not enter task containers, artifacts, stdout, stderr, LaTeX, PDFs, or archives.
 
-`verify-executor` is a distinct non-empirical mode. It passes `AUTODRIVE_EVAL_MODE=dry-run`, strips the known Google, Anthropic, OpenAI, and OpenCode provider keys from the child environment, sets the cost ceiling to zero, and enforces a 30-second timeout. All references must remain below `dry-run/`, all usage counters must be zero, and the returned model version must be `dry-run-contract-v1`.
+`verify-executor` is a distinct non-empirical mode. It constructs an allowlisted child environment containing no provider credential or gateway key-file path, passes `AUTODRIVE_EVAL_MODE=dry-run`, sets the cost ceiling to zero, and enforces a 30-second timeout. All references must remain below `dry-run/`, all usage counters must be zero, and the returned model version must be `dry-run-contract-v1`.
 
 ## Required artifacts
 
@@ -61,7 +61,7 @@ The paid canary accepts exactly one frozen primary-model run, uses one process, 
 ## Acceptance sequence
 
 1. `verify-executor` succeeds with zero cost and no formal output.
-2. A fresh paid canary preflight resolves the exact Google model version and capacity.
-3. One paid canary completes with matching provider billing, request hashes, trace, grader output, and container isolation evidence.
+2. A non-primary pilot completes with matching billing, request hashes, trace, grader output, and container isolation evidence.
+3. A fresh v1.14 full-scope receipt resolves the three D-Robotics workers and fixed controller, and proves the required account budget, rate limits, trajectory capacity, and concurrency.
 4. Two human annotators reach the preregistered agreement threshold and freeze the boundary test set.
-5. Only then may the full-scope receipt and formal runner append trajectories.
+5. Only then may the formal runner append trajectories. The accepted v1.13 canaries remain historical mechanism evidence and cannot satisfy a v1.14 formal gate.

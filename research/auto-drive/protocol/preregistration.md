@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.13
+# AutoDrive Preregistration v1.14
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -81,6 +81,12 @@ The first v1.12 regex pilot is retained as a negative pilot trajectory: the froz
 The first v1.12 blind canary reached six boundaries, injected the frozen static continuation exactly five times, and produced a 1,495-byte final patch after the third continuation. All 28 worker responses settled with complete usage of 355,997 prompt and 7,345 completion tokens and zero proxy errors. The first-boundary empty patch was graded unresolved. Final grading then stopped before tests because the model patch already contained every hunk of the frozen test patch; mechanically applying the same test patch a second time failed. The run produced no accepted trajectory or ledger row. Its reconciled metered cost is USD 0.3887664, and it remains an excluded engineering canary rather than a same-ID retry.
 
 Version 1.13 changes only isolated grader preparation. After applying a model patch, the grader first checks whether the frozen test patch applies forward. If not, it requires the complete patch to pass `git apply --reverse --check`, records `already-applied`, and proceeds without duplicating it. If neither direction validates, grading fails closed as a real patch conflict. A no-network reproduction using the exact v1.12 blind patch observed forward conflict, successful reverse validation, and both the target fail-to-pass test and a related pass-to-pass test passing. Worker/controller policies, prompts, models, task inputs, request parameters, continuation limits, outcome definitions, statistics, and budget are unchanged. Because the charged v1.12 blind ID is historical evidence, all deterministic v1.13 run IDs are regenerated.
+
+## Supervisor failure-abstention amendment (v1.14)
+
+The accepted v1.13 four-policy canary remains a historical, descriptive pilot outside the formal 384-run matrix. In its supervisor trajectory, the first controller response correctly continued unfinished work. A second semantically valid `continue` response completed 16.839 seconds after release, beyond the frozen 15-second controller deadline; the v1.13 runtime therefore used its deterministic regex fallback and persisted `stop`. This exposed a mismatch between the three-state safety contract and the failure path: controller uncertainty was converted into a binary heuristic guess instead of explicit abstention.
+
+Before any formal matrix row was accepted, version 1.14 changes only supervisor failure handling. Controller timeout, model or Session resolution failure, provider error, an empty response, and malformed JSON now persist `defer` and return control to the user without automatic continuation. The controller deadline remains 15 seconds. The worker/controller model matrix, prompts, temperature, token limits, six-step segment size, five-continuation cap, task selection, outcomes, statistics, concurrency, and budget are unchanged. The v1.13 canary is not reinterpreted or promoted into formal results. Because the protocol version is part of the deterministic run key, all 384 v1.14 run IDs are regenerated; a fresh full-capacity v1.14 preflight remains mandatory before dispatch.
 
 ## Claim boundary
 

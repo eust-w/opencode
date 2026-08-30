@@ -47,7 +47,7 @@ export const Run = z.object({
 export type Run = z.infer<typeof Run>
 
 export const protocol = {
-  version: "auto-drive-swe-evo-v1.13",
+  version: "auto-drive-swe-evo-v1.14",
   strategies: Strategy.options,
   models: {
     primary: "d-robotics/deepseek-v4-pro",
@@ -79,6 +79,8 @@ export const protocol = {
   workerMaxOutputTokens: 4_096,
   workerReasoningEffort: "low",
   controllerMaxOutputTokens: 1_024,
+  controllerTimeoutSeconds: 15,
+  controllerFailureAction: "defer",
   segmentSteps: 6,
   maxContinuations: 5,
   timeoutMinutes: 45,

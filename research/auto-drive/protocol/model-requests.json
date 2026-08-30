@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "protocol": "auto-drive-swe-evo-v1.13",
+  "protocol": "auto-drive-swe-evo-v1.14",
   "worker": {
     "models": ["d-robotics/deepseek-v4-pro", "d-robotics/qwen3.7-max", "d-robotics/deepseek-v4-flash"],
     "temperature": 0,
@@ -25,7 +25,7 @@
     "transport": "openai-chat-completions",
     "responseAccounting": "raw-response-sha256-and-complete-usage-required",
     "timeoutSeconds": 15,
-    "fallback": "regex",
+    "fallback": "defer",
     "providerVersion": null,
     "resolvedRequestSHA256": null,
     "resolutionRule": "Resolved fields remain null before paid execution and are mandatory in accepted trajectory records."

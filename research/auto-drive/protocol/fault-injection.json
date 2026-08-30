@@ -19,11 +19,11 @@
     },
     {
       "id": "supervisor-timeout",
-      "invariant": "A 15-second supervisor timeout terminates and falls back to the deterministic heuristic."
+      "invariant": "A 15-second supervisor timeout persists defer and returns control without automatic continuation."
     },
     {
       "id": "supervisor-invalid-json",
-      "invariant": "Malformed supervisor output falls back without unsafe implicit continuation."
+      "invariant": "Malformed supervisor output persists defer without heuristic guessing or automatic continuation."
     },
     {
       "id": "retryable-provider-error",
