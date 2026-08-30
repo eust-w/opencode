@@ -6,7 +6,7 @@ export function assertTrajectoryProvenance(
   trajectory: Trajectory,
   context: {
     run: Run
-    task: Task
+    task: Pick<Task, "instanceID" | "image" | "baseCommit">
     preflight: { receipt: Preflight; sha256: string }
   },
 ) {

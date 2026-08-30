@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "frozenAt": "2026-08-30T00:00:00+08:00",
+  "source": {
+    "dataset": "princeton-nlp/SWE-bench_Verified",
+    "revision": "c104f840cc67f8b6eec6f759ebc8b2693d585d4a",
+    "parquetSHA256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd",
+    "harnessRepository": "https://github.com/SWE-bench/SWE-bench",
+    "harnessCommit": "c2b3cefd4a5af0b248966a773650a39046072975"
+  },
+  "task": {
+    "instanceID": "psf__requests-1142",
+    "image": "xingyaoww/sweb.eval.x86_64.psf_s_requests-1142",
+    "imageDigest": "sha256:66a8b6938ee7b9a9cf3a462cf6b4a5860694bd1c31fd9c65f23dc723b46ef2f4"
+  },
+  "taskInput": {
+    "path": "pilot-tasks/psf__requests-1142.json",
+    "sha256": "ba405815f59758b2d8551d7959a68a1cffc31ec3ca536d722affc0cc607c3875"
+  },
+  "strategy": "supervisor"
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "instanceID": "psf__requests-1142",
+  "repo": "psf/requests",
+  "baseCommit": "22623bd8c265b78b161542663ee980738441c307",
+  "environmentSetupCommit": "22623bd8c265b78b161542663ee980738441c307",
+  "image": "xingyaoww/sweb.eval.x86_64.psf_s_requests-1142",
+  "problemStatement": "requests.get is ALWAYS sending content length\nHi,\n\nIt seems like that request.get always adds 'content-length' header to the request.\nI think that the right behavior is not to add this header automatically in GET requests or add the possibility to not send it.\n\nFor example http://amazon.com returns 503 for every get request that contains 'content-length' header.\n\nThanks,\n\nOren\n",
+  "testPatch": "diff --git a/test_requests.py b/test_requests.py\n--- a/test_requests.py\n+++ b/test_requests.py\n@@ -58,6 +58,13 @@ def test_basic_building(self):\n         assert pr.body == 'life=42'\n \n \n+    def test_no_content_length(self):\n+        get_req = requests.Request('GET', httpbin('get')).prepare()\n+        self.assertTrue('Content-Length' not in get_req.headers)\n+        head_req = requests.Request('HEAD', httpbin('head')).prepare()\n+        self.assertTrue('Content-Length' not in head_req.headers)\n+\n+\n     def test_path_is_not_double_encoded(self):\n         request = requests.Request('GET', \"http://0.0.0.0/get/test case\").prepare()\n \n",
+  "testCommand": "pytest -rA",
+  "logParser": "parse_log_pytest",
+  "failToPass": [
+    "test_requests.py::RequestsTestCase::test_no_content_length"
+  ],
+  "passToPass": [
+    "test_requests.py::RequestsTestCase::test_basic_building",
+    "test_requests.py::RequestsTestCase::test_entry_points",
+    "test_requests.py::RequestsTestCase::test_invalid_url",
+    "test_requests.py::RequestsTestCase::test_params_are_added_before_fragment",
+    "test_requests.py::RequestsTestCase::test_path_is_not_double_encoded"
+  ],
+  "source": {
+    "commit": "c2b3cefd4a5af0b248966a773650a39046072975",
+    "sha256": "a45b1fe4e2f0c8390b2b2938ac83e92ed5979000856808f3679c07812e9e6dcd"
+  }
+}

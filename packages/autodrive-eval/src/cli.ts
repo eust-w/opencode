@@ -3,6 +3,13 @@ import path from "node:path"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
 import { assertTrajectoryProvenance } from "./acceptance"
 import {
+  BoundaryCandidate,
+  extractSupervisorBoundaries,
+  freezeAnnotations,
+  renderBoundaryPacket,
+  renderLabelTemplate,
+} from "./annotation"
+import {
   analyzeTrajectories,
   assertSecretFree,
   parseTrajectory,
@@ -11,6 +18,7 @@ import {
 } from "./artifact"
 import { summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
 import { renderTaskManifest } from "./paper"
+import { createPilotRun, loadPilotManifest } from "./pilot"
 import { createModelMetadataSnapshot, loadPreflight, PreflightScope } from "./preflight"
 import { createRunPlan, parseManifest, protocol, type Run } from "./protocol"
 import { executeRuns, InfrastructureFailure, type ExecutionContext } from "./runner"
@@ -27,8 +35,13 @@ if (command === "snapshot-models") await snapshotModels()
 if (command === "preflight") await checkPreflight()
 if (command === "validate") await validate()
 if (command === "analyze") await analyze()
+if (command === "annotations-extract") await annotationsExtract()
+if (command === "annotations-prepare") await annotationsPrepare()
+if (command === "annotations-freeze") await annotationsFreeze()
 if (command === "verify-executor") await verifyExecutor()
 if (command === "canary") await canary()
+if (command === "pilot-plan") await pilotPlan()
+if (command === "pilot") await pilot()
 if (command === "run") await run()
 if (
   !new Set([
@@ -38,8 +51,13 @@ if (
     "preflight",
     "validate",
     "analyze",
+    "annotations-extract",
+    "annotations-prepare",
+    "annotations-freeze",
     "verify-executor",
     "canary",
+    "pilot-plan",
+    "pilot",
     "run",
   ]).has(command)
 )
@@ -126,7 +144,10 @@ async function validate() {
     "research/auto-drive/protocol/preregistration.md",
     "research/auto-drive/protocol/model-requests.json",
     "research/auto-drive/protocol/fault-injection.json",
+    "research/auto-drive/protocol/pilot-swe-bench-verified.json",
+    "research/auto-drive/protocol/pilot-tasks/psf__requests-1142.json",
     "research/auto-drive/annotations/guidelines.md",
+    "research/auto-drive/annotations/labels.template.csv",
     "research/auto-drive/host-executor.md",
     "research/auto-drive/environment.lock.json",
   ]
@@ -135,6 +156,12 @@ async function validate() {
     if (!(await Bun.file(path.join(root, relative)).exists())) missing.push(relative)
   }
   if (missing.length) fail(`Missing frozen research artifacts:\n${missing.join("\n")}`)
+  const pilotManifestPath = path.join(root, "research/auto-drive/protocol/pilot-swe-bench-verified.json")
+  const pilot = await loadPilotManifest(
+    pilotManifestPath,
+    await Bun.file(pilotManifestPath).json(),
+    new Set(manifest.tasks.map((task) => task.instanceID)),
+  )
 
   const resultsPath = path.resolve(
     option("results") ?? path.join(root, "research/auto-drive/results/trajectories.jsonl"),
@@ -154,6 +181,12 @@ async function validate() {
           tasks: manifest.tasks.length,
           commit: manifest.source.commit,
           sha256: manifest.source.sha256,
+        },
+        pilot: {
+          taskID: pilot.task.instanceID,
+          dataset: pilot.manifest.source.dataset,
+          revision: pilot.manifest.source.revision,
+          imageDigest: pilot.manifest.task.imageDigest,
         },
         plan: {
           trajectories: plan.length,
@@ -181,6 +214,170 @@ async function analyze() {
   await Bun.write(path.join(output, "summary.json"), JSON.stringify(analysis, null, 2) + "\n")
   await Bun.write(path.join(output, "runs.csv"), toCSV(records))
   console.log(JSON.stringify({ output, trajectories: records.length }))
+}
+
+async function annotationsExtract() {
+  const resultsPath = option("results")
+  if (!resultsPath) fail("--results PATH is required")
+  const artifactRoot = option("artifact-root")
+  if (!artifactRoot) fail("--artifact-root PATH is required")
+  const output = option("output")
+  if (!output) fail("--output PATH is required")
+  const resolvedArtifactRoot = path.resolve(artifactRoot)
+  const records = await readJSONL(path.resolve(resultsPath), parseTrajectory)
+  if (!records.length) fail("No trajectories are available for boundary extraction")
+  const candidates = (
+    await Promise.all(
+      records.map(async (record) => {
+        const controllers = record.modelRequests.filter((request) => request.kind === "controller")
+        if (!controllers.length) return []
+        await verifyTrajectoryArtifacts(record, resolvedArtifactRoot)
+        const trace = await readJSONL(path.join(resolvedArtifactRoot, record.trace.path), parseRecord)
+        const finished = trace.find((event) => event.type === "session-finished")
+        if (!finished || !Array.isArray(finished.messages))
+          throw new Error(`Trajectory ${record.runID} is missing its final Session transcript`)
+        const boundaries = trace.filter((event) => event.type === "boundary-captured")
+        if (boundaries.length !== controllers.length)
+          throw new Error(`Trajectory ${record.runID} has mismatched controller and boundary counts`)
+        const patches = await Promise.all(
+          controllers.map(async (controller, index) => {
+            const patch = await Bun.file(
+              path.join(
+                resolvedArtifactRoot,
+                "patches",
+                record.runID,
+                `boundary-${String(index).padStart(2, "0")}.diff`,
+              ),
+            ).text()
+            const boundary = boundaries[index]!
+            const sha256 = new Bun.CryptoHasher("sha256").update(patch).digest("hex")
+            if (boundary.sequence !== controller.sequence || boundary.sha256 !== sha256)
+              throw new Error(`Trajectory ${record.runID} boundary patch does not match its trace`)
+            return patch
+          }),
+        )
+        const requests = await Promise.all(
+          controllers.map(async (controller) => {
+            const content = await Bun.file(path.join(resolvedArtifactRoot, controller.normalizedRequest.path)).text()
+            assertSecretFree(content)
+            return {
+              requestSHA256: controller.requestSHA256,
+              workerResponses: record.modelRequests.filter(
+                (request) => request.kind === "worker" && request.sequence < controller.sequence,
+              ).length,
+              body: JSON.parse(content),
+            }
+          }),
+        )
+        return extractSupervisorBoundaries({
+          runID: record.runID,
+          taskID: record.taskID,
+          messages: finished.messages,
+          controllers: requests,
+          patches,
+        })
+      }),
+    )
+  ).flat()
+  if (!candidates.length) fail("No supervisor boundaries were found in the indexed trajectories")
+  if (new Set(candidates.map((candidate) => candidate.id)).size !== candidates.length)
+    throw new Error("Extracted boundary candidate IDs are not unique")
+  const resolvedOutput = path.resolve(output)
+  await mkdir(path.dirname(resolvedOutput), { recursive: true })
+  await Bun.write(resolvedOutput, renderBoundaryPacket(candidates))
+  console.log(
+    JSON.stringify({
+      output: resolvedOutput,
+      trajectories: new Set(candidates.map((candidate) => candidate.baseTrajectoryID)).size,
+      boundaries: candidates.length,
+    }),
+  )
+}
+
+async function annotationsPrepare() {
+  const candidatesPath = option("candidates")
+  if (!candidatesPath) fail("--candidates PATH is required")
+  const output = option("output")
+  if (!output) fail("--output PATH is required")
+  const annotator = option("annotator")
+  if (!annotator) fail("--annotator ID is required")
+  const candidates = await readJSONL(path.resolve(candidatesPath), (input) => BoundaryCandidate.parse(input))
+  if (!candidates.length) fail("Boundary candidate file is empty")
+  const resolvedOutput = path.resolve(output)
+  await mkdir(resolvedOutput, { recursive: true })
+  await Promise.all([
+    Bun.write(path.join(resolvedOutput, "examples.jsonl"), renderBoundaryPacket(candidates)),
+    Bun.write(path.join(resolvedOutput, "labels.csv"), renderLabelTemplate(candidates, annotator) + "\n"),
+  ])
+  console.log(JSON.stringify({ output: resolvedOutput, examples: candidates.length, annotator }))
+}
+
+async function annotationsFreeze() {
+  const candidatesPath = option("candidates")
+  if (!candidatesPath) fail("--candidates PATH is required")
+  const firstPath = option("first")
+  if (!firstPath) fail("--first PATH is required")
+  const secondPath = option("second")
+  if (!secondPath) fail("--second PATH is required")
+  const adjudicatedPath = option("adjudicated")
+  if (!adjudicatedPath) fail("--adjudicated PATH is required")
+  const output = option("output")
+  if (!output) fail("--output PATH is required")
+  const candidates = await readJSONL(path.resolve(candidatesPath), (input) => BoundaryCandidate.parse(input))
+  const [first, second, adjudicated] = await Promise.all(
+    [firstPath, secondPath, adjudicatedPath].map(async (filePath) => {
+      const content = await Bun.file(path.resolve(filePath)).text()
+      assertSecretFree(content)
+      return content
+    }),
+  )
+  const frozen = freezeAnnotations({
+    candidates,
+    first,
+    second,
+    adjudicated,
+    developmentSize: 54,
+    seed: "auto-drive-boundary-v1",
+    minimumKappa: 0.75,
+  })
+  const resolvedOutput = path.resolve(output)
+  await mkdir(resolvedOutput, { recursive: true })
+  await Promise.all([
+    Bun.write(
+      path.join(resolvedOutput, "development.jsonl"),
+      frozen.development.map((candidate) => JSON.stringify(candidate)).join("\n") + "\n",
+    ),
+    Bun.write(
+      path.join(resolvedOutput, "test.jsonl"),
+      frozen.frozen.map((candidate) => JSON.stringify(candidate)).join("\n") + "\n",
+    ),
+    Bun.write(
+      path.join(resolvedOutput, "seal.json"),
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          frozenAt: new Date().toISOString(),
+          kappa: frozen.kappa,
+          agreements: frozen.agreements,
+          counts: frozen.counts,
+          development: frozen.development.length,
+          test: frozen.frozen.length,
+          sha256: frozen.seal.sha256,
+        },
+        null,
+        2,
+      ) + "\n",
+    ),
+  ])
+  console.log(
+    JSON.stringify({
+      output: resolvedOutput,
+      kappa: frozen.kappa,
+      development: frozen.development.length,
+      test: frozen.frozen.length,
+      sha256: frozen.seal.sha256,
+    }),
+  )
 }
 
 async function verifyExecutor() {
@@ -280,6 +477,143 @@ async function canary() {
   )
 }
 
+async function pilotPlan() {
+  const manifestPath = path.resolve(
+    option("manifest") ?? path.join(root, "research/auto-drive/protocol/pilot-swe-bench-verified.json"),
+  )
+  const content = await Bun.file(manifestPath).text()
+  assertSecretFree(content)
+  const loaded = await loadPilotManifest(
+    manifestPath,
+    JSON.parse(content),
+    new Set(manifest.tasks.map((task) => task.instanceID)),
+  )
+  const selected = createPilotRun(loaded)
+  console.log(
+    JSON.stringify({
+      runID: selected.id,
+      taskID: selected.taskID,
+      dataset: loaded.manifest.source.dataset,
+      revision: loaded.manifest.source.revision,
+      strategy: selected.strategy,
+      image: loaded.task.image,
+      imageDigest: loaded.manifest.task.imageDigest,
+    }),
+  )
+}
+
+async function pilot() {
+  if (!flag("execute")) fail("Paid pilot execution is disabled; pass --execute after verify-executor succeeds")
+  const preflightPath = option("preflight")
+  if (!preflightPath) fail("--preflight PATH is required")
+  const artifactRoot = option("artifact-root")
+  if (!artifactRoot) fail("--artifact-root PATH is required")
+  const executorPath = option("executor")
+  if (!executorPath) fail("--executor PATH is required")
+  const sourceManifestPath = path.resolve(
+    option("manifest") ?? path.join(root, "research/auto-drive/protocol/pilot-swe-bench-verified.json"),
+  )
+  const sourceManifestContent = await Bun.file(sourceManifestPath).text()
+  assertSecretFree(sourceManifestContent)
+  const sourcePilot = await loadPilotManifest(
+    sourceManifestPath,
+    JSON.parse(sourceManifestContent),
+    new Set(manifest.tasks.map((task) => task.instanceID)),
+  )
+  const sourceTaskPath = path.resolve(path.dirname(sourceManifestPath), sourcePilot.manifest.taskInput.path)
+  const sourceTaskContent = await Bun.file(sourceTaskPath).text()
+  assertSecretFree(sourceTaskContent)
+
+  const resolvedArtifactRoot = path.resolve(artifactRoot)
+  const resolvedPreflightPath = path.resolve(preflightPath)
+  assertInside(resolvedArtifactRoot, resolvedPreflightPath, "Preflight receipt")
+  const protocolRoot = path.join(resolvedArtifactRoot, "pilot", "protocol")
+  const copiedManifestPath = path.join(protocolRoot, path.basename(sourceManifestPath))
+  const copiedTaskPath = path.join(protocolRoot, sourcePilot.manifest.taskInput.path)
+  await Promise.all([
+    mkdir(path.dirname(copiedTaskPath), { recursive: true }),
+    mkdir(path.dirname(copiedManifestPath), { recursive: true }),
+  ])
+  await Promise.all([
+    Bun.write(copiedManifestPath, sourceManifestContent),
+    Bun.write(copiedTaskPath, sourceTaskContent),
+  ])
+  const loaded = await loadPilotManifest(
+    copiedManifestPath,
+    JSON.parse(sourceManifestContent),
+    new Set(manifest.tasks.map((task) => task.instanceID)),
+  )
+  const selected = createPilotRun(loaded)
+  const preflight = await loadPreflight(resolvedPreflightPath, { scope: "canary" })
+  const resultsPath = path.join(resolvedArtifactRoot, "pilot", "trajectories.jsonl")
+  const ledgerPath = path.join(resolvedArtifactRoot, "pilot", "ledger.jsonl")
+  const existing = await readJSONL(resultsPath, parseTrajectory)
+  if (existing.length) fail("A paid non-primary pilot result already exists for this artifact root")
+  const ledger = await readJSONL(ledgerPath, parseLedger)
+  const spent = summarizeBudget(ledger).categories.pilot
+  const maxCostUSD = Math.min(protocol.gateway.canaryMaxSpendUSD, 50 - spent)
+  if (maxCostUSD <= 0) fail("Pilot budget is exhausted")
+  const records = await executeRuns(
+    [selected],
+    createExecutor(path.resolve(executorPath), {
+      artifactRoot: resolvedArtifactRoot,
+      preflight,
+      preflightPath: resolvedPreflightPath,
+      task: loaded.task,
+      taskInputRoot: path.dirname(copiedTaskPath),
+      imageDigest: loaded.manifest.task.imageDigest,
+    }),
+    {
+      concurrency: 1,
+      ledger,
+      budget: () => ({ category: "pilot", maxCostUSD }),
+      onRecord: async (record, entry) => {
+        const serialized = JSON.stringify(record)
+        assertSecretFree(serialized)
+        await appendFile(resultsPath, serialized + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
+        await appendFile(
+          ledgerPath,
+          JSON.stringify({
+            timestamp: record.endedAt,
+            runID: record.runID,
+            category: entry.category,
+            amountUSD: entry.amountUSD,
+            promptTokens: record.promptTokens,
+            completionTokens: record.completionTokens,
+          }) + "\n",
+          { encoding: "utf8", flag: "a", mode: 0o600 },
+        )
+      },
+    },
+  )
+  const manifestSHA256 = new Bun.CryptoHasher("sha256").update(sourceManifestContent).digest("hex")
+  await Bun.write(
+    path.join(resolvedArtifactRoot, "pilot", "receipt.json"),
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        protocol: protocol.version,
+        runID: records[0].runID,
+        manifest: { path: path.relative(resolvedArtifactRoot, copiedManifestPath), sha256: manifestSHA256 },
+        taskInput: loaded.manifest.taskInput,
+        preflightSHA256: preflight.sha256,
+        trace: records[0].trace,
+        costUSD: records[0].costUSD,
+      },
+      null,
+      2,
+    ) + "\n",
+  )
+  console.log(
+    JSON.stringify({
+      status: "accepted",
+      mode: "paid-non-primary-pilot",
+      runID: records[0].runID,
+      costUSD: records[0].costUSD,
+    }),
+  )
+}
+
 async function run() {
   if (!flag("execute")) fail("Paid execution is disabled; pass --execute after validating the executor and pilot")
   const preflightPath = option("preflight")
@@ -353,6 +687,9 @@ function createExecutor(
     artifactRoot: string
     preflight: Awaited<ReturnType<typeof loadPreflight>>
     preflightPath: string
+    task?: { instanceID: string; image: string; baseCommit: string }
+    taskInputRoot?: string
+    imageDigest?: string
   },
 ) {
   return async (run: Run, attempt: number, context: ExecutionContext) => {
@@ -372,17 +709,20 @@ function createExecutor(
           path.dirname(options.preflightPath),
           options.preflight.receipt.modelMetadata.path,
         ),
+        ...(options.taskInputRoot ? { AUTODRIVE_TASK_INPUT_ROOT: options.taskInputRoot } : {}),
       },
     })
     if (record.runID !== run.id || record.attempt !== attempt)
       throw new Error(`Executor returned mismatched provenance for ${run.id}`)
-    const task = manifest.tasks.find((item) => item.instanceID === run.taskID)
+    const task = options.task ?? manifest.tasks.find((item) => item.instanceID === run.taskID)
     if (!task) throw new Error(`Frozen task is missing: ${run.taskID}`)
     assertTrajectoryProvenance(record, {
       run,
       task,
       preflight: options.preflight,
     })
+    if (options.imageDigest && record.environment.imageDigest !== options.imageDigest)
+      throw new Error("Trajectory image digest does not match the frozen pilot manifest")
     await verifyTrajectoryArtifacts(record, options.artifactRoot)
     return record
   }
@@ -506,6 +846,11 @@ function parseLedger(input: unknown): LedgerEntry {
     category: entry.category as BudgetCategory,
     amountUSD: entry.amountUSD,
   }
+}
+
+function parseRecord(input: unknown) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Expected a JSON object")
+  return input as Record<string, unknown>
 }
 
 function toCSV(records: readonly Trajectory[]) {
