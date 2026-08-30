@@ -70,7 +70,7 @@ describe("frozen AutoDrive protocol", () => {
     expect(runs.filter((run) => run.repeat > 0)).toHaveLength(96)
   })
 
-  test("keeps 96 boundary-source trajectories outside the formal matrix", () => {
+  test("keeps 96 boundary-source trajectories outside the formal matrix", async () => {
     const parsed = parseManifest(manifest)
     const formal = createRunPlan(parsed)
     const boundary = createBoundaryRunPlan(parsed)
@@ -81,6 +81,12 @@ describe("frozen AutoDrive protocol", () => {
     expect(boundary.filter((run) => run.repeat === 0)).toHaveLength(48)
     expect(boundary.filter((run) => run.repeat === 1)).toHaveLength(48)
     expect(boundary.some((run) => formal.some((item) => item.id === run.id))).toBeFalse()
+    expect(
+      (await Bun.file("../../research/auto-drive/protocol/boundary-run-plan.jsonl").text())
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line)),
+    ).toEqual(boundary)
   })
 
   test("uses four continuation strategies and derives off from the first-boundary prefix", () => {

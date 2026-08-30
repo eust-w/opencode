@@ -161,6 +161,7 @@ async function validate() {
     "research/auto-drive/protocol/preregistration.md",
     "research/auto-drive/protocol/model-requests.json",
     "research/auto-drive/protocol/fault-injection.json",
+    "research/auto-drive/protocol/boundary-run-plan.jsonl",
     "research/auto-drive/protocol/pilot-swe-bench-verified.json",
     "research/auto-drive/protocol/pilot-tasks/psf__requests-1142.json",
     "research/auto-drive/annotations/guidelines.md",
