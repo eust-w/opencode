@@ -1,0 +1,28 @@
+{"timestamp":"2026-08-30T00:59:30.593Z","type":"executor-started","runID":"adr_99bf4682bf9a537ae7e9","attempt":1,"taskID":"iterative__dvc_2.21.1_2.21.2"}
+{"timestamp":"2026-08-30T00:59:34.203Z","type":"models-validated","workerModel":"deepseek-v4-pro","controllerModel":"qwen3.8-max"}
+{"timestamp":"2026-08-30T00:59:34.282Z","type":"session-created","sessionID":"ses_fafd23242ffeB2x6M7NwzJjlvZ"}
+{"timestamp":"2026-08-30T00:59:51.436Z","type":"patch-captured","label":"boundary-00","sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","bytes":0}
+{"timestamp":"2026-08-30T00:59:51.437Z","type":"boundary-captured","sequence":5,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","strategy":"blind"}
+{"timestamp":"2026-08-30T00:59:51.437Z","type":"external-continuation-decided","boundary":1,"action":"continue","reason":"Blind baseline continuation 1 of 5","continuationCount":0}
+{"timestamp":"2026-08-30T00:59:51.447Z","type":"external-continuation-admitted","boundary":1,"continuationCount":1}
+{"timestamp":"2026-08-30T01:00:29.550Z","type":"patch-captured","label":"boundary-01","sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","bytes":0}
+{"timestamp":"2026-08-30T01:00:29.551Z","type":"boundary-captured","sequence":11,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","strategy":"blind"}
+{"timestamp":"2026-08-30T01:00:29.551Z","type":"external-continuation-decided","boundary":2,"action":"continue","reason":"Blind baseline continuation 2 of 5","continuationCount":1}
+{"timestamp":"2026-08-30T01:00:29.561Z","type":"external-continuation-admitted","boundary":2,"continuationCount":2}
+{"timestamp":"2026-08-30T01:00:59.526Z","type":"patch-captured","label":"boundary-02","sha256":"3cea39ae7e33658ba9600545503822b7433d02d7b485d8a7b7c341a7ff25c68a","bytes":1495}
+{"timestamp":"2026-08-30T01:00:59.526Z","type":"boundary-captured","sequence":17,"sha256":"3cea39ae7e33658ba9600545503822b7433d02d7b485d8a7b7c341a7ff25c68a","strategy":"blind"}
+{"timestamp":"2026-08-30T01:00:59.526Z","type":"external-continuation-decided","boundary":3,"action":"continue","reason":"Blind baseline continuation 3 of 5","continuationCount":2}
+{"timestamp":"2026-08-30T01:00:59.536Z","type":"external-continuation-admitted","boundary":3,"continuationCount":3}
+{"timestamp":"2026-08-30T01:01:34.315Z","type":"patch-captured","label":"boundary-03","sha256":"3cea39ae7e33658ba9600545503822b7433d02d7b485d8a7b7c341a7ff25c68a","bytes":1495}
+{"timestamp":"2026-08-30T01:01:34.315Z","type":"boundary-captured","sequence":23,"sha256":"3cea39ae7e33658ba9600545503822b7433d02d7b485d8a7b7c341a7ff25c68a","strategy":"blind"}
+{"timestamp":"2026-08-30T01:01:34.315Z","type":"external-continuation-decided","boundary":4,"action":"continue","reason":"Blind baseline continuation 4 of 5","continuationCount":3}
+{"timestamp":"2026-08-30T01:01:34.325Z","type":"external-continuation-admitted","boundary":4,"continuationCount":4}
+{"timestamp":"2026-08-30T01:01:44.683Z","type":"patch-captured","label":"boundary-04","sha256":"3cea39ae7e33658ba9600545503822b7433d02d7b485d8a7b7c341a7ff25c68a","bytes":1495}
+{"timestamp":"2026-08-30T01:01:44.683Z","type":"boundary-captured","sequence":25,"sha256":"3cea39ae7e33658ba9600545503822b7433d02d7b485d8a7b7c341a7ff25c68a","strategy":"blind"}
+{"timestamp":"2026-08-30T01:01:44.683Z","type":"external-continuation-decided","boundary":5,"action":"continue","reason":"Blind baseline continuation 5 of 5","continuationCount":4}
+{"timestamp":"2026-08-30T01:01:44.692Z","type":"external-continuation-admitted","boundary":5,"continuationCount":5}
+{"timestamp":"2026-08-30T01:01:51.973Z","type":"patch-captured","label":"boundary-05","sha256":"3cea39ae7e33658ba9600545503822b7433d02d7b485d8a7b7c341a7ff25c68a","bytes":1495}
+{"timestamp":"2026-08-30T01:01:51.973Z","type":"boundary-captured","sequence":27,"sha256":"3cea39ae7e33658ba9600545503822b7433d02d7b485d8a7b7c341a7ff25c68a","strategy":"blind"}
+{"timestamp":"2026-08-30T01:01:51.973Z","type":"external-continuation-decided","boundary":6,"action":"stop","reason":"Maximum continuation count reached","continuationCount":5}
+{"timestamp":"2026-08-30T01:01:52.165Z","type":"patch-captured","label":"final","sha256":"3cea39ae7e33658ba9600545503822b7433d02d7b485d8a7b7c341a7ff25c68a","bytes":1495}
+{"timestamp":"2026-08-30T01:08:29.189Z","type":"grader-finished","label":"first-boundary","exitCode":1,"grade":{"resolved":false,"fixRate":0,"failToPassRate":0,"passToPassRate":1,"failToPassPassed":[],"failToPassFailed":["tests/func/api/test_params.py::test_params_show_untracked_target"],"passToPassPassed":["tests/func/api/test_params.py::test_params_show_deps","tests/func/api/test_params.py::test_params_show_no_args","tests/func/api/test_params.py::test_params_show_no_params_found","tests/func/api/test_params.py::test_params_show_repo","tests/func/api/test_params.py::test_params_show_stage_without_params","tests/func/api/test_params.py::test_params_show_stages","tests/func/api/test_params.py::test_params_show_targets","tests/func/api/test_params.py::test_params_show_while_running_stage"],"passToPassFailed":[]},"log":"grader/adr_99bf4682bf9a537ae7e9/first-boundary.log"}

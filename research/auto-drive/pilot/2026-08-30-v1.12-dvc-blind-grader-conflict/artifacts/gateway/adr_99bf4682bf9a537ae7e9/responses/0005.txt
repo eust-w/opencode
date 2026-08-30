@@ -1,0 +1,1210 @@
+data: {"type":"response.created","response":{"id":"resp_ci-Rg777wa_xs77d0i_xmFCmN2HbZkhrSDNrNhMJbiqqHTTYY_WBEDH_7LdfcJ7pY1v_i4ByPvZ11MRj72WSTYDZBHobu9dJEOK6q-FY97Gb9ptRewAbbfCQwh2b8wdRa2Hlnw8ga1djA5rpFc6B1XnuL_UHemUY_XKB802tut9Gg5W_ZR9eZAZWPb6Q4hjeQWEEn4gIGsNvfhPrUC8qMNYbNH_5ASY6ZU4hVnidpWJ0tISvDjR3qXCiSkHVgfiffSoiYFg8b6PaEXr9k9O1_GLVZOowcvhSBPmnd-pYkFGTt1qyRmgmqzGC4mWAcHu-wgrhN-_2sNw9e5WALWfsZsd9t68lYbzY9Z9nK_5caT7YbfvJMbLnRW2Smgog0Rp5d8sYPMUXwsrqLCWGUr7TGPzJDtlY-g==","created_at":1788051582,"metadata":{},"model":"deepseek-v4-pro","object":"response","output":[],"parallel_tool_calls":true,"temperature":0.0,"tool_choice":"none","tools":[],"top_p":1.0,"max_output_tokens":4096,"reasoning":{"effort":"low","summary":null},"status":"in_progress","text":{"format":{"type":"text"}},"truncation":"disabled","store":false,"background":false,"frequency_penalty":0.0,"presence_penalty":0.0,"service_tier":"default","top_logprobs":0},"sequence_number":0,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.in_progress","response":{"id":"resp_ci-Rg777wa_xs77d0i_xmFCmN2HbZkhrSDNrNhMJbiqqHTTYY_WBEDH_7LdfcJ7pY1v_i4ByPvZ11MRj72WSTYDZBHobu9dJEOK6q-FY97Gb9ptRewAbbfCQwh2b8wdRa2Hlnw8ga1djA5rpFc6B1XnuL_UHemUY_XKB802tut9Gg5W_ZR9eZAZWPb6Q4hjeQWEEn4gIGsNvfhPrUC8qMNYbNH_5ASY6ZU4hVnidpWJ0tISvDjR3qXCiSkHVgfiffSoiYFg8b6PaEXr9k9O1_GLVZOowcvhSBPmnd-pYkFGTt1qyRmgmqzGC4mWAcHu-wgrhN-_2sNw9e5WALWfsZsd9t68lYbzY9Z9nK_5caT7YbfvJMbLnRW2Smgog0Rp5d8sYPMUXwsrqLCWGUr7TGPzJDtlY-g==","created_at":1788051582,"metadata":{},"model":"deepseek-v4-pro","object":"response","output":[],"parallel_tool_calls":true,"temperature":0.0,"tool_choice":"none","tools":[],"top_p":1.0,"max_output_tokens":4096,"reasoning":{"effort":"low","summary":null},"status":"in_progress","text":{"format":{"type":"text"}},"truncation":"disabled","store":false,"background":false,"frequency_penalty":0.0,"presence_penalty":0.0,"service_tier":"default","top_logprobs":0},"sequence_number":1,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_item.added","output_index":0,"item":{"type":"reasoning","id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","status":"in_progress","content":[],"summary":[],"encrypted_content":"de709867-f4eb-4128-bb54-a45d4968c93e-0"},"sequence_number":2,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.content_part.added","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"content_index":0,"part":{"type":"reasoning_text","text":""},"sequence_number":3,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"The","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":4,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" user","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":5,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" asked","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":6,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" me","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":7,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" to","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":8,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" fix","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":9,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" a","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":10,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" bug","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":11,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":":","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":12,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" \"","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":13,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"api","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":14,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":":","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":15,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" Fix","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":16,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" `","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":17,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"params","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":18,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"_","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":19,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"show","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":20,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"`","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":21,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" for","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":22,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" unt","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":23,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"rack","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":24,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"ed","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":25,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" targets","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":26,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":".","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":27,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" (#","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":28,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"816","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":29,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"6","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":30,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":")\".","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":31,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" I","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":32,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" reached","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":33,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" the","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":34,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" maximum","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":35,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" steps","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":36,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":".","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":37,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" I","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":38,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" need","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":39,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" to","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":40,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" respond","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":41,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" with","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":42,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" text","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":43,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" only","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":44,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":",","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":45,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" summarizing","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":46,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" work","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":47,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" done","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":48,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" and","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":49,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" what","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":50,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" remains","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":51,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":".\n\n","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":52,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":"I","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":53,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" have","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":54,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" inspected","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":55,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" params","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":56,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":".py","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":57,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" and","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":58,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" show","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":59,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":".py","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":60,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" but","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":61,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" not","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":62,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" completed","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":63,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" the","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":64,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" fix","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":65,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":".","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":66,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" Let","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":67,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" me","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":68,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" provide","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":69,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" a","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":70,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" summary","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":71,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" and","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":72,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":" recommendation","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":73,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.delta","content_index":0,"delta":".","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":74,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.reasoning_text.done","content_index":0,"item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"sequence_number":75,"text":"The user asked me to fix a bug: \"api: Fix `params_show` for untracked targets. (#8166)\". I reached the maximum steps. I need to respond with text only, summarizing work done and what remains.\n\nI have inspected params.py and show.py but not completed the fix. Let me provide a summary and recommendation.","model":"deepseek-v4-pro"}
+
+data: {"type":"response.content_part.done","item_id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","output_index":0,"content_index":0,"part":{"type":"reasoning_text","text":"The user asked me to fix a bug: \"api: Fix `params_show` for untracked targets. (#8166)\". I reached the maximum steps. I need to respond with text only, summarizing work done and what remains.\n\nI have inspected params.py and show.py but not completed the fix. Let me provide a summary and recommendation."},"sequence_number":76,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_item.done","output_index":0,"sequence_number":77,"item":{"type":"reasoning","id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","status":"completed","content":[{"type":"reasoning_text","text":"The user asked me to fix a bug: \"api: Fix `params_show` for untracked targets. (#8166)\". I reached the maximum steps. I need to respond with text only, summarizing work done and what remains.\n\nI have inspected params.py and show.py but not completed the fix. Let me provide a summary and recommendation."}],"summary":[],"encrypted_content":"de709867-f4eb-4128-bb54-a45d4968c93e-0"},"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_item.added","output_index":1,"item":{"type":"message","id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","status":"in_progress","content":[],"phase":"final_answer","role":"assistant"},"sequence_number":78,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.content_part.added","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":""},"sequence_number":79,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"Maximum","logprobs":[],"sequence_number":80,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" steps","logprobs":[],"sequence_number":81,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" for","logprobs":[],"sequence_number":82,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" this","logprobs":[],"sequence_number":83,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" agent","logprobs":[],"sequence_number":84,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" have","logprobs":[],"sequence_number":85,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" been","logprobs":[],"sequence_number":86,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" reached","logprobs":[],"sequence_number":87,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".\n\n","logprobs":[],"sequence_number":88,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"##","logprobs":[],"sequence_number":89,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" What","logprobs":[],"sequence_number":90,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" has","logprobs":[],"sequence_number":91,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" been","logprobs":[],"sequence_number":92,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" accomplished","logprobs":[],"sequence_number":93,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" so","logprobs":[],"sequence_number":94,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" far","logprobs":[],"sequence_number":95,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"\n\n","logprobs":[],"sequence_number":96,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"I","logprobs":[],"sequence_number":97,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" inspected","logprobs":[],"sequence_number":98,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":99,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" repository","logprobs":[],"sequence_number":100,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" and","logprobs":[],"sequence_number":101,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" located","logprobs":[],"sequence_number":102,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":103,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" relevant","logprobs":[],"sequence_number":104,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" code","logprobs":[],"sequence_number":105,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" paths","logprobs":[],"sequence_number":106,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" for","logprobs":[],"sequence_number":107,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":108,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":109,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"params","logprobs":[],"sequence_number":110,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":111,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":112,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":113,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" API","logprobs":[],"sequence_number":114,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":":\n\n","logprobs":[],"sequence_number":115,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-","logprobs":[],"sequence_number":116,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":117,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"d","logprobs":[],"sequence_number":118,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"vc","logprobs":[],"sequence_number":119,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/api","logprobs":[],"sequence_number":120,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/","logprobs":[],"sequence_number":121,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"params","logprobs":[],"sequence_number":122,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".py","logprobs":[],"sequence_number":123,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":124,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" —","logprobs":[],"sequence_number":125,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":126,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" public","logprobs":[],"sequence_number":127,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":128,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"params","logprobs":[],"sequence_number":129,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":130,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":131,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":132,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" API","logprobs":[],"sequence_number":133,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":",","logprobs":[],"sequence_number":134,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" which","logprobs":[],"sequence_number":135,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" calls","logprobs":[],"sequence_number":136,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":137,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":138,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"repo","logprobs":[],"sequence_number":139,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".params","logprobs":[],"sequence_number":140,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".show","logprobs":[],"sequence_number":141,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"(...","logprobs":[],"sequence_number":142,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":")`","logprobs":[],"sequence_number":143,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" and","logprobs":[],"sequence_number":144,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" post","logprobs":[],"sequence_number":145,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-process","logprobs":[],"sequence_number":146,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"es","logprobs":[],"sequence_number":147,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" results","logprobs":[],"sequence_number":148,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".\n","logprobs":[],"sequence_number":149,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-","logprobs":[],"sequence_number":150,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":151,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"d","logprobs":[],"sequence_number":152,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"vc","logprobs":[],"sequence_number":153,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/re","logprobs":[],"sequence_number":154,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"po","logprobs":[],"sequence_number":155,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/","logprobs":[],"sequence_number":156,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"params","logprobs":[],"sequence_number":157,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/show","logprobs":[],"sequence_number":158,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".py","logprobs":[],"sequence_number":159,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":160,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" —","logprobs":[],"sequence_number":161,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":162,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" internal","logprobs":[],"sequence_number":163,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":164,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":165,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":166,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/","logprobs":[],"sequence_number":167,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":168,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":169,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"g","logprobs":[],"sequence_number":170,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ather","logprobs":[],"sequence_number":171,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":172,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":173,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/","logprobs":[],"sequence_number":174,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":175,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":176,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"collect","logprobs":[],"sequence_number":177,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_config","logprobs":[],"sequence_number":178,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":179,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":180,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/","logprobs":[],"sequence_number":181,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":182,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":183,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"read","logprobs":[],"sequence_number":184,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":185,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":186,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" implementation","logprobs":[],"sequence_number":187,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".\n","logprobs":[],"sequence_number":188,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-","logprobs":[],"sequence_number":189,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":190,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"tests","logprobs":[],"sequence_number":191,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/f","logprobs":[],"sequence_number":192,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"unc","logprobs":[],"sequence_number":193,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/api","logprobs":[],"sequence_number":194,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/test","logprobs":[],"sequence_number":195,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":196,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".py","logprobs":[],"sequence_number":197,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":198,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" —","logprobs":[],"sequence_number":199,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" existing","logprobs":[],"sequence_number":200,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" tests","logprobs":[],"sequence_number":201,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" covering","logprobs":[],"sequence_number":202,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":203,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"params","logprobs":[],"sequence_number":204,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":205,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":206,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":207,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" (`","logprobs":[],"sequence_number":208,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"test","logprobs":[],"sequence_number":209,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":210,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":211,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":212,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_target","logprobs":[],"sequence_number":213,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":214,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`,","logprobs":[],"sequence_number":215,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":216,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"test","logprobs":[],"sequence_number":217,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":218,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":219,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":220,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_no","logprobs":[],"sequence_number":221,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_args","logprobs":[],"sequence_number":222,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`,","logprobs":[],"sequence_number":223,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" etc","logprobs":[],"sequence_number":224,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".).\n\n","logprobs":[],"sequence_number":225,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"Key","logprobs":[],"sequence_number":226,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" observations","logprobs":[],"sequence_number":227,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" from","logprobs":[],"sequence_number":228,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":229,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" code","logprobs":[],"sequence_number":230,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" so","logprobs":[],"sequence_number":231,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" far","logprobs":[],"sequence_number":232,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":":\n\n","logprobs":[],"sequence_number":233,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-","logprobs":[],"sequence_number":234,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" In","logprobs":[],"sequence_number":235,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":236,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":237,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"collect","logprobs":[],"sequence_number":238,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_config","logprobs":[],"sequence_number":239,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":240,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":241,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" (","logprobs":[],"sequence_number":242,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":243,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".py","logprobs":[],"sequence_number":244,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"),","logprobs":[],"sequence_number":245,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":246,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"collect","logprobs":[],"sequence_number":247,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":248,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" is","logprobs":[],"sequence_number":249,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" called","logprobs":[],"sequence_number":250,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" with","logprobs":[],"sequence_number":251,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":252,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"target","logprobs":[],"sequence_number":253,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":254,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"=","logprobs":[],"sequence_number":255,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"target","logprobs":[],"sequence_number":256,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":257,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" or","logprobs":[],"sequence_number":258,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" []","logprobs":[],"sequence_number":259,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":260,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" and","logprobs":[],"sequence_number":261,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":262,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"output","logprobs":[],"sequence_number":263,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_filter","logprobs":[],"sequence_number":264,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"=_","logprobs":[],"sequence_number":265,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"is","logprobs":[],"sequence_number":266,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":267,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`.\n","logprobs":[],"sequence_number":268,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-","logprobs":[],"sequence_number":269,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" In","logprobs":[],"sequence_number":270,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":271,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":272,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"read","logprobs":[],"sequence_number":273,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":274,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()","logprobs":[],"sequence_number":275,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`,","logprobs":[],"sequence_number":276,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" when","logprobs":[],"sequence_number":277,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":278,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"d","logprobs":[],"sequence_number":279,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"eps","logprobs":[],"sequence_number":280,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":281,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/","logprobs":[],"sequence_number":282,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":283,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"st","logprobs":[],"sequence_number":284,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ages","logprobs":[],"sequence_number":285,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":286,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" are","logprobs":[],"sequence_number":287,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" not","logprobs":[],"sequence_number":288,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" set","logprobs":[],"sequence_number":289,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":",","logprobs":[],"sequence_number":290,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" it","logprobs":[],"sequence_number":291,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" reads","logprobs":[],"sequence_number":292,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":293,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"fs","logprobs":[],"sequence_number":294,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_path","logprobs":[],"sequence_number":295,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":296,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":297,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" directly","logprobs":[],"sequence_number":298,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" (","logprobs":[],"sequence_number":299,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"including","logprobs":[],"sequence_number":300,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" default","logprobs":[],"sequence_number":301,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":302,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"params","logprobs":[],"sequence_number":303,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".yaml","logprobs":[],"sequence_number":304,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":305,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" in","logprobs":[],"sequence_number":306,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" some","logprobs":[],"sequence_number":307,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" cases","logprobs":[],"sequence_number":308,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"),","logprobs":[],"sequence_number":309,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" but","logprobs":[],"sequence_number":310,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" otherwise","logprobs":[],"sequence_number":311,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" only","logprobs":[],"sequence_number":312,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" reads","logprobs":[],"sequence_number":313,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" tracked","logprobs":[],"sequence_number":314,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":315,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"Params","logprobs":[],"sequence_number":316,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"D","logprobs":[],"sequence_number":317,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ependency","logprobs":[],"sequence_number":318,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":319,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" outputs","logprobs":[],"sequence_number":320,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".\n","logprobs":[],"sequence_number":321,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-","logprobs":[],"sequence_number":322,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Targets","logprobs":[],"sequence_number":323,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" are","logprobs":[],"sequence_number":324,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" normalized","logprobs":[],"sequence_number":325,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" via","logprobs":[],"sequence_number":326,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":327,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"repo","logprobs":[],"sequence_number":328,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".d","logprobs":[],"sequence_number":329,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"vc","logprobs":[],"sequence_number":330,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"fs","logprobs":[],"sequence_number":331,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".from","logprobs":[],"sequence_number":332,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":333,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"os","logprobs":[],"sequence_number":334,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_path","logprobs":[],"sequence_number":335,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"(target","logprobs":[],"sequence_number":336,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":")`","logprobs":[],"sequence_number":337,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" in","logprobs":[],"sequence_number":338,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":339,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":340,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":341,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".\n\n","logprobs":[],"sequence_number":342,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"However","logprobs":[],"sequence_number":343,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":",","logprobs":[],"sequence_number":344,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" I","logprobs":[],"sequence_number":345,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" have","logprobs":[],"sequence_number":346,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" **","logprobs":[],"sequence_number":347,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"not","logprobs":[],"sequence_number":348,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" yet","logprobs":[],"sequence_number":349,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" determined","logprobs":[],"sequence_number":350,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":351,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" exact","logprobs":[],"sequence_number":352,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" root","logprobs":[],"sequence_number":353,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" cause","logprobs":[],"sequence_number":354,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"**","logprobs":[],"sequence_number":355,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" of","logprobs":[],"sequence_number":356,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":357,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" unt","logprobs":[],"sequence_number":358,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"rack","logprobs":[],"sequence_number":359,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ed","logprobs":[],"sequence_number":360,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-target","logprobs":[],"sequence_number":361,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":362,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" bug","logprobs":[],"sequence_number":363,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" or","logprobs":[],"sequence_number":364,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" implemented","logprobs":[],"sequence_number":365,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" a","logprobs":[],"sequence_number":366,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" fix","logprobs":[],"sequence_number":367,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".\n\n","logprobs":[],"sequence_number":368,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"##","logprobs":[],"sequence_number":369,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Rem","logprobs":[],"sequence_number":370,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"aining","logprobs":[],"sequence_number":371,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" tasks","logprobs":[],"sequence_number":372,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"\n\n","logprobs":[],"sequence_number":373,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"1","logprobs":[],"sequence_number":374,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".","logprobs":[],"sequence_number":375,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Rep","logprobs":[],"sequence_number":376,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"roduce","logprobs":[],"sequence_number":377,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/d","logprobs":[],"sequence_number":378,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"iagn","logprobs":[],"sequence_number":379,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ose","logprobs":[],"sequence_number":380,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":381,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" failure","logprobs":[],"sequence_number":382,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" with","logprobs":[],"sequence_number":383,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" unt","logprobs":[],"sequence_number":384,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"rack","logprobs":[],"sequence_number":385,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ed","logprobs":[],"sequence_number":386,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" targets","logprobs":[],"sequence_number":387,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" passed","logprobs":[],"sequence_number":388,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" to","logprobs":[],"sequence_number":389,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":390,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"params","logprobs":[],"sequence_number":391,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":392,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":393,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"(\"","logprobs":[],"sequence_number":394,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"unt","logprobs":[],"sequence_number":395,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"rack","logprobs":[],"sequence_number":396,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ed","logprobs":[],"sequence_number":397,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".yaml","logprobs":[],"sequence_number":398,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"\")","logprobs":[],"sequence_number":399,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`.\n","logprobs":[],"sequence_number":400,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"2","logprobs":[],"sequence_number":401,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".","logprobs":[],"sequence_number":402,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Identify","logprobs":[],"sequence_number":403,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" why","logprobs":[],"sequence_number":404,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" an","logprobs":[],"sequence_number":405,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" unt","logprobs":[],"sequence_number":406,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"rack","logprobs":[],"sequence_number":407,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ed","logprobs":[],"sequence_number":408,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" target","logprobs":[],"sequence_number":409,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" file","logprobs":[],"sequence_number":410,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" is","logprobs":[],"sequence_number":411,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" not","logprobs":[],"sequence_number":412,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" being","logprobs":[],"sequence_number":413,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" read","logprobs":[],"sequence_number":414,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" (","logprobs":[],"sequence_number":415,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"likely","logprobs":[],"sequence_number":416,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" in","logprobs":[],"sequence_number":417,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":418,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":419,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"collect","logprobs":[],"sequence_number":420,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_config","logprobs":[],"sequence_number":421,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":422,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":423,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" /","logprobs":[],"sequence_number":424,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":425,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":426,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"read","logprobs":[],"sequence_number":427,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":428,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":429,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" interplay","logprobs":[],"sequence_number":430,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" between","logprobs":[],"sequence_number":431,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":432,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"target","logprobs":[],"sequence_number":433,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":434,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":435,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" given","logprobs":[],"sequence_number":436,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":",","logprobs":[],"sequence_number":437,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":438,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"output","logprobs":[],"sequence_number":439,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_filter","logprobs":[],"sequence_number":440,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`,","logprobs":[],"sequence_number":441,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" and","logprobs":[],"sequence_number":442,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":443,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":444,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"d","logprobs":[],"sequence_number":445,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"eps","logprobs":[],"sequence_number":446,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"=False","logprobs":[],"sequence_number":447,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":448,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" path","logprobs":[],"sequence_number":449,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":").\n","logprobs":[],"sequence_number":450,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"3","logprobs":[],"sequence_number":451,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".","logprobs":[],"sequence_number":452,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Implement","logprobs":[],"sequence_number":453,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":454,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" smallest","logprobs":[],"sequence_number":455,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" correct","logprobs":[],"sequence_number":456,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" fix","logprobs":[],"sequence_number":457,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" (","logprobs":[],"sequence_number":458,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"likely","logprobs":[],"sequence_number":459,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" in","logprobs":[],"sequence_number":460,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":461,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"d","logprobs":[],"sequence_number":462,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"vc","logprobs":[],"sequence_number":463,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/re","logprobs":[],"sequence_number":464,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"po","logprobs":[],"sequence_number":465,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/","logprobs":[],"sequence_number":466,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"params","logprobs":[],"sequence_number":467,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/show","logprobs":[],"sequence_number":468,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".py","logprobs":[],"sequence_number":469,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":470,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":").\n","logprobs":[],"sequence_number":471,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"4","logprobs":[],"sequence_number":472,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".","logprobs":[],"sequence_number":473,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Run","logprobs":[],"sequence_number":474,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":475,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" relevant","logprobs":[],"sequence_number":476,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" tests","logprobs":[],"sequence_number":477,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":":","logprobs":[],"sequence_number":478,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":479,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"tests","logprobs":[],"sequence_number":480,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/f","logprobs":[],"sequence_number":481,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"unc","logprobs":[],"sequence_number":482,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/api","logprobs":[],"sequence_number":483,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/test","logprobs":[],"sequence_number":484,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":485,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".py","logprobs":[],"sequence_number":486,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`,","logprobs":[],"sequence_number":487,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" especially","logprobs":[],"sequence_number":488,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":489,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"test","logprobs":[],"sequence_number":490,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":491,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":492,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"show","logprobs":[],"sequence_number":493,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_target","logprobs":[],"sequence_number":494,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":495,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`,","logprobs":[],"sequence_number":496,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" plus","logprobs":[],"sequence_number":497,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" any","logprobs":[],"sequence_number":498,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" repo","logprobs":[],"sequence_number":499,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" params","logprobs":[],"sequence_number":500,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" show","logprobs":[],"sequence_number":501,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" tests","logprobs":[],"sequence_number":502,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".\n\n","logprobs":[],"sequence_number":503,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"##","logprobs":[],"sequence_number":504,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Recommendations","logprobs":[],"sequence_number":505,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" for","logprobs":[],"sequence_number":506,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" next","logprobs":[],"sequence_number":507,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" steps","logprobs":[],"sequence_number":508,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"\n\n","logprobs":[],"sequence_number":509,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-","logprobs":[],"sequence_number":510,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Continue","logprobs":[],"sequence_number":511,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" from","logprobs":[],"sequence_number":512,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":513,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"d","logprobs":[],"sequence_number":514,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"vc","logprobs":[],"sequence_number":515,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/re","logprobs":[],"sequence_number":516,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"po","logprobs":[],"sequence_number":517,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/","logprobs":[],"sequence_number":518,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"params","logprobs":[],"sequence_number":519,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/show","logprobs":[],"sequence_number":520,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".py","logprobs":[],"sequence_number":521,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":522,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":523,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":524,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"collect","logprobs":[],"sequence_number":525,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_config","logprobs":[],"sequence_number":526,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":527,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":528,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" and","logprobs":[],"sequence_number":529,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":530,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_","logprobs":[],"sequence_number":531,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"read","logprobs":[],"sequence_number":532,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":533,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"()`","logprobs":[],"sequence_number":534,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".\n","logprobs":[],"sequence_number":535,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-","logprobs":[],"sequence_number":536,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Compare","logprobs":[],"sequence_number":537,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" behavior","logprobs":[],"sequence_number":538,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" between","logprobs":[],"sequence_number":539,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" tracked","logprobs":[],"sequence_number":540,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" vs","logprobs":[],"sequence_number":541,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".","logprobs":[],"sequence_number":542,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" unt","logprobs":[],"sequence_number":543,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"rack","logprobs":[],"sequence_number":544,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ed","logprobs":[],"sequence_number":545,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" targets","logprobs":[],"sequence_number":546,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" when","logprobs":[],"sequence_number":547,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":548,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"target","logprobs":[],"sequence_number":549,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"s","logprobs":[],"sequence_number":550,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":551,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" is","logprobs":[],"sequence_number":552,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" provided","logprobs":[],"sequence_number":553,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" but","logprobs":[],"sequence_number":554,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":555,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"d","logprobs":[],"sequence_number":556,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"eps","logprobs":[],"sequence_number":557,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"=False","logprobs":[],"sequence_number":558,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":559,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" and","logprobs":[],"sequence_number":560,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":561,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"st","logprobs":[],"sequence_number":562,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ages","logprobs":[],"sequence_number":563,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"=None","logprobs":[],"sequence_number":564,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`.\n","logprobs":[],"sequence_number":565,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"-","logprobs":[],"sequence_number":566,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" Write","logprobs":[],"sequence_number":567,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/","logprobs":[],"sequence_number":568,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"run","logprobs":[],"sequence_number":569,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" a","logprobs":[],"sequence_number":570,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" focused","logprobs":[],"sequence_number":571,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" test","logprobs":[],"sequence_number":572,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" with","logprobs":[],"sequence_number":573,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" an","logprobs":[],"sequence_number":574,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" unt","logprobs":[],"sequence_number":575,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"rack","logprobs":[],"sequence_number":576,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"ed","logprobs":[],"sequence_number":577,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" params","logprobs":[],"sequence_number":578,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" file","logprobs":[],"sequence_number":579,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" to","logprobs":[],"sequence_number":580,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" confirm","logprobs":[],"sequence_number":581,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":582,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" fix","logprobs":[],"sequence_number":583,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":",","logprobs":[],"sequence_number":584,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" then","logprobs":[],"sequence_number":585,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" run","logprobs":[],"sequence_number":586,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" the","logprobs":[],"sequence_number":587,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" existing","logprobs":[],"sequence_number":588,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" `","logprobs":[],"sequence_number":589,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"tests","logprobs":[],"sequence_number":590,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/f","logprobs":[],"sequence_number":591,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"unc","logprobs":[],"sequence_number":592,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/api","logprobs":[],"sequence_number":593,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"/test","logprobs":[],"sequence_number":594,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"_params","logprobs":[],"sequence_number":595,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".py","logprobs":[],"sequence_number":596,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":"`","logprobs":[],"sequence_number":597,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":" suite","logprobs":[],"sequence_number":598,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.delta","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"delta":".","logprobs":[],"sequence_number":599,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_text.done","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"text":"Maximum steps for this agent have been reached.\n\n## What has been accomplished so far\n\nI inspected the repository and located the relevant code paths for the `params_show` API:\n\n- `dvc/api/params.py` — the public `params_show()` API, which calls `_repo.params.show(...)` and post-processes results.\n- `dvc/repo/params/show.py` — the internal `show()`/`_gather_params()`/`_collect_configs()`/`_read_params()` implementation.\n- `tests/func/api/test_params.py` — existing tests covering `params_show` (`test_params_show_targets`, `test_params_show_no_args`, etc.).\n\nKey observations from the code so far:\n\n- In `_collect_configs()` (show.py), `collect()` is called with `targets=targets or []` and `output_filter=_is_params`.\n- In `_read_params()`, when `deps`/`stages` are not set, it reads `fs_paths` directly (including default `params.yaml` in some cases), but otherwise only reads tracked `ParamsDependency` outputs.\n- Targets are normalized via `repo.dvcfs.from_os_path(target)` in `show()`.\n\nHowever, I have **not yet determined the exact root cause** of the untracked-targets bug or implemented a fix.\n\n## Remaining tasks\n\n1. Reproduce/diagnose the failure with untracked targets passed to `params_show(\"untracked.yaml\")`.\n2. Identify why an untracked target file is not being read (likely in `_collect_configs` / `_read_params` interplay between `targets` given, `output_filter`, and the `deps=False` path).\n3. Implement the smallest correct fix (likely in `dvc/repo/params/show.py`).\n4. Run the relevant tests: `tests/func/api/test_params.py`, especially `test_params_show_targets`, plus any repo params show tests.\n\n## Recommendations for next steps\n\n- Continue from `dvc/repo/params/show.py` `_collect_configs()` and `_read_params()`.\n- Compare behavior between tracked vs. untracked targets when `targets` is provided but `deps=False` and `stages=None`.\n- Write/run a focused test with an untracked params file to confirm the fix, then run the existing `tests/func/api/test_params.py` suite.","logprobs":[],"sequence_number":600,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.content_part.done","item_id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","output_index":1,"content_index":0,"part":{"type":"output_text","text":"Maximum steps for this agent have been reached.\n\n## What has been accomplished so far\n\nI inspected the repository and located the relevant code paths for the `params_show` API:\n\n- `dvc/api/params.py` — the public `params_show()` API, which calls `_repo.params.show(...)` and post-processes results.\n- `dvc/repo/params/show.py` — the internal `show()`/`_gather_params()`/`_collect_configs()`/`_read_params()` implementation.\n- `tests/func/api/test_params.py` — existing tests covering `params_show` (`test_params_show_targets`, `test_params_show_no_args`, etc.).\n\nKey observations from the code so far:\n\n- In `_collect_configs()` (show.py), `collect()` is called with `targets=targets or []` and `output_filter=_is_params`.\n- In `_read_params()`, when `deps`/`stages` are not set, it reads `fs_paths` directly (including default `params.yaml` in some cases), but otherwise only reads tracked `ParamsDependency` outputs.\n- Targets are normalized via `repo.dvcfs.from_os_path(target)` in `show()`.\n\nHowever, I have **not yet determined the exact root cause** of the untracked-targets bug or implemented a fix.\n\n## Remaining tasks\n\n1. Reproduce/diagnose the failure with untracked targets passed to `params_show(\"untracked.yaml\")`.\n2. Identify why an untracked target file is not being read (likely in `_collect_configs` / `_read_params` interplay between `targets` given, `output_filter`, and the `deps=False` path).\n3. Implement the smallest correct fix (likely in `dvc/repo/params/show.py`).\n4. Run the relevant tests: `tests/func/api/test_params.py`, especially `test_params_show_targets`, plus any repo params show tests.\n\n## Recommendations for next steps\n\n- Continue from `dvc/repo/params/show.py` `_collect_configs()` and `_read_params()`.\n- Compare behavior between tracked vs. untracked targets when `targets` is provided but `deps=False` and `stages=None`.\n- Write/run a focused test with an untracked params file to confirm the fix, then run the existing `tests/func/api/test_params.py` suite.","annotations":[],"logprobs":[]},"sequence_number":601,"model":"deepseek-v4-pro"}
+
+data: {"type":"response.output_item.done","output_index":1,"sequence_number":602,"item":{"type":"message","id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"Maximum steps for this agent have been reached.\n\n## What has been accomplished so far\n\nI inspected the repository and located the relevant code paths for the `params_show` API:\n\n- `dvc/api/params.py` — the public `params_show()` API, which calls `_repo.params.show(...)` and post-processes results.\n- `dvc/repo/params/show.py` — the internal `show()`/`_gather_params()`/`_collect_configs()`/`_read_params()` implementation.\n- `tests/func/api/test_params.py` — existing tests covering `params_show` (`test_params_show_targets`, `test_params_show_no_args`, etc.).\n\nKey observations from the code so far:\n\n- In `_collect_configs()` (show.py), `collect()` is called with `targets=targets or []` and `output_filter=_is_params`.\n- In `_read_params()`, when `deps`/`stages` are not set, it reads `fs_paths` directly (including default `params.yaml` in some cases), but otherwise only reads tracked `ParamsDependency` outputs.\n- Targets are normalized via `repo.dvcfs.from_os_path(target)` in `show()`.\n\nHowever, I have **not yet determined the exact root cause** of the untracked-targets bug or implemented a fix.\n\n## Remaining tasks\n\n1. Reproduce/diagnose the failure with untracked targets passed to `params_show(\"untracked.yaml\")`.\n2. Identify why an untracked target file is not being read (likely in `_collect_configs` / `_read_params` interplay between `targets` given, `output_filter`, and the `deps=False` path).\n3. Implement the smallest correct fix (likely in `dvc/repo/params/show.py`).\n4. Run the relevant tests: `tests/func/api/test_params.py`, especially `test_params_show_targets`, plus any repo params show tests.\n\n## Recommendations for next steps\n\n- Continue from `dvc/repo/params/show.py` `_collect_configs()` and `_read_params()`.\n- Compare behavior between tracked vs. untracked targets when `targets` is provided but `deps=False` and `stages=None`.\n- Write/run a focused test with an untracked params file to confirm the fix, then run the existing `tests/func/api/test_params.py` suite."}],"phase":"final_answer","role":"assistant"},"model":"deepseek-v4-pro"}
+
+data: {"type":"response.completed","response":{"id":"resp_ci-Rg777wa_xs77d0i_xmFCmN2HbZkhrSDNrNhMJbiqqHTTYY_WBEDH_7LdfcJ7pY1v_i4ByPvZ11MRj72WSTYDZBHobu9dJEOK6q-FY97Gb9ptRewAbbfCQwh2b8wdRa2Hlnw8ga1djA5rpFc6B1XnuL_UHemUY_XKB802tut9Gg5W_ZR9eZAZWPb6Q4hjeQWEEn4gIGsNvfhPrUC8qMNYbNH_5ASY6ZU4hVnidpWJ0tISvDjR3qXCiSkHVgfiffSoiYFg8b6PaEXr9k9O1_GLVZOowcvhSBPmnd-pYkFGTt1qyRmgmqzGC4mWAcHu-wgrhN-_2sNw9e5WALWfsZsd9t68lYbzY9Z9nK_5caT7YbfvJMbLnRW2Smgog0Rp5d8sYPMUXwsrqLCWGUr7TGPzJDtlY-g==","created_at":1788051582,"metadata":{},"model":"deepseek-v4-pro","object":"response","output":[{"id":"ca8047a7-63e1-4eb8-8624-3310c4d98e66","summary":[],"type":"reasoning","content":[{"text":"The user asked me to fix a bug: \"api: Fix `params_show` for untracked targets. (#8166)\". I reached the maximum steps. I need to respond with text only, summarizing work done and what remains.\n\nI have inspected params.py and show.py but not completed the fix. Let me provide a summary and recommendation.","type":"reasoning_text"}],"encrypted_content":"de709867-f4eb-4128-bb54-a45d4968c93e-0","status":"completed"},{"id":"0bf0a7f9-4d22-4fc3-b94e-4abd3f2e97c9","content":[{"annotations":[],"text":"Maximum steps for this agent have been reached.\n\n## What has been accomplished so far\n\nI inspected the repository and located the relevant code paths for the `params_show` API:\n\n- `dvc/api/params.py` — the public `params_show()` API, which calls `_repo.params.show(...)` and post-processes results.\n- `dvc/repo/params/show.py` — the internal `show()`/`_gather_params()`/`_collect_configs()`/`_read_params()` implementation.\n- `tests/func/api/test_params.py` — existing tests covering `params_show` (`test_params_show_targets`, `test_params_show_no_args`, etc.).\n\nKey observations from the code so far:\n\n- In `_collect_configs()` (show.py), `collect()` is called with `targets=targets or []` and `output_filter=_is_params`.\n- In `_read_params()`, when `deps`/`stages` are not set, it reads `fs_paths` directly (including default `params.yaml` in some cases), but otherwise only reads tracked `ParamsDependency` outputs.\n- Targets are normalized via `repo.dvcfs.from_os_path(target)` in `show()`.\n\nHowever, I have **not yet determined the exact root cause** of the untracked-targets bug or implemented a fix.\n\n## Remaining tasks\n\n1. Reproduce/diagnose the failure with untracked targets passed to `params_show(\"untracked.yaml\")`.\n2. Identify why an untracked target file is not being read (likely in `_collect_configs` / `_read_params` interplay between `targets` given, `output_filter`, and the `deps=False` path).\n3. Implement the smallest correct fix (likely in `dvc/repo/params/show.py`).\n4. Run the relevant tests: `tests/func/api/test_params.py`, especially `test_params_show_targets`, plus any repo params show tests.\n\n## Recommendations for next steps\n\n- Continue from `dvc/repo/params/show.py` `_collect_configs()` and `_read_params()`.\n- Compare behavior between tracked vs. untracked targets when `targets` is provided but `deps=False` and `stages=None`.\n- Write/run a focused test with an untracked params file to confirm the fix, then run the existing `tests/func/api/test_params.py` suite.","type":"output_text","logprobs":[]}],"role":"assistant","status":"completed","type":"message","phase":"final_answer"}],"parallel_tool_calls":true,"temperature":0.0,"tool_choice":"none","tools":[],"top_p":1.0,"max_output_tokens":4096,"reasoning":{"effort":"low","summary":null},"status":"completed","text":{"format":{"type":"text"}},"truncation":"disabled","usage":{"input_tokens":5712,"input_tokens_details":{"cached_tokens":0},"output_tokens":592,"output_tokens_details":{"reasoning_tokens":71},"total_tokens":6304},"store":false,"background":false,"completed_at":1788051590,"frequency_penalty":0.0,"presence_penalty":0.0,"service_tier":"default","top_logprobs":0},"sequence_number":603,"model":"deepseek-v4-pro"}
+
+data: [DONE]
+
