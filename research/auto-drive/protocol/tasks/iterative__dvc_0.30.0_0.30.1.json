@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "instanceID": "iterative__dvc_0.30.0_0.30.1",
+  "repo": "iterative/dvc",
+  "baseCommit": "9175c45b1472070e02521380e4db8315d7c910c4",
+  "environmentSetupCommit": "97c0997fe8902d2d13be6c9177a124313291df4a",
+  "image": "xingyaoww/sweb.eval.x86_64.iterative_s_dvc-1681",
+  "problemStatement": "1) Fix stage checksum calculation when `wdir` is default;",
+  "testPatch": "diff --git a/tests/test_stage.py b/tests/test_stage.py\nindex b1ef539ee..67266ada9 100644\n--- a/tests/test_stage.py\n+++ b/tests/test_stage.py\n@@ -103,6 +103,9 @@ class TestDefaultWorkingDirectory(TestDvc):\n             outs=[self.FOO],\n         )\n \n+        d = stage.dumpd()\n+        self.assertEqual(d[stage.PARAM_WDIR], \".\")\n+\n         with open(stage.relpath, \"r\") as fobj:\n             d = yaml.safe_load(fobj)\n         self.assertEqual(d[stage.PARAM_WDIR], \".\")\n@@ -111,6 +114,10 @@ class TestDefaultWorkingDirectory(TestDvc):\n         with open(stage.relpath, \"w\") as fobj:\n             yaml.safe_dump(d, fobj, default_flow_style=False)\n \n+        with open(stage.relpath, \"r\") as fobj:\n+            d = yaml.safe_load(fobj)\n+        self.assertIsNone(d.get(stage.PARAM_WDIR))\n+\n         with self.dvc.state:\n             stage = Stage.load(self.dvc, stage.relpath)\n             self.assertFalse(stage.changed())\ndiff --git a/tests/unit/stage.py b/tests/unit/stage.py\nindex add84d171..39aea09b2 100644\n--- a/tests/unit/stage.py\n+++ b/tests/unit/stage.py\n@@ -14,3 +14,37 @@ class TestStageChecksum(TestCase):\n             self.assertEqual(\n                 stage._compute_md5(), \"e9521a22111493406ea64a88cda63e0b\"\n             )\n+\n+    def test_wdir_default_ignored(self):\n+        stage = Stage(None, \"path\")\n+        outs = [{\"path\": \"a\", \"md5\": \"123456789\"}]\n+        deps = [{\"path\": \"b\", \"md5\": \"987654321\"}]\n+        d = {\n+            \"md5\": \"123456\",\n+            \"cmd\": \"mycmd\",\n+            \"outs\": outs,\n+            \"deps\": deps,\n+            \"wdir\": \".\",\n+        }\n+\n+        with mock.patch.object(stage, \"dumpd\", return_value=d):\n+            self.assertEqual(\n+                stage._compute_md5(), \"e9521a22111493406ea64a88cda63e0b\"\n+            )\n+\n+    def test_wdir_non_default_is_not_ignored(self):\n+        stage = Stage(None, \"path\")\n+        outs = [{\"path\": \"a\", \"md5\": \"123456789\"}]\n+        deps = [{\"path\": \"b\", \"md5\": \"987654321\"}]\n+        d = {\n+            \"md5\": \"123456\",\n+            \"cmd\": \"mycmd\",\n+            \"outs\": outs,\n+            \"deps\": deps,\n+            \"wdir\": \"..\",\n+        }\n+\n+        with mock.patch.object(stage, \"dumpd\", return_value=d):\n+            self.assertEqual(\n+                stage._compute_md5(), \"2ceba15e87f6848aa756502c1e6d24e9\"\n+            )\n",
+  "testCommand": "pytest --continue-on-collection-errors -rA",
+  "logParser": "parse_log_pytest",
+  "failToPass": [
+    "tests/test_stage.py::TestDefaultWorkingDirectory::test_ignored_in_checksum"
+  ],
+  "passToPass": [
+    "tests/test_stage.py::TestReload::test",
+    "tests/test_stage.py::TestSchemaCmd::test_cmd_none",
+    "tests/test_stage.py::TestSchemaCmd::test_cmd_object",
+    "tests/test_stage.py::TestSchemaCmd::test_cmd_str",
+    "tests/test_stage.py::TestSchemaCmd::test_no_cmd",
+    "tests/test_stage.py::TestSchemaDepsOuts::test_empty_list",
+    "tests/test_stage.py::TestSchemaDepsOuts::test_list",
+    "tests/test_stage.py::TestSchemaDepsOuts::test_none",
+    "tests/test_stage.py::TestSchemaDepsOuts::test_object",
+    "tests/unit/stage.py::TestStageChecksum::test",
+    "tests/unit/stage.py::TestStageChecksum::test_wdir_default_ignored",
+    "tests/unit/stage.py::TestStageChecksum::test_wdir_non_default_is_not_ignored"
+  ],
+  "source": {
+    "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+    "sha256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
+  }
+}

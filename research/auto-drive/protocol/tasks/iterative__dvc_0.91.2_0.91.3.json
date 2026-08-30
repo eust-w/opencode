@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "instanceID": "iterative__dvc_0.91.2_0.91.3",
+  "repo": "iterative/dvc",
+  "baseCommit": "0c2e4d0b723a7c2f120db751193463b4939303d7",
+  "environmentSetupCommit": "55644f376b53dc7d537e1abe219868f15d6c6268",
+  "image": "xingyaoww/sweb.eval.x86_64.iterative_s_dvc-3537",
+  "problemStatement": "* remote: skip non-cache looking files when estimating remote size (#3557) @efiop\n* remote: short-circuit remote size estimation for large remotes (#3537) @pmrowla\n* gdrive: method signatures cleanup, more safeguards (#3548) @shcheklein",
+  "testPatch": "diff --git a/tests/func/test_data_cloud.py b/tests/func/test_data_cloud.py\nindex 57945afeb..1bf93ab7f 100644\n--- a/tests/func/test_data_cloud.py\n+++ b/tests/func/test_data_cloud.py\n@@ -200,7 +200,7 @@ def setup_gdrive_cloud(remote_url, dvc):\n \n     dvc.config = config\n     remote = DataCloud(dvc).get_remote()\n-    remote._create_remote_dir(\"root\", remote.path_info.path)\n+    remote._gdrive_create_dir(\"root\", remote.path_info.path)\n \n \n class TestRemoteGDrive(GDrive, TestDataCloudBase):\ndiff --git a/tests/unit/remote/test_base.py b/tests/unit/remote/test_base.py\nindex 64e64bc67..ab799a78d 100644\n--- a/tests/unit/remote/test_base.py\n+++ b/tests/unit/remote/test_base.py\n@@ -1,5 +1,6 @@\n from unittest import TestCase\n \n+import math\n import mock\n \n from dvc.path_info import PathInfo\n@@ -76,8 +77,15 @@ def test_cache_exists(path_to_checksum, object_exists, traverse):\n     ):\n         checksums = list(range(1000))\n         remote.cache_exists(checksums)\n+        # verify that _cache_paths_with_max() short circuits\n+        # before returning all 256 remote checksums\n+        max_checksums = math.ceil(\n+            remote._max_estimation_size(checksums)\n+            / pow(16, remote.TRAVERSE_PREFIX_LEN)\n+        )\n+        assert max_checksums < 256\n         object_exists.assert_called_with(\n-            frozenset(range(256, 1000)), None, None\n+            frozenset(range(max_checksums, 1000)), None, None\n         )\n         traverse.assert_not_called()\n \ndiff --git a/tests/unit/remote/test_gdrive.py b/tests/unit/remote/test_gdrive.py\nindex 72b790ea9..2e9c8f791 100644\n--- a/tests/unit/remote/test_gdrive.py\n+++ b/tests/unit/remote/test_gdrive.py\n@@ -35,7 +35,7 @@ class TestRemoteGDrive(object):\n             RemoteGDrive.GDRIVE_CREDENTIALS_DATA\n         ] = USER_CREDS_TOKEN_REFRESH_ERROR\n         with pytest.raises(GDriveAccessTokenRefreshError):\n-            remote.drive\n+            remote._drive\n \n         os.environ[RemoteGDrive.GDRIVE_CREDENTIALS_DATA] = \"\"\n         remote = RemoteGDrive(Repo(), self.CONFIG)\n@@ -43,4 +43,4 @@ class TestRemoteGDrive(object):\n             RemoteGDrive.GDRIVE_CREDENTIALS_DATA\n         ] = USER_CREDS_MISSED_KEY_ERROR\n         with pytest.raises(GDriveMissedCredentialKeyError):\n-            remote.drive\n+            remote._drive\n",
+  "testCommand": "pytest --continue-on-collection-errors -rA",
+  "logParser": "parse_log_pytest",
+  "failToPass": [
+    "tests/unit/remote/test_base.py::test_cache_exists",
+    "tests/unit/remote/test_gdrive.py::TestRemoteGDrive::test_drive"
+  ],
+  "passToPass": [
+    "tests/func/test_data_cloud.py::TestDataCloud::test",
+    "tests/func/test_data_cloud.py::TestDataCloudErrorCLI::test_error",
+    "tests/func/test_data_cloud.py::TestRecursiveSyncOperations::test",
+    "tests/func/test_data_cloud.py::TestRemoteHTTP::test",
+    "tests/func/test_data_cloud.py::TestRemoteLOCAL::test",
+    "tests/func/test_data_cloud.py::TestRemoteLOCALCLI::test",
+    "tests/func/test_data_cloud.py::TestRemoteSSHMocked::test",
+    "tests/func/test_data_cloud.py::TestShouldWarnOnNoChecksumInLocalAndRemoteCache::test",
+    "tests/func/test_data_cloud.py::TestWarnOnOutdatedStage::test",
+    "tests/func/test_data_cloud.py::test_checksum_recalculation",
+    "tests/func/test_data_cloud.py::test_pull_external_dvc_imports",
+    "tests/func/test_data_cloud.py::test_pull_git_imports[erepo_dir]",
+    "tests/func/test_data_cloud.py::test_verify_checksums",
+    "tests/unit/remote/test_base.py::TestCmdError::test",
+    "tests/unit/remote/test_base.py::TestMissingDeps::test",
+    "tests/unit/remote/test_base.py::test_cache_exists_traverse",
+    "tests/unit/remote/test_gdrive.py::TestRemoteGDrive::test_init"
+  ],
+  "source": {
+    "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+    "sha256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
+  }
+}

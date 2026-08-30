@@ -303,6 +303,7 @@ describe("SWE-EVO host executor", () => {
   test("applies missing test patches and accepts fully pre-applied test patches", () => {
     expect(classifyTestPatch({ forwardApplies: true, reverseApplies: false })).toBe("apply")
     expect(classifyTestPatch({ forwardApplies: false, reverseApplies: true })).toBe("already-applied")
+    expect(classifyTestPatch({ patch: "", forwardApplies: false, reverseApplies: false })).toBe("absent")
     expect(() => classifyTestPatch({ forwardApplies: false, reverseApplies: false })).toThrow(
       "Model patch conflicts with the frozen test patch",
     )
@@ -474,6 +475,7 @@ describe("SWE-EVO host executor", () => {
   test("rejects task records that contain a gold patch", () => {
     expect(() => parseTaskInput({ ...task, patch: "gold" })).toThrow()
     expect(() => parseTaskInput({ ...task, all_patch: "gold" })).toThrow()
+    expect(() => parseTaskInput({ ...task, testPatch: "" })).not.toThrow()
   })
 
   test("matches the official pytest parser and SWE-EVO fix-rate rule", () => {
@@ -499,6 +501,22 @@ describe("SWE-EVO host executor", () => {
       passToPassPassed: ["tests/test_params.py::test_one"],
       passToPassFailed: ["tests/test_params.py::test_two"],
     })
+  })
+
+  test("matches every pytest parser variant pinned by SWE-EVO", () => {
+    expect(() => parseTaskInput({ ...task, logParser: "parse_log_pytest_options" })).not.toThrow()
+    expect(() => parseTaskInput({ ...task, logParser: "parse_log_pytest_v2" })).not.toThrow()
+    expect(() => parseTaskInput({ ...task, logParser: "parse_log_pytest_pydantic" })).not.toThrow()
+    expect(() => parseTaskInput({ ...task, logParser: "unknown" })).toThrow()
+    expect(
+      parsePytestLog("PASSED tests/test_requests.py::test_path[/private/tmp/example]", "parse_log_pytest_options"),
+    ).toEqual({ "tests/test_requests.py::test_path[/example]": "PASSED" })
+    expect(parsePytestLog("tests/test_old.py::test_case PASSED", "parse_log_pytest_v2")).toEqual({
+      "tests/test_old.py::test_case": "PASSED",
+    })
+    expect(
+      parsePytestLog("FAILED [gw0] tests/test_main.py::test_case - AssertionError", "parse_log_pytest_pydantic"),
+    ).toEqual({ "tests/test_main.py::test_case": "FAILED" })
   })
 
   test("treats missing tests as failures and XFAIL as an official pass", () => {

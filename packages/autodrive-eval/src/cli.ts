@@ -17,6 +17,7 @@ import {
   type Trajectory,
 } from "./artifact"
 import { caps, summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
+import { parseTaskInput } from "./host-executor"
 import { renderTaskManifest } from "./paper"
 import { createPilotRun, loadPilotManifest } from "./pilot"
 import { createModelMetadataSnapshot, loadPreflight, PreflightScope } from "./preflight"
@@ -174,6 +175,27 @@ async function validate() {
     if (!(await Bun.file(path.join(root, relative)).exists())) missing.push(relative)
   }
   if (missing.length) fail(`Missing frozen research artifacts:\n${missing.join("\n")}`)
+  const taskInputs = await Promise.all(
+    manifest.tasks.map(async (task) => {
+      const input = parseTaskInput(
+        await Bun.file(path.join(root, "research/auto-drive/protocol/tasks", `${task.instanceID}.json`)).json(),
+      )
+      if (
+        input.instanceID !== task.instanceID ||
+        input.repo !== task.repo ||
+        input.baseCommit !== task.baseCommit ||
+        input.environmentSetupCommit !== task.environmentSetupCommit ||
+        input.image !== task.image ||
+        input.failToPass.length !== task.failToPassCount ||
+        input.passToPass.length !== task.passToPassCount ||
+        input.source.commit !== manifest.source.commit ||
+        input.source.sha256 !== manifest.source.sha256
+      )
+        throw new Error(`Frozen task input does not match the SWE-EVO manifest: ${task.instanceID}`)
+      return input
+    }),
+  )
+  if (taskInputs.length !== manifest.tasks.length) throw new Error("Frozen task inputs are incomplete")
   const pilotManifestPath = path.join(root, "research/auto-drive/protocol/pilot-swe-bench-verified.json")
   const pilot = await loadPilotManifest(
     pilotManifestPath,
@@ -797,7 +819,7 @@ function createExecutor(
           path.dirname(options.preflightPath),
           options.preflight.receipt.modelMetadata.path,
         ),
-        ...(options.taskInputRoot ? { AUTODRIVE_TASK_INPUT_ROOT: options.taskInputRoot } : {}),
+        AUTODRIVE_TASK_INPUT_ROOT: options.taskInputRoot ?? path.join(root, "research/auto-drive/protocol/tasks"),
       },
     })
     if (record.runID !== run.id || record.attempt !== attempt)

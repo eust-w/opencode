@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "instanceID": "iterative__dvc_2.21.1_2.21.2",
+  "repo": "iterative/dvc",
+  "baseCommit": "512bfc4305a7607f63514dc734663c973ed954b2",
+  "environmentSetupCommit": "7b3b4b373b5e383f30792cd25d9d08be62db8275",
+  "image": "xingyaoww/sweb.eval.x86_64.iterative_s_dvc-8166",
+  "problemStatement": "> Refer to https://dvc.org/doc/install for installation instructions.\n\n## Changes\n\n## 🐛 Bug Fixes \n\n- api: Fix `params_show` for untracked targets. (#8166) @daavoo\n\nThanks again to @daavoo for the contributions! 🎉",
+  "testPatch": "diff --git a/tests/func/api/test_params.py b/tests/func/api/test_params.py\nindex b2e954539..85e82ae88 100644\n--- a/tests/func/api/test_params.py\n+++ b/tests/func/api/test_params.py\n@@ -67,6 +67,9 @@ def test_params_show_targets(params_repo):\n         \"bar\": 2,\n         \"foobar\": 3,\n     }\n+    assert api.params_show(\"params.yaml\", stages=\"stage-1\") == {\n+        \"foo\": 5,\n+    }\n \n \n def test_params_show_deps(params_repo):\n@@ -168,3 +171,15 @@ def test_params_show_stage_without_params(tmp_dir, dvc):\n \n     with pytest.raises(DvcException, match=\"No params found\"):\n         api.params_show(deps=True)\n+\n+\n+def test_params_show_untracked_target(params_repo, tmp_dir):\n+    tmp_dir.gen(\"params_foo.yaml\", \"foo: 1\")\n+\n+    assert api.params_show(\"params_foo.yaml\") == {\"foo\": 1}\n+\n+    with pytest.raises(DvcException, match=\"No params found\"):\n+        api.params_show(\"params_foo.yaml\", stages=\"stage-0\")\n+\n+    with pytest.raises(DvcException, match=\"No params found\"):\n+        api.params_show(\"params_foo.yaml\", deps=True)\n",
+  "testCommand": "pytest --continue-on-collection-errors -rA",
+  "logParser": "parse_log_pytest",
+  "failToPass": [
+    "tests/func/api/test_params.py::test_params_show_untracked_target"
+  ],
+  "passToPass": [
+    "tests/func/api/test_params.py::test_params_show_deps",
+    "tests/func/api/test_params.py::test_params_show_no_args",
+    "tests/func/api/test_params.py::test_params_show_no_params_found",
+    "tests/func/api/test_params.py::test_params_show_repo",
+    "tests/func/api/test_params.py::test_params_show_stage_without_params",
+    "tests/func/api/test_params.py::test_params_show_stages",
+    "tests/func/api/test_params.py::test_params_show_targets",
+    "tests/func/api/test_params.py::test_params_show_while_running_stage"
+  ],
+  "source": {
+    "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+    "sha256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
+  }
+}

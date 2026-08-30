@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "instanceID": "iterative__dvc_2.58.1_2.58.2",
+  "repo": "iterative/dvc",
+  "baseCommit": "6d783b8d97fa29387d064d7340bbc610afaf6938",
+  "environmentSetupCommit": "6a5fa998adf8b01fdb364217974c9391f20f476f",
+  "image": "xingyaoww/sweb.eval.x86_64.iterative_s_dvc-9511",
+  "problemStatement": "<!-- Release notes generated using configuration in .github/release.yml at 2.x -->\n\n## What's Changed\n### Other Changes\n* (2.x) repro: Continue on RunCacheNotSupported by @mergify in https://github.com/iterative/dvc/pull/9511\n* (2.x) deps: bumps dvc-azure>=2.21.2 by @mergify in https://github.com/iterative/dvc/pull/9526\n\n\n**Full Changelog**: https://github.com/iterative/dvc/compare/2.58.1...2.58.2",
+  "testPatch": "diff --git a/tests/func/test_repro_multistage.py b/tests/func/test_repro_multistage.py\nindex 7c8563419..6f98e0d8b 100644\n--- a/tests/func/test_repro_multistage.py\n+++ b/tests/func/test_repro_multistage.py\n@@ -9,6 +9,7 @@ from dvc.cli import main\n from dvc.dvcfile import LOCK_FILE, PROJECT_FILE\n from dvc.exceptions import CyclicGraphError, ReproductionError\n from dvc.stage import PipelineStage\n+from dvc.stage.cache import RunCacheNotSupported\n from dvc.stage.exceptions import StageNotFound\n from dvc.utils.fs import remove\n \n@@ -457,3 +458,30 @@ def test_repro_allow_missing_and_pull(tmp_dir, dvc, mocker, local_remote):\n     ret = dvc.reproduce(pull=True, allow_missing=True)\n     # create-foo is skipped ; copy-foo pulls missing dep\n     assert len(ret) == 1\n+\n+\n+def test_repro_pulls_continue_without_run_cache(tmp_dir, dvc, mocker, local_remote):\n+    (foo,) = tmp_dir.dvc_gen(\"foo\", \"foo\")\n+\n+    dvc.push()\n+    mocker.patch.object(\n+        dvc.stage_cache, \"pull\", side_effect=RunCacheNotSupported(\"foo\")\n+    )\n+    dvc.stage.add(name=\"copy-foo\", cmd=\"cp foo bar\", deps=[\"foo\"], outs=[\"bar\"])\n+    remove(\"foo\")\n+    remove(foo.outs[0].cache_path)\n+\n+    assert dvc.reproduce(pull=True)\n+\n+\n+def test_repro_skip_pull_if_no_run_cache_is_passed(tmp_dir, dvc, mocker, local_remote):\n+    (foo,) = tmp_dir.dvc_gen(\"foo\", \"foo\")\n+\n+    dvc.push()\n+    spy_pull = mocker.spy(dvc.stage_cache, \"pull\")\n+    dvc.stage.add(name=\"copy-foo\", cmd=\"cp foo bar\", deps=[\"foo\"], outs=[\"bar\"])\n+    remove(\"foo\")\n+    remove(foo.outs[0].cache_path)\n+\n+    assert dvc.reproduce(pull=True, run_cache=False)\n+    assert not spy_pull.called\n",
+  "testCommand": "pytest --continue-on-collection-errors -rA",
+  "logParser": "parse_log_pytest",
+  "failToPass": [
+    "tests/func/test_repro_multistage.py::test_repro_pulls_continue_without_run_cache",
+    "tests/func/test_repro_multistage.py::test_repro_skip_pull_if_no_run_cache_is_passed"
+  ],
+  "passToPass": [
+    "tests/func/test_repro_multistage.py::test_cyclic_graph_error",
+    "tests/func/test_repro_multistage.py::test_downstream",
+    "tests/func/test_repro_multistage.py::test_non_existing_stage_name",
+    "tests/func/test_repro_multistage.py::test_repro_allow_missing",
+    "tests/func/test_repro_multistage.py::test_repro_allow_missing_and_pull",
+    "tests/func/test_repro_multistage.py::test_repro_frozen",
+    "tests/func/test_repro_multistage.py::test_repro_list_of_commands_in_order[False]",
+    "tests/func/test_repro_multistage.py::test_repro_list_of_commands_in_order[True]",
+    "tests/func/test_repro_multistage.py::test_repro_list_of_commands_raise_and_stops_after_failure[False]",
+    "tests/func/test_repro_multistage.py::test_repro_list_of_commands_raise_and_stops_after_failure[True]",
+    "tests/func/test_repro_multistage.py::test_repro_multiple_params",
+    "tests/func/test_repro_multistage.py::test_repro_pulls_mising_data_source",
+    "tests/func/test_repro_multistage.py::test_repro_when_cmd_changes",
+    "tests/func/test_repro_multistage.py::test_repro_when_lockfile_gets_deleted",
+    "tests/func/test_repro_multistage.py::test_repro_when_new_deps_added_does_not_exist",
+    "tests/func/test_repro_multistage.py::test_repro_when_new_deps_is_added_in_dvcfile",
+    "tests/func/test_repro_multistage.py::test_repro_when_new_deps_is_moved",
+    "tests/func/test_repro_multistage.py::test_repro_when_new_out_overlaps_others_stage_outs",
+    "tests/func/test_repro_multistage.py::test_repro_when_new_outs_added_does_not_exist",
+    "tests/func/test_repro_multistage.py::test_repro_when_new_outs_is_added_in_dvcfile"
+  ],
+  "source": {
+    "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+    "sha256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
+  }
+}

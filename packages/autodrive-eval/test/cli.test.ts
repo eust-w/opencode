@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { mkdtemp, rm } from "node:fs/promises"
+import { chmod, mkdir, mkdtemp, rm } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
@@ -184,6 +184,124 @@ describe("paid experiment CLI gates", () => {
     const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
     expect(exitCode).toBe(1)
     expect(stderr).toContain("--preflight PATH is required")
+  })
+
+  test("projects the frozen SWE-EVO task inputs into boundary executors", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-boundary-inputs-"))
+    try {
+      const preflight = path.join(directory, "preflight")
+      const metadata = path.join(preflight, "metadata/models.json")
+      const workerProbe = path.join(preflight, "probes/worker.json")
+      const controllerProbe = path.join(preflight, "probes/controller.json")
+      const capture = path.join(directory, "task-root.txt")
+      const executor = path.join(directory, "executor.ts")
+      await Promise.all([
+        mkdir(path.dirname(metadata), { recursive: true }),
+        mkdir(path.dirname(workerProbe), { recursive: true }),
+      ])
+      const model = (id: string, output: number) => ({
+        id,
+        name: id,
+        release_date: "2026-08-30",
+        attachment: false,
+        reasoning: true,
+        temperature: true,
+        tool_call: true,
+        limit: { context: 131_072, output },
+        modalities: { input: ["text"], output: ["text"] },
+      })
+      const metadataContent =
+        JSON.stringify({
+          "d-robotics": {
+            models: {
+              "deepseek-v4-pro": model("deepseek-v4-pro", 4_096),
+              "qwen3.8-max": model("qwen3.8-max", 1_024),
+            },
+          },
+        }) + "\n"
+      const workerContent =
+        JSON.stringify({ billing: "paid", modelVersion: "deepseek-v4-pro", trajectoryCapacity: 96 }) + "\n"
+      const controllerContent =
+        JSON.stringify({ billing: "paid", modelVersion: "qwen3.8-max", trajectoryCapacity: 96 }) + "\n"
+      const digest = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
+      await Promise.all([
+        Bun.write(metadata, metadataContent),
+        Bun.write(workerProbe, workerContent),
+        Bun.write(controllerProbe, controllerContent),
+        Bun.write(
+          executor,
+          `#!/usr/bin/env bun\nimport path from "node:path"\nconst root = Bun.env.AUTODRIVE_TASK_INPUT_ROOT\nconst task = root ? Bun.file(path.join(root, "conan-io__conan_2.0.14_2.0.15.json")) : undefined\nawait Bun.write(Bun.env.AUTODRIVE_TEST_ENV_CAPTURE!, root && task && await task.exists() ? root : "missing")\nconsole.error("zero-cost infrastructure probe")\nprocess.exit(75)\n`,
+        ),
+      ])
+      await Promise.all([
+        chmod(executor, 0o755),
+        Bun.write(
+          path.join(preflight, "receipt.json"),
+          JSON.stringify({
+            schemaVersion: 1,
+            protocol: "auto-drive-swe-evo-v1.14",
+            scope: "boundary",
+            capturedAt: new Date(Date.now() - 60_000).toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+            models: [
+              {
+                model: "d-robotics/deepseek-v4-pro",
+                catalogModelID: "deepseek-v4-pro",
+                modelVersion: "deepseek-v4-pro",
+                credentialPresent: true,
+                billing: "paid",
+                trajectoryCapacity: 96,
+                probe: { path: "probes/worker.json", sha256: digest(workerContent) },
+              },
+              {
+                model: "d-robotics/qwen3.8-max",
+                catalogModelID: "qwen3.8-max",
+                modelVersion: "qwen3.8-max",
+                credentialPresent: true,
+                billing: "paid",
+                trajectoryCapacity: 96,
+                probe: { path: "probes/controller.json", sha256: digest(controllerContent) },
+              },
+            ],
+            modelMetadata: { path: "metadata/models.json", sha256: digest(metadataContent) },
+            runtime: {
+              disableExternalSkills: true,
+              disableClaudeCodeSkills: true,
+              disableModelsFetch: true,
+            },
+          }) + "\n",
+        ),
+      ])
+      const run = createBoundaryRunPlan(parseManifest(manifestInput))[0]
+      const child = Bun.spawn(
+        [
+          Bun.which("bun")!,
+          "src/cli.ts",
+          "boundary-run",
+          "--execute",
+          "--executor",
+          executor,
+          "--preflight",
+          path.join(preflight, "receipt.json"),
+          "--artifact-root",
+          directory,
+          "--run-id",
+          run.id,
+        ],
+        {
+          cwd: import.meta.dir + "/..",
+          stdout: "pipe",
+          stderr: "pipe",
+          env: { ...Bun.env, AUTODRIVE_TEST_ENV_CAPTURE: capture },
+        },
+      )
+      await child.exited
+      expect(await Bun.file(capture).text()).toEndWith("research/auto-drive/protocol/tasks")
+      expect(await Bun.file(path.join(directory, "boundary/trajectories.jsonl")).exists()).toBeFalse()
+      expect(await Bun.file(path.join(directory, "boundary/ledger.jsonl")).exists()).toBeFalse()
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
   })
 
   test("keeps the non-primary pilot fail-closed without explicit execution", async () => {

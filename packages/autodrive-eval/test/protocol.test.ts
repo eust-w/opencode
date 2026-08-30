@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import manifest from "../../../research/auto-drive/protocol/swe-evo-48.json"
+import { parseTaskInput } from "../src/host-executor"
 import { createBoundaryRunPlan, createRunPlan, parseManifest, protocol } from "../src/protocol"
 
 describe("frozen AutoDrive protocol", () => {
@@ -62,6 +63,44 @@ describe("frozen AutoDrive protocol", () => {
     expect(new Set(parsed.tasks.map((task) => task.repo)).size).toBe(7)
     expect(parsed.source.commit).toBe("9b83d5af943ba7a17567336f5b18239f73960219")
     expect(parsed.source.sha256).toBe("74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520")
+  })
+
+  test("materializes every pinned SWE-EVO task into the host-executor contract", async () => {
+    const parsed = parseManifest(manifest)
+    const inputs = await Promise.all(
+      parsed.tasks.map(async (task) =>
+        parseTaskInput(
+          await Bun.file(
+            new URL(`../../../research/auto-drive/protocol/tasks/${task.instanceID}.json`, import.meta.url),
+          ).json(),
+        ),
+      ),
+    )
+
+    expect(inputs).toHaveLength(48)
+    expect(
+      inputs.map((input) => ({
+        instanceID: input.instanceID,
+        repo: input.repo,
+        baseCommit: input.baseCommit,
+        environmentSetupCommit: input.environmentSetupCommit,
+        image: input.image,
+        failToPassCount: input.failToPass.length,
+        passToPassCount: input.passToPass.length,
+        source: input.source,
+      })),
+    ).toEqual(
+      parsed.tasks.map((task) => ({
+        instanceID: task.instanceID,
+        repo: task.repo,
+        baseCommit: task.baseCommit,
+        environmentSetupCommit: task.environmentSetupCommit,
+        image: task.image,
+        failToPassCount: task.failToPassCount,
+        passToPassCount: task.passToPassCount,
+        source: { commit: parsed.source.commit, sha256: parsed.source.sha256 },
+      })),
+    )
   })
 
   test("expands the preregistered matrix to exactly 384 paid trajectories", () => {

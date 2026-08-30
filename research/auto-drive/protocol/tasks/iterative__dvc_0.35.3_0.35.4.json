@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "instanceID": "iterative__dvc_0.35.3_0.35.4",
+  "repo": "iterative/dvc",
+  "baseCommit": "441e4f4745d7925ff82b2321fa946f5ff59fc297",
+  "environmentSetupCommit": "212f9b7dd4396a46eb1a4abd68c8d76543383bdf",
+  "image": "xingyaoww/sweb.eval.x86_64.iterative_s_dvc-1855",
+  "problemStatement": "1) [Fix bug where `dvc checkout/remove` were not able to handle broken symlinks;](https://github.com/iterative/dvc/issues/1856)",
+  "testPatch": "diff --git a/tests/requirements.txt b/tests/requirements.txt\nindex 71ad79e5b..fade9c8b1 100644\n--- a/tests/requirements.txt\n+++ b/tests/requirements.txt\n@@ -13,3 +13,4 @@ collective.checkdocs\n black==19.3b0 ; python_version >= '3.6'\n flake8\n flake8-docstrings\n+jaraco.windows==3.9.2\ndiff --git a/tests/test_checkout.py b/tests/test_checkout.py\nindex e263c1938..f987f1376 100644\n--- a/tests/test_checkout.py\n+++ b/tests/test_checkout.py\n@@ -517,3 +517,52 @@ class TestCheckoutRecursiveNotDirectory(TestDvc):\n \n         with self.assertRaises(TargetNotDirectoryError):\n             self.dvc.checkout(target=self.FOO, recursive=True)\n+\n+\n+class TestCheckoutMovedCacheDirWithSymlinks(TestDvc):\n+    def test(self):\n+        ret = main([\"config\", \"cache.type\", \"symlink\"])\n+        self.assertEqual(ret, 0)\n+\n+        ret = main([\"add\", self.FOO])\n+        self.assertEqual(ret, 0)\n+\n+        ret = main([\"add\", self.DATA_DIR])\n+        self.assertEqual(ret, 0)\n+\n+        if os.name == \"nt\":\n+            from jaraco.windows.filesystem import readlink\n+        else:\n+            readlink = os.readlink\n+\n+        self.assertTrue(System.is_symlink(self.FOO))\n+        old_foo_link = readlink(self.FOO)\n+\n+        self.assertTrue(System.is_symlink(self.DATA))\n+        old_data_link = readlink(self.DATA)\n+\n+        old_cache_dir = self.dvc.cache.local.cache_dir\n+        new_cache_dir = old_cache_dir + \"_new\"\n+        os.rename(old_cache_dir, new_cache_dir)\n+\n+        ret = main([\"cache\", \"dir\", new_cache_dir])\n+        self.assertEqual(ret, 0)\n+\n+        ret = main([\"checkout\", \"-f\"])\n+        self.assertEqual(ret, 0)\n+\n+        self.assertTrue(System.is_symlink(self.FOO))\n+        new_foo_link = readlink(self.FOO)\n+\n+        self.assertTrue(System.is_symlink(self.DATA))\n+        new_data_link = readlink(self.DATA)\n+\n+        self.assertEqual(\n+            os.path.relpath(old_foo_link, old_cache_dir),\n+            os.path.relpath(new_foo_link, new_cache_dir),\n+        )\n+\n+        self.assertEqual(\n+            os.path.relpath(old_data_link, old_cache_dir),\n+            os.path.relpath(new_data_link, new_cache_dir),\n+        )\ndiff --git a/tests/test_remove.py b/tests/test_remove.py\nindex d0511e1e6..beab5c2b5 100644\n--- a/tests/test_remove.py\n+++ b/tests/test_remove.py\n@@ -1,6 +1,8 @@\n import os\n+import shutil\n \n from dvc.main import main\n+from dvc.system import System\n from dvc.stage import Stage, StageFileDoesNotExistError\n from dvc.exceptions import DvcException\n \n@@ -33,6 +35,24 @@ class TestRemoveNonExistentFile(TestDvc):\n             self.dvc.remove(\"non_existent_dvc_file\")\n \n \n+class TestRemoveBrokenSymlink(TestDvc):\n+    def test(self):\n+        ret = main([\"config\", \"cache.type\", \"symlink\"])\n+        self.assertEqual(ret, 0)\n+\n+        ret = main([\"add\", self.FOO])\n+        self.assertEqual(ret, 0)\n+\n+        shutil.rmtree(self.dvc.cache.local.cache_dir)\n+\n+        self.assertTrue(System.is_symlink(self.FOO))\n+\n+        ret = main([\"remove\", self.FOO + \".dvc\"])\n+        self.assertEqual(ret, 0)\n+\n+        self.assertFalse(os.path.lexists(self.FOO))\n+\n+\n class TestRemoveDirectory(TestDvc):\n     def test(self):\n         stages = self.dvc.add(self.DATA_DIR)\n",
+  "testCommand": "pytest --continue-on-collection-errors -rA",
+  "logParser": "parse_log_pytest",
+  "failToPass": [
+    "tests/test_checkout.py::TestCheckoutMovedCacheDirWithSymlinks::test",
+    "tests/test_remove.py::TestRemoveBrokenSymlink::test"
+  ],
+  "passToPass": [
+    "tests/test_checkout.py::TestCheckout::test",
+    "tests/test_checkout.py::TestCheckoutCleanWorkingDir::test",
+    "tests/test_checkout.py::TestCheckoutCleanWorkingDir::test_force",
+    "tests/test_checkout.py::TestCheckoutCorruptedCacheDir::test",
+    "tests/test_checkout.py::TestCheckoutCorruptedCacheFile::test",
+    "tests/test_checkout.py::TestCheckoutDirectory::test",
+    "tests/test_checkout.py::TestCheckoutEmptyDir::test",
+    "tests/test_checkout.py::TestCheckoutHook::test",
+    "tests/test_checkout.py::TestCheckoutMissingMd5InStageFile::test",
+    "tests/test_checkout.py::TestCheckoutNotCachedFile::test",
+    "tests/test_checkout.py::TestCheckoutRecursiveNotDirectory::test",
+    "tests/test_checkout.py::TestCheckoutSelectiveRemove::test",
+    "tests/test_checkout.py::TestCheckoutShouldHaveSelfClearingProgressBar::test",
+    "tests/test_checkout.py::TestCheckoutSingleStage::test",
+    "tests/test_checkout.py::TestCheckoutSuggestGit::test",
+    "tests/test_checkout.py::TestCheckoutTargetRecursiveShouldNotRemoveOtherUsedFiles::test",
+    "tests/test_checkout.py::TestCmdCheckout::test",
+    "tests/test_checkout.py::TestGitIgnoreBasic::test",
+    "tests/test_checkout.py::TestGitIgnoreWhenCheckout::test",
+    "tests/test_checkout.py::TestRemoveFilesWhenCheckout::test",
+    "tests/test_remove.py::TestCmdRemove::test",
+    "tests/test_remove.py::TestRemove::test",
+    "tests/test_remove.py::TestRemoveDirectory::test",
+    "tests/test_remove.py::TestRemoveNonExistentFile::test",
+    "tests/test_remove.py::TestRemovePurge::test",
+    "tests/test_remove.py::TestRemovePurge::test_force"
+  ],
+  "source": {
+    "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+    "sha256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
+  }
+}

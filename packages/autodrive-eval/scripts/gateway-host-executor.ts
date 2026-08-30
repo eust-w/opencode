@@ -552,12 +552,26 @@ try {
           ["docker", "exec", "-i", graderName, "git", "-C", "/testbed", "apply", "--whitespace=nowarn", "-"],
           { stdin: modelPatch },
         )
-      const forward = await command(
-        ["docker", "exec", "-i", graderName, "git", "-C", "/testbed", "apply", "--check", "--whitespace=nowarn", "-"],
-        { allowFailure: true, stdin: task.testPatch },
-      )
+      const forward = task.testPatch.trim()
+        ? await command(
+            [
+              "docker",
+              "exec",
+              "-i",
+              graderName,
+              "git",
+              "-C",
+              "/testbed",
+              "apply",
+              "--check",
+              "--whitespace=nowarn",
+              "-",
+            ],
+            { allowFailure: true, stdin: task.testPatch },
+          )
+        : undefined
       const reverse =
-        forward.exitCode === 0
+        !forward || forward.exitCode === 0
           ? undefined
           : await command(
               [
@@ -577,7 +591,8 @@ try {
               { allowFailure: true, stdin: task.testPatch },
             )
       const disposition = classifyTestPatch({
-        forwardApplies: forward.exitCode === 0,
+        patch: task.testPatch,
+        forwardApplies: forward?.exitCode === 0,
         reverseApplies: reverse?.exitCode === 0,
       })
       if (disposition === "apply")
@@ -594,7 +609,7 @@ try {
       const logPath = path.join(artifactRoot, "grader", input.run.id, `${label}.log`)
       await mkdir(path.dirname(logPath), { recursive: true })
       await Bun.write(logPath, content)
-      const grade = gradePytest(task, parsePytestLog(content))
+      const grade = gradePytest(task, parsePytestLog(content, task.logParser))
       await trace({ type: "grader-finished", label, exitCode: test.exitCode, grade, log: relativeArtifact(logPath) })
       return grade
     } finally {

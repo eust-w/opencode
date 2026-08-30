@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "instanceID": "iterative__dvc_1.0.0b6_1.0.0",
+  "repo": "iterative/dvc",
+  "baseCommit": "a2f1367a9a75849ef6ad7ee23a5bacc18580f102",
+  "environmentSetupCommit": "57e476acc4be0c3425417c070aa1cc838289548d",
+  "image": "xingyaoww/sweb.eval.x86_64.iterative_s_dvc-4075",
+  "problemStatement": "* completion: misc fixes (#4076) @casperdcl\n* add --no-exec mode to import url (#4075) @karajan1001",
+  "testPatch": "diff --git a/tests/func/test_import_url.py b/tests/func/test_import_url.py\nindex 52e7edd2f..c5b8db8f9 100644\n--- a/tests/func/test_import_url.py\n+++ b/tests/func/test_import_url.py\n@@ -103,3 +103,12 @@ def test_import_stage_accompanies_target(tmp_dir, dvc, erepo_dir):\n def test_import_url_nonexistent(dvc, erepo_dir):\n     with pytest.raises(DependencyDoesNotExistError):\n         dvc.imp_url(os.fspath(erepo_dir / \"non-existent\"))\n+\n+\n+def test_import_url_with_no_exec(tmp_dir, dvc, erepo_dir):\n+    tmp_dir.gen({\"data_dir\": {\"file\": \"file content\"}})\n+    src = os.path.join(\"data_dir\", \"file\")\n+\n+    dvc.imp_url(src, \".\", no_exec=True)\n+    dst = tmp_dir / \"file\"\n+    assert not dst.exists()\ndiff --git a/tests/unit/command/test_imp_url.py b/tests/unit/command/test_imp_url.py\nindex 8e04d1268..6b5b5f784 100644\n--- a/tests/unit/command/test_imp_url.py\n+++ b/tests/unit/command/test_imp_url.py\n@@ -14,7 +14,7 @@ def test_import_url(mocker):\n \n     assert cmd.run() == 0\n \n-    m.assert_called_once_with(\"src\", out=\"out\", fname=\"file\")\n+    m.assert_called_once_with(\"src\", out=\"out\", fname=\"file\", no_exec=False)\n \n \n def test_failed_import_url(mocker, caplog):\n@@ -31,3 +31,16 @@ def test_failed_import_url(mocker, caplog):\n             \"adding it with `dvc add`.\"\n         )\n         assert expected_error in caplog.text\n+\n+\n+def test_import_url_no_exec(mocker):\n+    cli_args = parse_args(\n+        [\"import-url\", \"--no-exec\", \"src\", \"out\", \"--file\", \"file\"]\n+    )\n+\n+    cmd = cli_args.func(cli_args)\n+    m = mocker.patch.object(cmd.repo, \"imp_url\", autospec=True)\n+\n+    assert cmd.run() == 0\n+\n+    m.assert_called_once_with(\"src\", out=\"out\", fname=\"file\", no_exec=True)\n",
+  "testCommand": "pytest --continue-on-collection-errors -rA",
+  "logParser": "parse_log_pytest",
+  "failToPass": [
+    "tests/unit/command/test_imp_url.py::test_import_url",
+    "tests/unit/command/test_imp_url.py::test_import_url_no_exec"
+  ],
+  "passToPass": [
+    "tests/func/test_import_url.py::TestCmdImport::test_unsupported",
+    "tests/unit/command/test_imp_url.py::test_failed_import_url"
+  ],
+  "source": {
+    "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+    "sha256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
+  }
+}

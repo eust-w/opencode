@@ -15,6 +15,18 @@ bun run validate
 
 Expected before paid runs: 48 tasks, 384 planned trajectories, status `pending`, completed 0, spent USD 0, and remaining USD 800.
 
+The 48 strict host-executor inputs are committed under `research/auto-drive/protocol/tasks/`. `validate` checks them against the frozen manifest and source digest. To independently rematerialize them, download the exact Arrow path recorded in `swe-evo-48.json`, verify SHA-256 `74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520`, then run:
+
+```bash
+python3 packages/autodrive-eval/scripts/materialize-swe-evo-task-inputs.py \
+  --arrow /path/to/data-00000-of-00001.arrow \
+  --manifest research/auto-drive/protocol/swe-evo-48.json \
+  --output /tmp/materialized-swe-evo-tasks
+diff -ru research/auto-drive/protocol/tasks /tmp/materialized-swe-evo-tasks
+```
+
+The materializer requires PyArrow, rejects a mismatched Arrow digest or manifest row, and never copies the gold implementation patch.
+
 Freeze the required model metadata and validate a sealed provider receipt before execution:
 
 ```bash

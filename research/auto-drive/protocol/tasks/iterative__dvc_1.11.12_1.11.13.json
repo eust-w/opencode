@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "instanceID": "iterative__dvc_1.11.12_1.11.13",
+  "repo": "iterative/dvc",
+  "baseCommit": "9638dde4daf3f338e3538712133c4457e96d23ad",
+  "environmentSetupCommit": "983da1d981d6c858802f3ad170f26b7a027e5b5e",
+  "image": "xingyaoww/sweb.eval.x86_64.iterative_s_dvc-5336",
+  "problemStatement": "- dvc: ignore errors on protect/set_exec (#5335) @efiop",
+  "testPatch": "diff --git a/tests/docker-compose.yml b/tests/docker-compose.yml\nindex 7dfab75de..6cd84986b 100644\n--- a/tests/docker-compose.yml\n+++ b/tests/docker-compose.yml\n@@ -2,7 +2,8 @@\n version: '3.2'\n services:\n   azurite:\n-    image: mcr.microsoft.com/azure-storage/azurite:3.9.0\n+    image: mcr.microsoft.com/azure-storage/azurite:3.10.0\n+    command: azurite -L -l /data --blobHost 0.0.0.0 --queueHost 0.0.0.0\n     ports:\n       - \"10000\"\n   oss:\ndiff --git a/tests/unit/remote/test_local.py b/tests/unit/remote/test_local.py\nindex 5846c1ddf..ccd8049fb 100644\n--- a/tests/unit/remote/test_local.py\n+++ b/tests/unit/remote/test_local.py\n@@ -65,28 +65,12 @@ def test_is_protected(tmp_dir, dvc, link_name):\n         assert tree.is_protected(foo)\n \n \n-@pytest.mark.parametrize(\"err\", [errno.EPERM, errno.EACCES])\n-def test_protect_ignore_errors(tmp_dir, mocker, err):\n+@pytest.mark.parametrize(\"err\", [errno.EPERM, errno.EACCES, errno.EROFS])\n+def test_protect_ignore_errors(tmp_dir, dvc, mocker, err):\n     tmp_dir.gen(\"foo\", \"foo\")\n-    foo = PathInfo(\"foo\")\n-    tree = LocalTree(None, {})\n-\n-    tree.protect(foo)\n \n     mock_chmod = mocker.patch(\n         \"os.chmod\", side_effect=OSError(err, \"something\")\n     )\n-    tree.protect(foo)\n-    assert mock_chmod.called\n-\n-\n-def test_protect_ignore_erofs(tmp_dir, mocker):\n-    tmp_dir.gen(\"foo\", \"foo\")\n-    foo = PathInfo(\"foo\")\n-    tree = LocalTree(None, {})\n-\n-    mock_chmod = mocker.patch(\n-        \"os.chmod\", side_effect=OSError(errno.EROFS, \"read-only fs\")\n-    )\n-    tree.protect(foo)\n+    LocalTree(None, {}).protect(PathInfo(\"foo\"))\n     assert mock_chmod.called\n",
+  "testCommand": "pytest --continue-on-collection-errors -rA",
+  "logParser": "parse_log_pytest",
+  "failToPass": [
+    "tests/unit/remote/test_local.py::test_protect_ignore_errors[13]",
+    "tests/unit/remote/test_local.py::test_protect_ignore_errors[1]"
+  ],
+  "passToPass": [
+    "tests/unit/remote/test_local.py::test_is_protected[hardlink]",
+    "tests/unit/remote/test_local.py::test_is_protected[symlink]",
+    "tests/unit/remote/test_local.py::test_protect_ignore_errors[30]",
+    "tests/unit/remote/test_local.py::test_status_download_optimization"
+  ],
+  "source": {
+    "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+    "sha256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
+  }
+}

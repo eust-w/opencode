@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "instanceID": "iterative__dvc_3.4.0_3.5.0",
+  "repo": "iterative/dvc",
+  "baseCommit": "8661abf2244d75a3fe3e314284a498bc6ec2a796",
+  "environmentSetupCommit": "4de4f0fd65e628098605fe698d383c52fbf272df",
+  "image": "xingyaoww/sweb.eval.x86_64.iterative_s_dvc-9676",
+  "problemStatement": "<!-- Release notes generated using configuration in .github/release.yml at main -->\n\n## What's Changed\n### 🚀 New Features and Enhancements\n* output: checkout: use f-string by @skshetry in https://github.com/iterative/dvc/pull/9715\n* fetch: introduce --type metrics/plots by @efiop in https://github.com/iterative/dvc/pull/9718\n### 🐛 Bug Fixes\n* repro:  ignore --downstream if used together with --pipeline by @skshetry in https://github.com/iterative/dvc/pull/9692\n### Other Changes\n* api.get_url: use index storage for getting remote URL by @pmrowla in https://github.com/iterative/dvc/pull/9676\n* repo: site_cache_dir: take major version into account by @efiop in https://github.com/iterative/dvc/pull/9699\n* readme: point to dvc.org for packages by @efiop in https://github.com/iterative/dvc/pull/9703\n* update link for external data sources by @dberenbaum in https://github.com/iterative/dvc/pull/9706\n* output: fix formatting by @efiop in https://github.com/iterative/dvc/pull/9716\n* output: pass explicit callback to hashfile.build() by @efiop in https://github.com/iterative/dvc/pull/9714\n* deps: bump dvc-data to 2.5.0 by @efiop in https://github.com/iterative/dvc/pull/9717\n\n\n**Full Changelog**: https://github.com/iterative/dvc/compare/3.4.0...3.5.0",
+  "testPatch": "diff --git a/tests/func/api/test_data.py b/tests/func/api/test_data.py\nindex dec5d4183..09267e8a8 100644\n--- a/tests/func/api/test_data.py\n+++ b/tests/func/api/test_data.py\n@@ -198,11 +198,13 @@ def test_get_url_subrepos(tmp_dir, scm, local_cloud):\n         local_cloud / \"files\" / \"md5\" / \"ac\" / \"bd18db4cc2f85cedef654fccc4a4d8\"\n     )\n     assert api.get_url(os.path.join(\"subrepo\", \"dir\", \"foo\")) == expected_url\n+    assert api.get_url(os.path.join(\"subrepo\", \"dir\", \"foo\"), repo=\".\") == expected_url\n \n     expected_url = os.fspath(\n         local_cloud / \"files\" / \"md5\" / \"37\" / \"b51d194a7513e45b56f6524f2d51f2\"\n     )\n     assert api.get_url(\"subrepo/bar\") == expected_url\n+    assert api.get_url(\"subrepo/bar\", repo=\".\") == expected_url\n \n \n def test_open_from_remote(tmp_dir, erepo_dir, cloud, local_cloud):\ndiff --git a/tests/unit/command/test_data_sync.py b/tests/unit/command/test_data_sync.py\nindex 9af90c529..13f180c88 100644\n--- a/tests/unit/command/test_data_sync.py\n+++ b/tests/unit/command/test_data_sync.py\n@@ -20,6 +20,10 @@ def test_fetch(mocker, dvc):\n             \"--run-cache\",\n             \"--max-size\",\n             \"10\",\n+            \"--type\",\n+            \"plots\",\n+            \"--type\",\n+            \"metrics\",\n         ]\n     )\n     assert cli_args.func == CmdDataFetch\n@@ -40,6 +44,7 @@ def test_fetch(mocker, dvc):\n         recursive=True,\n         run_cache=True,\n         max_size=10,\n+        types=[\"plots\", \"metrics\"],\n     )\n \n \ndiff --git a/tests/unit/repo/test_graph.py b/tests/unit/repo/test_graph.py\nindex 380ffa3c7..5aa1988b3 100644\n--- a/tests/unit/repo/test_graph.py\n+++ b/tests/unit/repo/test_graph.py\n@@ -2,7 +2,7 @@ import pytest\n from networkx import DiGraph\n from networkx.utils import graphs_equal\n \n-from dvc.repo.graph import get_steps, get_subgraph_of_nodes\n+from dvc.repo.graph import get_subgraph_of_nodes\n \n \n @pytest.mark.parametrize(\n@@ -36,34 +36,3 @@ def test_subgraph_of_nodes(nodes, downstream, expected_edges):\n     subgraph = get_subgraph_of_nodes(graph, nodes, downstream=downstream)\n     expected = DiGraph(expected_edges)\n     assert graphs_equal(expected, subgraph)\n-\n-\n-@pytest.mark.parametrize(\n-    \"nodes,downstream,expected_steps\",\n-    [\n-        ([], False, [4, 5, 2, 6, 7, 3, 1, 9, 8]),\n-        ([1], False, [4, 5, 2, 6, 7, 3, 1]),\n-        ([2], False, [4, 5, 2]),\n-        ([3], False, [6, 7, 3]),\n-        ([8], False, [9, 8]),\n-        ([2, 3, 8], False, [4, 5, 2, 6, 7, 3, 9, 8]),\n-        ([4], False, [4]),\n-        ([], True, [4, 5, 2, 6, 7, 3, 1, 9, 8]),\n-        ([1], True, [1]),\n-        ([9], True, [9, 8]),\n-        ([2], True, [2, 1]),\n-        ([6], True, [6, 3, 1]),\n-        ([2, 3, 8], True, [8, 2, 3, 1]),\n-        ([4, 7], True, [4, 2, 7, 3, 1]),\n-    ],\n-)\n-def test_steps(nodes, downstream, expected_steps):\n-    r\"\"\"\n-             1\n-           /   \\\n-          2     3      8\n-         / \\   / \\     |\n-        4   5 6   7    9\n-    \"\"\"\n-    graph = DiGraph({1: [2, 3], 2: [4, 5], 3: [6, 7], 8: [9]})\n-    assert get_steps(graph, nodes, downstream=downstream) == expected_steps\n",
+  "testCommand": "pytest --continue-on-collection-errors -rA",
+  "logParser": "parse_log_pytest",
+  "failToPass": [
+    "tests/func/api/test_data.py::test_get_url_subrepos",
+    "tests/unit/command/test_data_sync.py::test_fetch"
+  ],
+  "passToPass": [
+    "tests/func/api/test_data.py::TestAPI::test_get_url",
+    "tests/func/api/test_data.py::TestAPI::test_open",
+    "tests/func/api/test_data.py::test_api_missing_local_cache_exists_on_remote[file-False]",
+    "tests/func/api/test_data.py::test_api_missing_local_cache_exists_on_remote[inside-dir-False]",
+    "tests/func/api/test_data.py::test_get_url_granular",
+    "tests/func/api/test_data.py::test_missing",
+    "tests/func/api/test_data.py::test_open_granular",
+    "tests/func/api/test_data.py::test_open_not_cached",
+    "tests/func/api/test_data.py::test_open_scm_controlled",
+    "tests/func/api/test_data.py::test_read_with_subrepos[True]",
+    "tests/unit/command/test_data_sync.py::test_pull",
+    "tests/unit/command/test_data_sync.py::test_push",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes0-False-expected_edges0]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes1-False-expected_edges1]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes10-True-expected_edges10]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes11-True-expected_edges11]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes12-True-expected_edges12]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes13-True-expected_edges13]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes2-False-expected_edges2]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes3-False-expected_edges3]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes4-False-expected_edges4]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes5-False-expected_edges5]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes6-False-expected_edges6]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes7-True-expected_edges7]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes8-True-expected_edges8]",
+    "tests/unit/repo/test_graph.py::test_subgraph_of_nodes[nodes9-True-expected_edges9]"
+  ],
+  "source": {
+    "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+    "sha256": "74e7c63160ada4ceba71d5d89a9bb7c9794f4574b384458d546eb65cdb730520"
+  }
+}

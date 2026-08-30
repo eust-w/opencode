@@ -4,6 +4,13 @@ import type { Strategy } from "./protocol"
 
 export const BASELINE_CONTINUATION_PROMPT = "Please proceed with the next step."
 
+export const LogParser = z.enum([
+  "parse_log_pytest",
+  "parse_log_pytest_options",
+  "parse_log_pytest_pydantic",
+  "parse_log_pytest_v2",
+])
+
 export function dockerPortPublish(containerPort: number) {
   return `127.0.0.1:0:${containerPort}`
 }
@@ -28,9 +35,9 @@ export const TaskInput = z
     environmentSetupCommit: z.string().regex(/^[a-f0-9]{40}$/),
     image: z.string().min(1),
     problemStatement: z.string().min(1),
-    testPatch: z.string().min(1),
+    testPatch: z.string(),
     testCommand: z.string().min(1),
-    logParser: z.literal("parse_log_pytest"),
+    logParser: LogParser,
     failToPass: z.array(z.string().min(1)).min(1),
     passToPass: z.array(z.string().min(1)),
     source: z.object({
@@ -164,7 +171,8 @@ export function classifyIdleSession(input: {
   return input.usageComplete ? ("non-retryable-provider" as const) : ("retryable-provider" as const)
 }
 
-export function classifyTestPatch(input: { forwardApplies: boolean; reverseApplies: boolean }) {
+export function classifyTestPatch(input: { patch?: string; forwardApplies: boolean; reverseApplies: boolean }) {
+  if (input.patch !== undefined && !input.patch.trim()) return "absent" as const
   if (input.forwardApplies) return "apply" as const
   if (input.reverseApplies) return "already-applied" as const
   throw new Error("Model patch conflicts with the frozen test patch")
@@ -407,15 +415,33 @@ function provider(url: string, model: string, tools: boolean, output: number, pk
 
 const statuses = new Set(["PASSED", "FAILED", "SKIPPED", "ERROR", "XFAIL"])
 
-export function parsePytestLog(content: string) {
+export function parsePytestLog(content: string, parser: z.infer<typeof LogParser> = "parse_log_pytest") {
   return Object.fromEntries(
     content.split("\n").flatMap((line) => {
-      const status = line.split(/\s+/, 1)[0]
-      if (!statuses.has(status)) return []
-      const normalized = status === "FAILED" ? line.replaceAll(" - ", " ") : line
+      const cleaned =
+        parser === "parse_log_pytest_v2" || parser === "parse_log_pytest_pydantic"
+          ? line
+              .replace(/\[\d+m/g, "")
+              .replace(/[\x01-\x1f]/g, "")
+              .replace(parser === "parse_log_pytest_pydantic" ? /FAILED\s*\[.*?\]/ : /$^/, "FAILED")
+          : line
+      const first = cleaned.split(/\s+/, 1)[0]
+      const last = cleaned.trim().split(/\s+/).at(-1)
+      const suffix = parser === "parse_log_pytest_v2" || parser === "parse_log_pytest_pydantic"
+      if (!statuses.has(first) && (!suffix || !last || !statuses.has(last))) return []
+      if (!statuses.has(first)) {
+        const fields = cleaned.trim().split(/\s+/)
+        if (fields.length < 2) return []
+        return [[fields[0], fields[1]]]
+      }
+      const normalized = first === "FAILED" ? cleaned.replaceAll(" - ", " ") : cleaned
       const fields = normalized.split(/\s+/)
       if (fields.length <= 1) return []
-      return [[fields[1], fields[0]]]
+      const option = parser === "parse_log_pytest_options" ? fields[1].match(/^(.*?)\[(.*)\]$/) : undefined
+      const test = option
+        ? `${option[1]}[${option[2].startsWith("/") && !option[2].startsWith("//") && !option[2].includes("*") ? `/${option[2].split("/").at(-1)}` : option[2]}]`
+        : fields[1]
+      return [[test, fields[0]]]
     }),
   )
 }
