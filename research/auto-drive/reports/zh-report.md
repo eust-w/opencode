@@ -76,3 +76,11 @@ controller 实际返回了合法 `continue` JSON，但从 release 到完整响�
 系统层面的结论是：三态控制、统一 Session 接口、持久计数、确定 input ID、用户抢占和 V1 显式拒绝已有自动化证据；真实 canary 进一步验证了 supervisor 决策持久化、Session memory 和自动 queue 恢复。机制层面已观察到 Regex 假停止与 supervisor 延迟尾部两个失效模式，并用 v1.14 的失败即 `defer` 契约封住了后者的错误回退路径。
 
 研究效果结论仍为待验证。patch-baseline 质量门已经关闭，但单任务 canary 和单条负向 r9 pilot 都不能说明 Supervisor 总体优于或劣于其他策略，正式论文的 RQ1--RQ4 数值、置信区间和多重校正仍必须由冻结矩阵与 180 条双人标注产生。论文将无论结果正面、无显著差异或负面都如实完成。
+
+## v1.14 边界语料执行快照
+
+边界来源实验使用独立外部目录和 96 条冻结 Supervisor-only 轨迹。当前前 5 条被有效接纳，共 56 个完整模型请求、接纳费用 1.4671039 美元；它们均未解决任务，这只是语料采集状态，不是策略优劣结论。第 6 条在 32 个完整 HTTP 200 响应后触发“模型补丁与冻结测试补丁冲突”，按预注册规则以 0.413868 美元计费排除。
+
+第 7 条首次尝试在 provider admission 前失败，严格保持零请求、零费用，并消耗唯一一次基础设施重试。第二次尝试真实产生 6 个 worker 请求和 1 个 controller 请求，但 retry artifact 命名空间未投影到 gateway：代理把证据写入基础 run ID，执行器却从 attempt-2 目录读取，因此拒绝了空请求清单。6 个 worker 响应均为完整 HTTP 200；controller 请求在 hold 超时后以 1 个 proxy error 终止。连续 4 次账户读数稳定，隔离费用为 0.0906303 美元，usage 为 33,559 prompt 和 3,116 completion token。
+
+该错误没有被伪装成实验结果，也没有第三次重试。严格 reconciliation 工具逐一校验 retry 时间窗、7 个请求的唯一终止事件、6 份响应 usage、原始请求/响应哈希、稳定账单和单条费用上限，然后写入内容寻址的排除回执与幂等账本。修复提交 `260e9c835c` 显式向 gateway 传入 attempt artifact ID；117/117 测试、类型检查和零 provider attempt-2 namespace canary 均通过。当前有效轨迹 5 条、计费排除 2 条，边界账本 1.9716022 美元；计入 0.0900565 美元 preflight 后为 2.0616587 美元。顺序 runner 已从第 8 条继续。
