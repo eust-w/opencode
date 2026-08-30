@@ -45,7 +45,7 @@
 \raggedbottom
 
 \begin{abstract}
-Coding agents often end a conversational turn before the admitted software task is complete. Users then re-enter short prompts such as ``continue,'' even when the next action is safe, in scope, and inferable from the existing trace. We call this failure \emph{premature session handoff}. We present \system, a session-scoped controller that evaluates terminal worker turns at safe boundaries, chooses among \continueaction, \stopaction, and \deferaction, and durably admits bounded follow-up work. The design separates model execution from continuation admission, preserves user queue and steering priority, and uses event-sourced state plus deterministic input identifiers to recover exactly once across a decision-to-admission crash window. We define a preregistered evaluation on all 48 SWE-EVO long-horizon tasks, a 384-trajectory model and policy matrix, a balanced 180-boundary human-labeled corpus, component ablations, and fault injection. Primary outcomes cover task success, partial Fix Rate, manual continuation demand, unsafe continuation, redundant work, cost, latency, and recovery. This manuscript is an artifact-complete study draft: system and protocol claims are test-backed, while empirical outcome fields remain \ResultStatus{} until the frozen runs and independent annotations are complete.
+Coding agents often end a conversational turn before the admitted software task is complete. Users then re-enter short prompts such as ``continue,'' even when the next action is safe, in scope, and inferable from the existing trace. We call this failure \emph{premature session handoff}. We present \system, a session-scoped controller that evaluates terminal worker turns at safe boundaries, chooses among \continueaction, \stopaction, and \deferaction, and durably admits bounded follow-up work. The design separates model execution from continuation admission, preserves user queue and steering priority, and uses event-sourced state plus deterministic input identifiers to recover exactly once across a decision-to-admission crash window. We define a preregistered evaluation on all 48 SWE-EVO long-horizon tasks, a 384-trajectory model and policy matrix, a balanced 180-boundary human-labeled corpus, component ablations, and fault injection. Primary outcomes cover task success, partial Fix Rate, manual continuation demand, unsafe continuation, redundant work, cost, latency, and recovery. This manuscript is a pre-results study draft: system and protocol claims are test-backed, while empirical outcome fields remain \ResultStatus{} until the frozen runs and independent annotations are complete.
 \end{abstract}
 
 \begin{CCSXML}
@@ -70,7 +70,7 @@ Coding agents often end a conversational turn before the admitted software task 
 \maketitle
 
 \begin{center}
-\fbox{\parbox{0.94\columnwidth}{\small\textbf{Draft status.} The implementation and frozen protocol are available, but paid trajectories and two-person boundary annotations are not complete. Every red \ResultStatus{} field is generated from an explicit result macro and is not an empirical claim.}}
+\fbox{\parbox{0.94\columnwidth}{\small\textbf{Draft status.} The implementation and v1.14 protocol are available, and four v1.13 paid canary trajectories are reported descriptively. The formal matrix and two-person boundary annotations are not complete. Every red \ResultStatus{} field is generated from an explicit result macro and is not an empirical claim.}}
 \end{center}
 
 \section{Introduction}
@@ -164,7 +164,7 @@ The public V2 endpoint updates the Session state used by the UI, settings dialog
 
 The deterministic policy examines the trailing worker response for completion, continuation, choice, missing-information, permission-expansion, and destructive-action cues. Safety cues produce \deferaction{} before continuation patterns are considered. The supervisor policy receives the admitted initial goal, last worker output, optional trajectory context, and optional within-session memory. It must return strict JSON with an action, reason, optional next prompt, and optional memory update. Its tool set is empty, temperature is zero, output is capped at 1,024 tokens, and the call has a 15-second timeout.
 
-Malformed output, provider failure, or timeout falls back to the deterministic policy. This fallback preserves availability but is not treated as equivalent evidence: traces record the policy path, and the boundary study reports fallback cases separately. Project playbooks are read only when explicitly configured. The default memory lives in the Session database and never writes \path{.opencode/auto-drive.md} into the worktree.
+Malformed output, provider failure, an unavailable model or Session, an empty response, or timeout produces \deferaction{} under protocol v1.14. The controller therefore abstains instead of converting uncertainty into a regex guess or an automatic continuation. Traces record the failure path separately from a semantic supervisor decision. Project playbooks are read only when explicitly configured. The default memory lives in the Session database and never writes \path{.opencode/auto-drive.md} into the worktree.
 
 \subsection{Safety policy and action semantics}
 
@@ -192,7 +192,7 @@ Let $A(b)$ denote the set of concrete next actions visible at boundary $b$, $\op
 & \operatorname{scope}(a,P) \land \operatorname{safe}(a) \land \neg\operatorname{choice}(a).
 \end{align*}
 
-This predicate is not presented as a complete semantic model of software work. It documents the asymmetry implemented by the fallback and the human rubric: evidence of missing authority dominates evidence that work remains. The supervisor can supply a better interpretation of the trace, but cannot weaken this interface contract.
+This predicate is not presented as a complete semantic model of software work. It documents the asymmetry implemented by the deterministic baseline and the human rubric: evidence of missing authority dominates evidence that work remains. The supervisor can supply a better interpretation of the trace, but cannot weaken this interface contract; failure to obtain that interpretation is itself a reason to defer.
 
 \subsection{Durable exactly-once admission}
 
@@ -233,21 +233,22 @@ Table~\ref{tab:matrix} freezes the paid trajectory count. The four policies are:
   \caption{Frozen end-to-end trajectory matrix.}
   \label{tab:matrix}
   \centering
-  \begin{tabular}{lrrr}
+  \small
+  \begin{tabular}{p{0.43\columnwidth}rrr}
     \toprule
     Worker setting & Tasks & Repeats & Trajectories \\
     \midrule
-    Gemini primary & 48 & 1 & 192 \\
-    Gemini replicated subset & 12 & 2 extra & 96 \\
-    Claude Sonnet replication & 12 & 1 & 48 \\
-    GPT replication & 12 & 1 & 48 \\
+    DeepSeek Pro primary & 48 & 1 & 192 \\
+    DeepSeek Pro subset repeats & 12 & 2 extra & 96 \\
+    Qwen Max replication & 12 & 1 & 48 \\
+    DeepSeek Flash replication & 12 & 1 & 48 \\
     \midrule
     Total & & & 384 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The primary worker is Gemini 3.7 Flash. The twelve-task subset is repeated twice with the primary worker and once each with Claude Sonnet 4.6 and GPT-5.4. Every supervisor is Gemini 3.7 Flash, isolating worker-model variation. The subset covers every repository and samples low/high upstream PR and \texttt{FAIL\_TO\_PASS} proxies. Cross-model results are replication evidence rather than the primary estimate.
+The primary worker is \path{d-robotics/deepseek-v4-pro}. The twelve-task subset receives two extra primary-worker repeats and one run each with \path{d-robotics/qwen3.7-max} and \path{d-robotics/deepseek-v4-flash}. Every supervisor is \path{d-robotics/qwen3.8-max}, isolating one source of controller variation. Qwen provides a different-family replication, whereas DeepSeek Flash is only a same-family scale or variant replication. The subset covers every repository and samples low/high upstream PR and \texttt{FAIL\_TO\_PASS} proxies. Gateway model aliases are recorded as such and are not represented as direct-provider revisions.
 
 Each run uses a pinned image digest and base commit, temperature zero, six worker steps per segment, five automatic continuations, 45 minutes, and at most two concurrent tasks. Exact provider model versions and normalized request hashes are mandatory trajectory fields. The host executor holds provider credentials; task containers do not receive them.
 
@@ -314,7 +315,7 @@ Table~\ref{tab:results} is generated from the frozen trajectory index. The main 
   \end{tabular}
 \end{table}
 
-Before the formal matrix, we completed a paid v1.13 execution canary on one DVC task. Table~\ref{tab:canary-ablation} reports all four accepted policy trajectories. The canary used the qualified D-Robotics gateway with a DeepSeek worker and Qwen controller rather than the preregistered formal model matrix. Every trajectory was unresolved at its own first boundary; oracle and blind ultimately resolved, while regex stopped immediately and the supervisor resumed once before a controller timeout triggered the frozen regex fallback. These rows are independent, unpaired trajectories, so they establish mechanism and failure cases rather than a treatment effect.
+Before the formal matrix, we completed a paid v1.13 execution canary on one DVC task. Table~\ref{tab:canary-ablation} reports all four accepted policy trajectories. The canary used the same D-Robotics primary worker and controller identifiers as the v1.14 formal protocol, but its historical v1.13 run IDs are not formal matrix rows. Every trajectory was unresolved at its own first boundary; oracle and blind ultimately resolved, while regex stopped immediately and the supervisor resumed once before a controller timeout triggered the then-frozen regex fallback. These rows are independent, unpaired trajectories, so they establish mechanism and failure cases rather than a treatment effect.
 
 \input{generated/canary-v1.13}
 
@@ -336,7 +337,7 @@ The supervisor's token/cost difference is \CostDelta{} and latency difference is
 
 After the frozen run, two reviewers will assign one primary failure category and optional secondary categories to unresolved or unsafe cases. Planned categories are: worker capability failure; wrong continuation decision; correct continuation with ineffective next prompt; repeated strategy; stale or misleading summary; memory contamination within a Session; verifier mismatch; permission/defer error; provider/runtime failure; and benchmark defect.
 
-The v1.13 canary already supplies two observed cases without changing the frozen taxonomy. Regex produced a missed continuation: it persisted STOP on an empty patch even though the worker listed unfinished implementation and validation and the F2P test failed. The full supervisor correctly recovered that boundary and durably admitted one queue continuation. At the next boundary, its eventual semantic action was again CONTINUE, but the streamed response completed 16.839 seconds after release and missed the 15-second deadline; the preregistered regex fallback then persisted STOP. The extra segment produced no patch and is counted as redundant. This is classified as a provider/runtime latency failure with a secondary wrong fallback decision, not as evidence that supervision generally harms utility.
+The v1.13 canary already supplies two observed cases without changing the frozen taxonomy. Regex produced a missed continuation: it persisted STOP on an empty patch even though the worker listed unfinished implementation and validation and the F2P test failed. The full supervisor correctly recovered that boundary and durably admitted one queue continuation. At the next boundary, its eventual semantic action was again CONTINUE, but the streamed response completed 16.839 seconds after release and missed the 15-second deadline; the v1.13 regex fallback then persisted STOP. The extra segment produced no patch and is counted as redundant. This is classified as a provider/runtime latency failure with a secondary wrong fallback decision, not as evidence that supervision generally harms utility. Before any formal row was accepted, v1.14 changed failure handling to \deferaction{} while preserving the 15-second deadline and all experimental factors.
 
 We will sample both false continuations and missed continuations, preserving task and worker strata. Error categories are descriptive and cannot remove a failure from quantitative analysis. Suspected benchmark defects are reported with evidence and sensitivity analyses, but the primary frozen result remains intact.
 
@@ -344,7 +345,7 @@ We will sample both false continuations and missed continuations, preserving tas
 
 \textbf{Construct validity.} A static ``continue'' input is only an approximation to human follow-up. Manual continuation count measures interaction demand, not user satisfaction. The three labels compress nuanced states; the guide and dual annotation mitigate but do not eliminate disagreement.
 
-\textbf{Internal validity.} Provider services may be nondeterministic at temperature zero, and model aliases may move. We therefore record resolved model versions and request hashes, repeat the primary worker on a stratified subset, and pair each off prefix with its own trace. The same Gemini controller across workers isolates one source of variation but may favor outputs it understands better.
+\textbf{Internal validity.} Provider services may be nondeterministic at temperature zero, and model aliases may move. We therefore record resolved model versions and request hashes, repeat the primary worker on a stratified subset, and pair each off prefix with its own trace. The same Qwen 3.8 Max controller across workers isolates one source of variation but may favor outputs it understands better. The gateway aliases do not reveal direct upstream revisions, limiting reproducibility outside the sealed gateway snapshot.
 
 The single-task canary is especially vulnerable to this threat: its policy rows are independent trajectories, not counterfactual replays. We therefore report its costs, continuations, and outcomes descriptively and do not include it in McNemar tests, bootstrap intervals, or Holm correction.
 

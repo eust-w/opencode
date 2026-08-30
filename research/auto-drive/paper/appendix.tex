@@ -72,8 +72,8 @@ The exact 54/126 split is group-constrained by base trajectory. The split routin
     Admission before promotion & The pending input survives restart and promotes once. \\
     Duplicate wake & No duplicate provider execution or SessionInput row. \\
     User preemption & Real steer/queue input takes priority and begins a new chain. \\
-    Supervisor timeout & The call terminates at 15 seconds and uses the recorded fallback. \\
-    Invalid JSON & Parsing falls back without an implicit unsafe continuation. \\
+    Supervisor timeout & The call terminates at 15 seconds, persists DEFER, and admits no continuation. \\
+    Invalid JSON & Parsing persists DEFER without heuristic guessing or implicit continuation. \\
     Retryable provider failure & Retries are finite and visible in the trace. \\
     Non-retryable provider failure & Execution stops immediately and counts as failure. \\
     Maximum count & No input numbered \texttt{maxRuns + 1} is admitted. \\
@@ -85,7 +85,7 @@ The exact 54/126 split is group-constrained by base trajectory. The split routin
 
 Fault injection operates at named storage boundaries rather than arbitrary wall-clock delays. For the first crash window, a failpoint terminates the process after the decided event commits and before input admission begins. The restarted drain reloads the event, recomputes no decision, and reconciles the stored input ID. For the second window, termination occurs after admission commits but before the scheduler can promote the input. Restart must discover the pending row; creating a replacement is a failure even if the transcript text would match.
 
-Duplicate wake testing issues multiple advisory wakes for the same Session while one drain is active. The process-local coordinator must join or coalesce them, while different Session IDs remain eligible for concurrent drains. User-preemption testing inserts both steering and queued user input around an automatic pending row and verifies real-user priority plus a fresh automatic chain. Timeout and invalid-JSON tests record the supervisor failure mode and selected deterministic fallback. Provider-error tests distinguish retryable from non-retryable errors and assert the five-attempt bound. The maximum-count scenario restarts between continuations to ensure the durable count, rather than process memory, enforces the limit.
+Duplicate wake testing issues multiple advisory wakes for the same Session while one drain is active. The process-local coordinator must join or coalesce them, while different Session IDs remain eligible for concurrent drains. User-preemption testing inserts both steering and queued user input around an automatic pending row and verifies real-user priority plus a fresh automatic chain. Timeout, provider-error, empty-response, unavailable-model, and invalid-JSON tests record the supervisor failure mode and require explicit DEFER. Provider-error tests also distinguish retryable from non-retryable worker errors and assert the five-attempt bound. The maximum-count scenario restarts between continuations to ensure the durable count, rather than process memory, enforces the limit.
 
 Recovery success requires all invariants simultaneously: one source input ID, correct delivery mode, unchanged prompt, correct chain and sequence metadata, no skipped user input, no extra provider turn, and a traceable terminal classification. Merely reaching an idle Session is not recovery evidence.
 
@@ -114,7 +114,7 @@ The USD 50 pilot pool is gated separately. Its purpose is to validate container 
 
 An engineering preflight on 2026-08-30 deviated from the intended non-primary pilot by using the smallest locally feasible official image, task \texttt{iterative\_\_dvc\_0.30.0\_0.30.1}, under a host disk constraint. No normal handoff boundary or code change was obtained, and the traces were rejected from the result index. The preflight exposed an invalid final-step model-role construction and a 20-request free-tier quota. Main dispatch therefore remains disabled. If the study proceeds, the unchanged all-48 estimate is accompanied by a sensitivity analysis excluding this canary-contaminated task.
 
-After transport, request-routing, output-limit, controller-release, and grader amendments, the v1.13 D-Robotics canary completed one accepted trajectory for each of oracle, blind, regex, and supervisor policies on \texttt{iterative\_\_dvc\_2.21.1\_2.21.2}. All four first boundaries were unresolved; oracle and blind eventually resolved, regex stopped immediately, and supervisor resumed once before a 15-second controller timeout invoked regex fallback. The four rows are retained only as a single-task, unpaired paid canary and do not enter RQ estimates. Formal dispatch remains disabled until the annotation set and a full-capacity receipt for the preregistered model matrix are frozen. The unchanged all-48 estimate will also be accompanied by the preregistered canary-contamination sensitivity analysis.
+After transport, request-routing, output-limit, controller-release, and grader amendments, the v1.13 D-Robotics canary completed one accepted trajectory for each of oracle, blind, regex, and supervisor policies on \texttt{iterative\_\_dvc\_2.21.1\_2.21.2}. All four first boundaries were unresolved; oracle and blind eventually resolved, regex stopped immediately, and supervisor resumed once before a 15-second controller timeout invoked the historical v1.13 regex fallback. The four rows are retained only as a single-task, unpaired paid canary and do not enter RQ estimates. Before any formal row was accepted, v1.14 changed supervisor timeout, unavailable-model, provider-error, empty-response, and malformed-output handling to DEFER, retained the 15-second bound and model matrix, and regenerated all 384 run IDs. Formal dispatch remains disabled until the annotation set and a fresh full-capacity v1.14 receipt are frozen. The unchanged all-48 estimate will also be accompanied by the preregistered canary-contamination sensitivity analysis.
 
 \subsection{Model and continuation request contract}
 
@@ -128,11 +128,11 @@ Table~\ref{tab:request-contract} lists the provider-independent request fields. 
     \toprule
     Component & Field & Frozen value \\
     \midrule
-    Worker & Models & Gemini 3.7 Flash; Claude Sonnet 4.6; GPT-5.4 \\
-    Worker & Sampling & Temperature 0; tool choice auto \\
+    Worker & Models & D-Robotics DeepSeek V4 Pro; Qwen 3.7 Max; DeepSeek V4 Flash \\
+    Worker & Sampling & Temperature 0; low reasoning; 4,096 output tokens; tool choice auto \\
     Worker & Horizon & Six steps per segment; five continuations; 2,700 seconds \\
-    Supervisor & Model and sampling & Gemini 3.7 Flash; temperature 0; no tools \\
-    Supervisor & Bound & 1,024 output tokens; 15 seconds; regex fallback \\
+    Supervisor & Model and sampling & D-Robotics Qwen 3.8 Max; temperature 0; no tools \\
+    Supervisor & Bound & 1,024 output tokens; 15 seconds; DEFER on failure \\
     Continuation & Delivery & Queue; ``Please proceed with the next step.'' \\
     Off policy & Derivation & First-boundary prefix of the same paid trajectory \\
     \bottomrule

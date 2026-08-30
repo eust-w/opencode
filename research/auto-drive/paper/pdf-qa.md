@@ -7,33 +7,33 @@ Date: 2026-08-30
 - TeX image: `opencode-autodrive-texlive-locked@sha256:73c0d3f3b9d78663d7f549a8d1d113f153aa16b244338b6942e978a74baa70cd`
 - Build network: disabled
 - Engine: pdfTeX 3.141592653-2.6-1.40.29, TeX Live 2026
-- Anonymous PDF SHA-256: `dd71f424147ddfd77d5006f4978865144995b0574688fd3ac1a16f751b3f462c`
-- Placeholder-author PDF SHA-256: `088dcec5ad078bc5d396e8826fdfdd90c9e475d6616e87796a2782a74de2d179`
-- Deterministic arXiv source archive SHA-256: `af99ab402d878edb080d0aa9f9faf7a0921c872a0dabc5192dd97f40d9cd158f`
-- The previously recorded local image digest had been pruned and could not be reproduced byte-for-byte. The replacement image was rebuilt from the same pinned Dockerfile and base, with provenance disabled, then locked by the immutable digest above. The source and output audit was repeated against that replacement.
+- Anonymous PDF SHA-256: `e5bef17d705b2af614821a8c7b577d8d1ccc75d946d157df90c845cc938ad0ca`
+- Placeholder-author PDF SHA-256: `f9fe9439409c9d3f2d1da6f6b73003bd0fb6a8c44d37094fbf0ed3b136f69936`
+- Deterministic arXiv source archive SHA-256: `f319b1552d9f80e7c114dd1fa516e9ae3fee1044930621b0edd49f77cfe1b651`
 
 ## Structural and textual checks
 
-- Both outputs are 11-page, US Letter, unencrypted PDF 1.7 files with no JavaScript.
-- `pdfplumber` text extraction succeeds for every page: 57,568 characters in the anonymous version and 57,802 in the placeholder-author version.
-- Title, references, appendix, full 48-task manifest, the v1.13 canary table values, and the 16.839-second timeout disclosure are extractable.
-- The anonymous file contains `AnonymousAuthor(s)` after extraction and no author placeholder. The signed-wrapper draft contains the author placeholder and `author@example.invalid`.
-- Each PDF contains 34 visible `PENDING` tokens and zero unresolved `??` references. Pending result macros are intentional publication gates, not empirical claims.
+- The anonymous output is 11 pages and the placeholder-author output is 12 pages. Both are US Letter, unencrypted PDF 1.7 files.
+- `pdfplumber` extracted 58,621 characters from the anonymous version and 59,497 from the placeholder-author version.
+- Title, references, appendix, full 48-task manifest, v1.14 protocol text, the v1.13 canary values, and the 16.839-second historical timeout disclosure are extractable.
+- No extracted stale Gemini, Claude Sonnet, or GPT-5.4 model name remains. The D-Robotics DeepSeek/Qwen matrix and DEFER-on-failure request contract are extractable.
+- The anonymous file contains the anonymous marker and no author placeholder. The placeholder-author file contains the placeholder and invalid example email only.
+- Each PDF contains 25 visible `Pending` result values and zero unresolved `??` references. Pending macros are intentional publication gates, not empirical claims.
 
 ## Fonts and logs
 
-- All 12 used fonts have non-empty embedded programs.
-- All fonts are subset Type 1 fonts; no Type 3 fonts are present.
-- Final LaTeX logs report no undefined references, undefined citations, BibTeX warnings, or overfull boxes.
-- The only final warning is the ACM `balance` package noting that `\\balance` was called in the second column; pages 10 and 11 were rendered and contain no clipping or overlap.
+- Both files use 12 distinct font resources; every resource has an embedded font program.
+- All font resources are subset Type 1 fonts; no Type 3 font is present.
+- Final LaTeX logs report no undefined references, undefined citations, BibTeX warnings, overfull boxes, or overfull vertical boxes.
+- The only final warning is the ACM `balance` package noting that `\\balance` was called in the second column.
 
 ## Visual audit
 
-Every page of the current anonymous PDF was rendered at 96 DPI for a whole-document audit; pages 5 and 6 were additionally rendered at 144 DPI to inspect the new result disclosure and Table 4. Page 9 was re-rendered at 144 DPI after repairing the task identifier's `\\texttt` markup. The placeholder-author title page was rendered at 144 DPI, while its shared body is byte-generated from the same `main.tex`. Titles, line numbers, tables, equations, references, appendix headings, red pending values, and the 48-row task manifest are legible. No inspected page contains clipping, unintended overlap, missing glyphs, or content outside the page boundary.
+All 11 anonymous pages and all 12 placeholder-author pages were rendered at 110 DPI and inspected in complete-document contact sheets. Titles, author modes, line numbers, tables, equations, references, appendix headings, red pending values, request contract, and the 48-row task manifest are legible. No page contains clipping, unintended overlap, missing glyphs, or content outside the page boundary.
 
 ## arXiv source archive
 
-- The archive contains only `arxiv.tex`, `main.tex`, `appendix.tex`, `references.bib`, and three generated TeX fragments, including the v1.13 canary table.
+- The archive contains only `arxiv.tex`, `main.tex`, `appendix.tex`, `references.bib`, and three generated TeX fragments, including the historical v1.13 canary table.
 - It contains no PDF, raw trace, build cache, absolute local path, host address, or secret-shaped string.
 - Two consecutive packaging runs produced the same SHA-256.
-- A clean extraction compiled to an equivalent 11-page placeholder-author PDF inside the digest-locked, network-disabled TeX image. The rebuild regenerates PDF creation and modification timestamps, so byte identity is not required; structural and extracted result checks passed.
+- A clean extraction compiled to a 12-page placeholder-author PDF inside the digest-locked, network-disabled TeX image with no overfull boxes or unresolved references.

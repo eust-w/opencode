@@ -2,24 +2,26 @@
 
 - [x] Preregistered claim boundary and four research questions
 - [x] Upstream SWE-EVO commit and Arrow SHA-256
-- [x] Exact 48-task manifest and 384-run matrix
-- [x] Model request and budget contracts
+- [x] Exact 48-task manifest and deterministic 384-run v1.14 matrix
+- [x] D-Robotics model request, 15-second DEFER fallback, and budget contracts
 - [x] Boundary annotation guide and grouped split code
 - [x] Fault-injection invariants
 - [x] Statistics implementations with deterministic tests
 - [x] Secret-shaped content rejection
 - [x] AutoDrive tests, typechecks, codegen, app build, and browser regression
-- [x] Branch diff and secret scan
-- [ ] Repository-wide dependency audit (237 existing findings; see `../reports/verification.md`)
+- [x] Accepted four-policy v1.13 canary with descriptive generated table
+- [x] Branch diff, source archive, and secret scans
+- [ ] Repository-wide dependency audit (237 advisories; see `../reports/verification.md`)
+- [ ] Fresh full-capacity v1.14 provider receipt
 - [ ] Two independent boundary annotation files and kappa gate
 - [ ] Non-primary pilot accepted
-- [ ] 384 provenance-complete trajectories
+- [ ] 384 provenance-complete v1.14 trajectories
 - [ ] Frozen derived CSV, JSON, tables, and figures
 - [ ] Error-analysis adjudication
-- [ ] Immutable implementation and result snapshot commits
+- [ ] Immutable formal result snapshot commit
 - [x] Anonymous PDF visual audit
-- [x] Signed PDF visual audit
-- [x] arXiv source archive validation
+- [x] Placeholder-author PDF visual audit
+- [x] Deterministic arXiv source archive validation
 - [ ] Real author, affiliation, email, order, license, and final PDF approval
 
-No unchecked empirical or identity item may be represented as complete in the paper or archive.
+No unchecked empirical, security, capacity, or identity item may be represented as complete in the paper or archive.
