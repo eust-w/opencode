@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "provider": "d-robotics-gateway",
+  "gatewaySoftware": "LiteLLM 1.90.0",
+  "billing": "sponsored",
+  "modelVersion": "deepseek-v4-pro",
+  "trajectoryCapacity": 1,
+  "spendEndpoint": "/key/info",
+  "spendAtCaptureUSD": 0.0235005,
+  "providerMaxBudgetUSD": null,
+  "blocked": null,
+  "credentialExpiresAt": null,
+  "localCanarySpendCapUSD": 5,
+  "catalogModelsVerified": ["deepseek-v4-pro", "qwen3.7-max", "deepseek-v4-flash", "qwen3.8-max"],
+  "transport": "openai-responses",
+  "reasoning": { "effort": "low" },
+  "maxOutputTokens": 4096,
+  "compatibilityProbe": {
+    "httpStatus": 200,
+    "responseStatus": "completed",
+    "outputTypes": ["reasoning", "message"],
+    "inputTokens": 8,
+    "outputTokens": 11,
+    "rawSHA256": "a50eacf335495e1a565e5e028620aae635271f63126c419f14a17f0f60c92930"
+  },
+  "realContextQualification": "research/auto-drive/pilot/2026-08-30-terminal-context-qualification",
+  "blockedReason": null
+}
