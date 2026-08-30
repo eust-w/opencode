@@ -34,3 +34,7 @@ The attempt-one receipt SHA-256 remains `fac69b3cd006310a2e821958f0d8ae1cdbbae51
 ## Resumption
 
 The namespace fix passed 117/117 evaluation tests, type checking, validation, formatting, targeted lint, diff checks, secret scanning, remote replay, and a zero-provider attempt-two namespace canary. Runner v3 resumed from frozen row eight, `adr_270c032aeb168dee0342`, at `2026-08-30T22:10:13Z`. This log records acquisition integrity only; it is not an RQ or ablation result.
+
+## Candidate pipeline preview
+
+The five accepted trajectories produce eight blinded boundary candidates after complete trajectory artifact, patch, and Session transcript verification. They cover five base trajectories and three tasks; one trajectory contains four boundaries and the other four contain one each. The preview SHA-256 is `6ec72982d25ef1f563a9c7abd2fdb0f0434973a77d9379a398cc2686a78aa777`. These examples are unlabelled previews, not the frozen 180-example boundary dataset.
