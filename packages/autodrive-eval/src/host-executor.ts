@@ -185,6 +185,156 @@ export function classifyTestPatch(input: { forwardApplies: boolean; reverseAppli
   throw new Error("Model patch conflicts with the frozen test patch")
 }
 
+const FailureGatewayEvent = z
+  .object({
+    type: z.string(),
+    status: z.number().optional(),
+    usageComplete: z.boolean().optional(),
+    promptTokens: z.number().optional(),
+    completionTokens: z.number().optional(),
+  })
+  .loose()
+
+const ExecutorFailureReceipt = z
+  .object({
+    schemaVersion: z.literal(1),
+    protocol: z.string().min(1),
+    classification: z.enum(["excluded-charged-evaluation-failure", "executor-failure"]),
+    stage: z.string().min(1),
+    code: z.string().min(1),
+    runID: z.string().min(1),
+    taskID: z.string().min(1),
+    attempt: z.number().int().min(1).max(2),
+    startedAt: z.string().min(1),
+    recordedAt: z.string().min(1),
+    error: z.object({ name: z.string().min(1), message: z.string().min(1) }).strict(),
+    sessionID: z.string().min(1).optional(),
+    gateway: z
+      .object({
+        settlement: z
+          .object({
+            attempted: z.boolean(),
+            completed: z.boolean(),
+            error: z.string().min(1).optional(),
+          })
+          .strict(),
+        requests: z.number().int().nonnegative(),
+        responses: z.number().int().nonnegative(),
+        non200Responses: z.number().int().nonnegative(),
+        proxyErrors: z.number().int().nonnegative(),
+        usageCompleteResponses: z.number().int().nonnegative(),
+        promptTokens: z.number().int().nonnegative(),
+        completionTokens: z.number().int().nonnegative(),
+        baselineSpendUSD: z.number().nonnegative().optional(),
+        settledSpendUSD: z.number().nonnegative().optional(),
+        observedSpendDeltaUSD: z.number().nonnegative().optional(),
+        captureErrors: z.array(z.string().min(1)).optional(),
+      })
+      .strict(),
+    acceptance: z
+      .object({ trajectoryAccepted: z.literal(false), ledgerRowWritten: z.literal(false) })
+      .strict(),
+    artifacts: z.array(
+      z
+        .object({
+          path: z.string().min(1),
+          sha256: z.string().regex(/^[a-f0-9]{64}$/),
+        })
+        .strict(),
+    ),
+    recordingErrors: z.array(z.string().min(1)),
+  })
+  .strict()
+
+export async function captureGatewayFailureEvidence(input: {
+  proxyStarted: boolean
+  baselineSpend?: number
+  readRequests: () => Promise<Record<string, unknown>[]>
+  waitForSettlement: () => Promise<void>
+  readEvents: () => Promise<Record<string, unknown>[]>
+  readSettledSpend: () => Promise<number>
+}) {
+  const initialRequests = await attempt(input.readRequests)
+  const shouldSettle = input.proxyStarted && (!initialRequests.ok || initialRequests.value.length > 0)
+  const settlement = shouldSettle ? await attempt(input.waitForSettlement) : { ok: true as const, value: undefined }
+  const finalRequests = await attempt(input.readRequests)
+  const events = await attempt(input.readEvents)
+  const requests = finalRequests.ok ? finalRequests.value : initialRequests.ok ? initialRequests.value : []
+  const parsedEvents = events.ok
+    ? events.value.flatMap((event) => {
+        const parsed = FailureGatewayEvent.safeParse(event)
+        return parsed.success ? [parsed.data] : []
+      })
+    : []
+  const responses = parsedEvents.filter((event) => event.type === "provider-response")
+  const usage = responses.filter((event) => event.status === 200 && event.usageComplete === true)
+  const spend =
+    input.baselineSpend !== undefined && input.proxyStarted && requests.length > 0
+      ? await attempt(input.readSettledSpend)
+      : undefined
+  const captureErrors = [
+    initialRequests.ok ? undefined : `initial requests: ${initialRequests.error}`,
+    finalRequests.ok ? undefined : `final requests: ${finalRequests.error}`,
+    events.ok ? undefined : `events: ${events.error}`,
+    spend && !spend.ok ? `spend: ${spend.error}` : undefined,
+  ].filter((item): item is string => !!item)
+
+  return {
+    settlement: {
+      attempted: shouldSettle,
+      completed: settlement.ok,
+      ...(!settlement.ok ? { error: settlement.error } : {}),
+    },
+    requests: requests.length,
+    responses: responses.length,
+    non200Responses: responses.filter((event) => event.status !== 200).length,
+    proxyErrors: parsedEvents.filter((event) => event.type === "proxy-error").length,
+    usageCompleteResponses: usage.length,
+    promptTokens: usage.reduce((sum, event) => sum + (event.promptTokens ?? 0), 0),
+    completionTokens: usage.reduce((sum, event) => sum + (event.completionTokens ?? 0), 0),
+    ...(input.baselineSpend !== undefined ? { baselineSpendUSD: input.baselineSpend } : {}),
+    ...(spend?.ok
+      ? {
+          settledSpendUSD: spend.value,
+          observedSpendDeltaUSD: Number(Math.max(0, spend.value - (input.baselineSpend ?? spend.value)).toFixed(7)),
+        }
+      : {}),
+    ...(captureErrors.length ? { captureErrors } : {}),
+  }
+}
+
+export function classifyExecutorFailure(error: unknown, stage: string) {
+  const details = errorDetails(error)
+  if (details.message === "Model patch conflicts with the frozen test patch")
+    return {
+      classification: "excluded-charged-evaluation-failure" as const,
+      stage: `${stage}-test-patch-conflict`,
+      code: "model-patch-conflicts-frozen-test-patch" as const,
+      ...details,
+    }
+  return {
+    classification: "executor-failure" as const,
+    stage,
+    code: "executor-error" as const,
+    ...details,
+  }
+}
+
+export function parseExecutorFailureReceipt(input: unknown) {
+  return ExecutorFailureReceipt.parse(input)
+}
+
+async function attempt<T>(run: () => Promise<T>) {
+  const [result] = await Promise.allSettled([Promise.resolve().then(run)])
+  if (result.status === "fulfilled") return { ok: true as const, value: result.value }
+  return { ok: false as const, error: errorDetails(result.reason).message }
+}
+
+function errorDetails(error: unknown) {
+  if (error instanceof Error) return { name: error.name, message: error.message }
+  return { name: "UnknownError", message: String(error) }
+}
+
 function permissions() {
   return { "*": "allow" as const, question: "deny" as const, external_directory: "deny" as const }
 }

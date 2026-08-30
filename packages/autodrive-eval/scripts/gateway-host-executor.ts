@@ -8,12 +8,15 @@ import { gatewayRequestsSettled, requireCompleteGatewayUsage } from "../src/gate
 import {
   buildAutoDriveUpdate,
   buildTaskPrompt,
+  captureGatewayFailureEvidence,
+  classifyExecutorFailure,
   classifyIdleSession,
   classifyTestPatch,
   decideExternalContinuation,
   dockerPortPublish,
   gradePytest,
   hasExperimentModels,
+  parseExecutorFailureReceipt,
   parsePytestLog,
   parseTaskInput,
   prepareExperimentConfig,
@@ -64,6 +67,7 @@ const gatewayRoot = path.join(artifactRoot, "gateway", input.run.id)
 const requestManifest = path.join(gatewayRoot, "requests.jsonl")
 const proxyTrace = path.join(gatewayRoot, "proxy.jsonl")
 const controlRoot = path.join(gatewayRoot, "control")
+const failurePath = path.join(artifactRoot, "failures", input.run.id, `attempt-${input.attempt}.json`)
 const startedAt = new Date()
 
 await Promise.all([
@@ -79,6 +83,7 @@ await trace({ type: "executor-started", runID: input.run.id, attempt: input.atte
 let proxyStarted = false
 let taskStarted = false
 let networkCreated = false
+const execution: { baselineSpend?: number; sessionID?: string; stage: string } = { stage: "setup" }
 
 try {
   await prepareExperimentConfig(opencodeConfigRoot, {
@@ -94,6 +99,7 @@ try {
   networkCreated = true
 
   const baselineSpend = await readSpend()
+  execution.baselineSpend = baselineSpend
   await command([
     "docker",
     "run",
@@ -218,6 +224,7 @@ try {
       model: { providerID: "openai", id: workerModel },
     }),
   })
+  execution.sessionID = session.id
   await api(address, `/api/session/${session.id}/auto-drive`, {
     method: "PUT",
     headers,
@@ -237,12 +244,16 @@ try {
   })
 
   const gradeCache = new Map<string, Awaited<ReturnType<typeof gradePatch>>>()
+  execution.stage = "session-drain"
   const drained = await drain(address, session.id, headers)
   const boundaryPatches = drained.patches
   const finalPatch = await capturePatch("final")
   const firstPatch = boundaryPatches[0]?.content ?? finalPatch
+  execution.stage = "first-boundary-grader"
   const firstGrade = await gradeCached("first-boundary", firstPatch)
+  execution.stage = "final-grader"
   const finalGrade = firstPatch === finalPatch ? firstGrade : await gradeCached("final", finalPatch)
+  execution.stage = "session-artifacts"
   const info = await api<{
     autoDrive: { status: { action?: string; continuationCount: number; reason?: string } }
   }>(address, `/api/session/${session.id}`, { headers })
@@ -251,6 +262,7 @@ try {
   await trace({ type: "session-finished", autoDrive: info.autoDrive, messages, context })
   await Bun.write(path.join(patchRoot, "final.diff"), finalPatch)
 
+  execution.stage = "gateway-settlement"
   await waitForGatewaySettlement()
   const requests = await readJSONL(requestManifest)
   const proxyEvents = await readJSONL(proxyTrace)
@@ -265,6 +277,7 @@ try {
   const serverLog = await command(["docker", "logs", taskName], { allowFailure: true })
   await trace({ type: "server-log", stdout: serverLog.stdout, stderr: serverLog.stderr })
   const endedAt = new Date()
+  execution.stage = "trajectory-finalization"
   const trajectory = parseTrajectory({
     schemaVersion: 3,
     runID: input.run.id,
@@ -590,20 +603,6 @@ try {
     throw new Error("Gateway proxy did not become ready")
   }
 
-  async function waitForGatewaySettlement() {
-    const deadline = Date.now() + 5 * 60_000
-    while (Date.now() < deadline) {
-      const requests = await readJSONL(requestManifest)
-      const events = await readJSONL(proxyTrace)
-      if (gatewayRequestsSettled(events, requests.length)) {
-        await trace({ type: "gateway-settled", requests: requests.length })
-        return
-      }
-      await Bun.sleep(200)
-    }
-    throw new Error("Gateway requests did not settle before the frozen deadline")
-  }
-
   async function waitForServer() {
     const deadline = Date.now() + 90_000
     while (Date.now() < deadline) {
@@ -623,10 +622,101 @@ try {
     throw new Error("OpenCode server did not become ready")
   }
 
+} catch (error) {
+  const captured = await Promise.allSettled([recordExecutorFailure(error)])
+  if (captured[0].status === "rejected") {
+    const failure = classifyExecutorFailure(captured[0].reason, "failure-receipt")
+    assertSecretFree(failure.message)
+    console.error(`Failure receipt capture failed: ${failure.message}`)
+  }
+  throw error
 } finally {
   if (taskStarted) await command(["docker", "rm", "--force", taskName], { allowFailure: true })
   if (proxyStarted) await command(["docker", "rm", "--force", proxyName], { allowFailure: true })
   if (networkCreated) await command(["docker", "network", "rm", networkName], { allowFailure: true })
+}
+
+async function recordExecutorFailure(error: unknown) {
+  const failure = classifyExecutorFailure(error, execution.stage)
+  const gateway = await captureGatewayFailureEvidence({
+    proxyStarted,
+    baselineSpend: execution.baselineSpend,
+    readRequests: () => readJSONL(requestManifest),
+    waitForSettlement: waitForGatewaySettlement,
+    readEvents: () => readJSONL(proxyTrace),
+    readSettledSpend,
+  })
+  const failureTrace = await Promise.allSettled([
+    trace({
+      type: "executor-failed",
+      classification: failure.classification,
+      stage: failure.stage,
+      code: failure.code,
+      error: { name: failure.name, message: failure.message },
+      gateway,
+    }),
+  ])
+  const artifacts = await Promise.allSettled([
+    failureArtifact(tracePath),
+    failureArtifact(requestManifest),
+    failureArtifact(proxyTrace),
+  ])
+  const receipt = parseExecutorFailureReceipt({
+    schemaVersion: 1,
+    protocol: protocol.version,
+    classification: failure.classification,
+    stage: failure.stage,
+    code: failure.code,
+    runID: input.run.id,
+    taskID: input.run.taskID,
+    attempt: input.attempt,
+    startedAt: startedAt.toISOString(),
+    recordedAt: new Date().toISOString(),
+    error: { name: failure.name, message: failure.message },
+    ...(execution.sessionID ? { sessionID: execution.sessionID } : {}),
+    gateway,
+    acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+    artifacts: artifacts.flatMap((artifact) =>
+      artifact.status === "fulfilled" && artifact.value ? [artifact.value] : [],
+    ),
+    recordingErrors: [
+      ...(failureTrace[0].status === "rejected"
+        ? [`failure trace: ${classifyExecutorFailure(failureTrace[0].reason, "failure-trace").message}`]
+        : []),
+      ...artifacts.flatMap((artifact, index) =>
+        artifact.status === "rejected"
+          ? [`artifact ${index}: ${classifyExecutorFailure(artifact.reason, "failure-artifact").message}`]
+          : [],
+      ),
+    ],
+  })
+  const content = JSON.stringify(receipt, null, 2) + "\n"
+  assertSecretFree(content)
+  await mkdir(path.dirname(failurePath), { recursive: true })
+  await Bun.write(failurePath, content)
+  await chmod(failurePath, 0o600)
+}
+
+async function failureArtifact(filePath: string) {
+  const file = Bun.file(filePath)
+  if (!(await file.exists())) return undefined
+  const content = await file.text()
+  assertSecretFree(content)
+  return { path: relativeArtifact(filePath), sha256: digest(content) }
+}
+
+async function waitForGatewaySettlement() {
+  const deadline = Date.now() + 5 * 60_000
+  while (Date.now() < deadline) {
+    const requests = await readJSONL(requestManifest)
+    const events = await readJSONL(proxyTrace)
+    if (gatewayRequestsSettled(events, requests.length)) {
+      await trace({ type: "gateway-settled", requests: requests.length })
+      return
+    }
+    await Bun.sleep(200)
+  }
+  throw new Error("Gateway requests did not settle before the frozen deadline")
 }
 
 async function api<T = unknown>(address: string, pathname: string, init: RequestInit = {}) {
