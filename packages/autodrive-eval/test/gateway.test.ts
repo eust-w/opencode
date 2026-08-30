@@ -9,6 +9,7 @@ import {
   parseGatewayCatalog,
   parseGatewayUsage,
   proxyGatewayRequest,
+  relayTaskRequest,
   requireCompleteGatewayUsage,
   requireGatewayBudget,
   gatewayRequestsSettled,
@@ -219,6 +220,40 @@ describe("gateway experiment transport", () => {
     expect(headers.has("host")).toBe(false)
     expect(headers.has("x-session-id")).toBe(false)
     expect(headers.get("content-type")).toBe("application/json")
+  })
+
+  test("relays host API traffic to the isolated task without forwarding credentials", async () => {
+    let receivedAuthorization = ""
+    let receivedDirectory = ""
+    let receivedPath = ""
+    const upstream = Bun.serve({
+      port: 0,
+      fetch: (request) => {
+        receivedAuthorization = request.headers.get("authorization") ?? ""
+        receivedDirectory = request.headers.get("x-opencode-directory") ?? ""
+        receivedPath = new URL(request.url).pathname + new URL(request.url).search
+        return Response.json({ status: "ready" })
+      },
+    })
+    try {
+      const response = await relayTaskRequest(
+        new Request("http://proxy/_autodrive/task/api/health?probe=1", {
+          headers: {
+            authorization: "Bearer host-secret",
+            "x-opencode-directory": "/testbed",
+          },
+        }),
+        `http://127.0.0.1:${upstream.port}`,
+      )
+
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ status: "ready" })
+      expect(receivedAuthorization).toBe("")
+      expect(receivedDirectory).toBe("/testbed")
+      expect(receivedPath).toBe("/api/health?probe=1")
+    } finally {
+      await upstream.stop(true)
+    }
   })
 
   test("extracts model and token usage from streaming or JSON responses", () => {

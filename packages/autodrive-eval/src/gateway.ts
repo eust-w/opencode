@@ -87,6 +87,24 @@ export function gatewayHeaders(input: Headers, key: string) {
   return headers
 }
 
+export async function relayTaskRequest(input: Request, upstream: string) {
+  const source = new URL(input.url)
+  const prefix = "/_autodrive/task"
+  if (!source.pathname.startsWith(`${prefix}/`)) throw new Error("Task relay path is invalid")
+  const headers = new Headers()
+  ;["accept", "content-type", "x-opencode-directory"].forEach((name) => {
+    const value = input.headers.get(name)
+    if (value) headers.set(name, value)
+  })
+  const method = input.method.toUpperCase()
+  return fetch(new URL(source.pathname.slice(prefix.length) + source.search, upstream), {
+    method,
+    headers,
+    body: method === "GET" || method === "HEAD" ? undefined : await input.arrayBuffer(),
+    redirect: "manual",
+  })
+}
+
 export function parseGatewayUsage(input: string) {
   const data = input
     .split("\n")

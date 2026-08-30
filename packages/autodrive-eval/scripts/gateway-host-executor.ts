@@ -109,6 +109,8 @@ try {
     proxyName,
     "--network",
     "bridge",
+    "--publish",
+    dockerPortPublish(8_080),
     "--read-only",
     "--cap-drop",
     "ALL",
@@ -130,6 +132,8 @@ try {
     `AUTODRIVE_RUN_ID=${input.run.id}`,
     "--env",
     `AUTODRIVE_GATEWAY_UPSTREAM=${gatewayUpstream}`,
+    "--env",
+    `AUTODRIVE_TASK_UPSTREAM=http://${taskName}:4096`,
     "--env",
     `AUTODRIVE_GATEWAY_BASELINE_SPEND=${baselineSpend}`,
     "--env",
@@ -167,8 +171,6 @@ try {
     "ALL",
     "--security-opt",
     "no-new-privileges",
-    "--publish",
-    dockerPortPublish(4_096),
     "--mount",
     `type=bind,src=${opencodeBinary},dst=/usr/local/bin/opencode,readonly`,
     "--mount",
@@ -614,26 +616,13 @@ try {
   async function waitForServer() {
     const deadline = Date.now() + 90_000
     while (Date.now() < deadline) {
-      const port = await command(["docker", "port", taskName, "4096/tcp"], { allowFailure: true })
+      const port = await command(["docker", "port", proxyName, "8080/tcp"], { allowFailure: true })
       const match = port.stdout.match(/127\.0\.0\.1:(\d+)/)
-      const containerIP = await command(
-        [
-          "docker",
-          "inspect",
-          "--format",
-          `{{with index .NetworkSettings.Networks ${JSON.stringify(networkName)}}}{{.IPAddress}}{{end}}`,
-          taskName,
-        ],
-        { allowFailure: true },
-      )
-      const addresses = [
-        match ? `http://127.0.0.1:${match[1]}` : undefined,
-        containerIP.stdout.trim() ? `http://${containerIP.stdout.trim()}:4096` : undefined,
-      ].filter((item): item is string => !!item)
-      for (const address of addresses) {
-        const response = await fetch(new URL("/api/health", address)).catch(() => undefined)
-        if (response?.ok) return address
-      }
+      const address = match ? `http://127.0.0.1:${match[1]}` : undefined
+      const response = address
+        ? await fetch(new URL("/_autodrive/task/api/health", address)).catch(() => undefined)
+        : undefined
+      if (address && response?.ok) return address
       const running = await command(["docker", "inspect", "--format", "{{.State.Running}}", taskName], {
         allowFailure: true,
       })
@@ -650,7 +639,10 @@ try {
 }
 
 async function api<T = unknown>(address: string, pathname: string, init: RequestInit = {}) {
-  const response = await fetch(new URL(pathname, address), { ...init, signal: AbortSignal.timeout(30_000) })
+  const response = await fetch(new URL(`/_autodrive/task${pathname}`, address), {
+    ...init,
+    signal: AbortSignal.timeout(30_000),
+  })
   const content = await response.text()
   assertSecretFree(content)
   if (!response.ok) throw new Error(`OpenCode API ${pathname} failed with HTTP ${response.status}: ${content.slice(0, 500)}`)

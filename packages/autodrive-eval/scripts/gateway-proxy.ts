@@ -5,6 +5,7 @@ import path from "node:path"
 import { assertSecretFree } from "../src/artifact"
 import {
   proxyGatewayRequest,
+  relayTaskRequest,
   requireGatewayBudget,
   shouldHoldGatewayRequest,
   waitForControllerRelease,
@@ -14,6 +15,7 @@ const keyFile = requireAbsolute("AUTODRIVE_GATEWAY_KEY_FILE")
 const artifactRoot = requireAbsolute("AUTODRIVE_EVAL_ARTIFACT_ROOT")
 const runID = requireValue("AUTODRIVE_RUN_ID")
 const upstream = Bun.env.AUTODRIVE_GATEWAY_UPSTREAM ?? "https://ai-api.d-robotics.cc"
+const taskUpstream = requireValue("AUTODRIVE_TASK_UPSTREAM")
 const baselineSpend = requireNumber("AUTODRIVE_GATEWAY_BASELINE_SPEND")
 const maxSpendUSD = requireNumber("AUTODRIVE_GATEWAY_MAX_SPEND_USD")
 const port = Number(Bun.env.AUTODRIVE_GATEWAY_PROXY_PORT ?? "8080")
@@ -37,7 +39,12 @@ Bun.serve({
   hostname: "0.0.0.0",
   port,
   async fetch(input) {
-    if (new URL(input.url).pathname === "/healthz") return Response.json({ status: "ready", runID })
+    const pathname = new URL(input.url).pathname
+    if (pathname === "/healthz") return Response.json({ status: "ready", runID })
+    if (pathname.startsWith("/_autodrive/task/"))
+      return relayTaskRequest(input, taskUpstream).catch(() =>
+        Response.json({ error: { message: "AutoDrive task relay failed" } }, { status: 502 }),
+      )
     const current = sequence++
     try {
       requireGatewayBudget({
