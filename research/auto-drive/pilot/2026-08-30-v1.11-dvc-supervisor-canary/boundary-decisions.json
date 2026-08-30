@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "runID": "adr_a804f8cbd6677beb63bf",
+  "source": {
+    "persistedEventType": "session.next.auto-drive.decided.1",
+    "sessionDatabaseIncluded": false,
+    "note": "The source Session database was queried read-only before export and then excluded from the sanitized research artifact. Provider timing and responses remain in the gateway trace."
+  },
+  "decisions": [
+    {
+      "boundary": 1,
+      "eventSequence": 44,
+      "decidedAt": "2026-08-29T23:50:47.419Z",
+      "action": "continue",
+      "reason": "The worker identified the relevant code paths and has clear, safe, in-scope remaining steps to reproduce the bug, determine the root cause, implement a minimal fix, and verify with tests.",
+      "chainID": "msg_04feed57a001prr1cZJpHHhC8r",
+      "continuationCount": 1,
+      "inputID": "msg_04feed57a002r5M73NjWuXhu3r",
+      "nextPrompt": "Reproduce the `dvc.api.params_show()` failure for an existing parameter file that is not tracked in `dvc.yaml`, then inspect `dvc/repo/params/show.py` (especially `_collect_configs` and `_read_params`) and related tests to identify the exact root cause.",
+      "memory": "Worker located relevant files: dvc/api/params.py and dvc/repo/params/show.py. Bug concerns params_show for untracked targets. Next: reproduce untracked params file failure and root-cause path collection/read handling.",
+      "controllerRequestSequence": 6,
+      "controllerCompletedAt": "2026-08-29T23:50:47.410Z",
+      "providerResultApplied": true,
+      "autoInput": {
+        "delivery": "queue",
+        "source": {
+          "type": "auto-drive",
+          "chainID": "msg_04feed57a001prr1cZJpHHhC8r",
+          "decision": "continue",
+          "continuation": 1
+        },
+        "admittedSequence": 45,
+        "promotedSequence": 46
+      }
+    },
+    {
+      "boundary": 2,
+      "eventSequence": 89,
+      "decidedAt": "2026-08-29T23:51:55.057Z",
+      "action": "stop",
+      "reason": "No continuation cues found",
+      "chainID": "msg_04feed57a001prr1cZJpHHhC8r",
+      "continuationCount": 1,
+      "memory": "Worker located relevant files: dvc/api/params.py and dvc/repo/params/show.py. Bug concerns params_show for untracked targets. Next: reproduce untracked params file failure and root-cause path collection/read handling.",
+      "controllerRequestSequence": 13,
+      "controllerCompletedAt": "2026-08-29T23:52:53.000Z",
+      "providerResultApplied": false,
+      "fallback": "regex-timeout-fallback",
+      "lateProviderAction": "continue",
+      "lateProviderReason": "The worker has clear remaining work: root-causing the untracked-target handling, implementing a fix, and adding a regression test. The environment blocker prevents network installs and test execution, but there is still a safe, in-scope next step: verify whether an existing usable Python environment is present, and if not, proceed with static root-cause analysis and prepare the fix/test while documenting the commands that could not be run."
+    }
+  ]
+}
