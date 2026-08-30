@@ -7,6 +7,17 @@ export function dockerPortPublish(containerPort: number) {
   return `127.0.0.1:0:${containerPort}`
 }
 
+export function hasExperimentModels(input: unknown, workerModel: string, controllerModel: string) {
+  const result = z
+    .object({
+      providers: z.array(z.object({ id: z.string(), models: z.record(z.string(), z.unknown()) })),
+    })
+    .parse(input)
+  const has = (providerID: string, modelID: string) =>
+    result.providers.some((provider) => provider.id === providerID && modelID in provider.models)
+  return has("openai", workerModel) && has("autodrive-controller", controllerModel)
+}
+
 export const TaskInput = z
   .object({
     schemaVersion: z.literal(1),
@@ -110,23 +121,23 @@ export function buildExperimentConfig(input: {
   return {
     model: `openai/${input.workerModel}`,
     default_agent: "experiment",
-    permissions: permissions(),
-    agents: {
+    permission: permissions(),
+    agent: {
       experiment: {
         mode: "primary",
         steps: input.segmentSteps,
-        request: { body: { temperature: input.temperature } },
-        permissions: permissions(),
+        temperature: input.temperature,
+        permission: permissions(),
       },
     },
-    providers: {
+    provider: {
       openai: provider(
         "http://autodrive-proxy:8080/worker/v1",
         input.workerModel,
         true,
         4_096,
         "@ai-sdk/openai",
-        { reasoning: { effort: "low" } },
+        { reasoningEffort: "low" },
       ),
       "autodrive-controller": provider(
         "http://autodrive-proxy:8080/controller/v1",
@@ -161,23 +172,25 @@ export function classifyTestPatch(input: { forwardApplies: boolean; reverseAppli
 }
 
 function permissions() {
-  return [
-    { action: "*", resource: "*", effect: "allow" },
-    { action: "question", resource: "*", effect: "deny" },
-    { action: "external_directory", resource: "*", effect: "deny" },
-  ]
+  return { "*": "allow" as const, question: "deny" as const, external_directory: "deny" as const }
 }
 
-function provider(url: string, model: string, tools: boolean, output: number, pkg: string, body: object) {
+function provider(url: string, model: string, tools: boolean, output: number, pkg: string, options: object) {
   return {
-    api: { type: "aisdk", package: pkg, url },
-    request: { body: { apiKey: "proxy-only-no-secret" } },
+    name: model,
+    npm: pkg,
+    env: [],
+    options: { apiKey: "proxy-only-no-secret", baseURL: url },
     models: {
       [model]: {
-        api: { id: model },
-        request: { body },
-        capabilities: { tools, input: ["text"], output: ["text"] },
+        id: model,
+        name: model,
+        reasoning: Object.keys(options).length > 0,
+        temperature: true,
+        tool_call: tools,
+        modalities: { input: ["text"], output: ["text"] },
         limit: { context: 131_072, output },
+        options,
       },
     },
   }

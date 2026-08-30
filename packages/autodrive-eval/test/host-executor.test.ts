@@ -9,6 +9,7 @@ import {
   decideExternalContinuation,
   dockerPortPublish,
   gradePytest,
+  hasExperimentModels,
   parsePytestLog,
   parseTaskInput,
 } from "../src/host-executor"
@@ -32,6 +33,17 @@ const task = {
 describe("SWE-EVO host executor", () => {
   test("requests an explicit random loopback port from Docker", () => {
     expect(dockerPortPublish(4_096)).toBe("127.0.0.1:0:4096")
+  })
+
+  test("validates worker and controller models from the current provider projection", () => {
+    const providers = {
+      providers: [
+        { id: "openai", models: { "deepseek-v4-pro": {} } },
+        { id: "autodrive-controller", models: { "qwen3.8-max": {} } },
+      ],
+    }
+    expect(hasExperimentModels(providers, "deepseek-v4-pro", "qwen3.8-max")).toBe(true)
+    expect(hasExperimentModels(providers, "missing", "qwen3.8-max")).toBe(false)
   })
 
   test("maps internal policies without leaking full-system context into the regex baseline", () => {
@@ -103,14 +115,14 @@ describe("SWE-EVO host executor", () => {
     })
 
     expect(config.model).toBe("openai/qwen3.8-max")
-    expect(config.agents.experiment.request.body).toEqual({ temperature: 0 })
-    expect(config.providers.openai.models["qwen3.8-max"].request.body).toEqual({
-      reasoning: { effort: "low" },
-    })
-    expect(config.providers.openai.models["qwen3.8-max"].limit.output).toBe(4_096)
-    expect(config.providers.openai.api.package).toBe("@ai-sdk/openai")
-    expect(config.providers.openai.api.url).toBe("http://autodrive-proxy:8080/worker/v1")
-    expect(config.providers["autodrive-controller"].api.package).toBe("@ai-sdk/openai-compatible")
+    expect(config.agent.experiment.temperature).toBe(0)
+    expect(config.permission).toEqual({ "*": "allow", question: "deny", external_directory: "deny" })
+    expect(config.provider.openai.models["qwen3.8-max"].options).toEqual({ reasoningEffort: "low" })
+    expect(config.provider.openai.models["qwen3.8-max"].limit.output).toBe(4_096)
+    expect(config.provider.openai.npm).toBe("@ai-sdk/openai")
+    expect(config.provider.openai.options.baseURL).toBe("http://autodrive-proxy:8080/worker/v1")
+    expect(config.provider["autodrive-controller"].npm).toBe("@ai-sdk/openai-compatible")
+    expect(config).not.toHaveProperty("providers")
   })
 
   test("bounds idle sessions and classifies incomplete provider streams", () => {

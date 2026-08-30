@@ -14,6 +14,7 @@ import {
   decideExternalContinuation,
   dockerPortPublish,
   gradePytest,
+  hasExperimentModels,
   parsePytestLog,
   parseTaskInput,
 } from "../src/host-executor"
@@ -212,11 +213,8 @@ try {
   taskStarted = true
   const address = await waitForServer()
   const headers = { "content-type": "application/json", "x-opencode-directory": "/testbed" }
-  const availableModels = await api<{ providerID: string; id: string }[]>(address, "/api/model", { headers })
-  if (
-    !availableModels.some((model) => model.providerID === "openai" && model.id === workerModel) ||
-    !availableModels.some((model) => model.providerID === "autodrive-controller" && model.id === controllerModel)
-  )
+  const availableModels = await api<unknown>(address, "/config/providers", { headers })
+  if (!hasExperimentModels(availableModels, workerModel, controllerModel))
     throw new Error("Frozen worker or controller model is unavailable in the task server")
   await trace({ type: "models-validated", workerModel, controllerModel })
   const session = await api<{ id: string }>(address, "/api/session", {
