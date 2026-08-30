@@ -14,7 +14,7 @@ export function renderTaskManifest(tasks: readonly Task[]) {
   \\label{tab:task-manifest}
   \\centering
   \\footnotesize
-  \\renewcommand{\\arraystretch}{0.86}
+  \\renewcommand{\\arraystretch}{0.85}
   \\begin{tabular}{llrrr}
     \\toprule
     Repository & Version evolution & FTP & PTP & PR \\\\
