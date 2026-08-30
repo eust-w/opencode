@@ -304,6 +304,191 @@ describe("paid experiment CLI gates", () => {
     }
   })
 
+  test("recovers a strict charged boundary exclusion before invoking its executor again", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-boundary-exclusion-"))
+    const run = createBoundaryRunPlan(parseManifest(manifestInput))[5]!
+    try {
+      const preflight = await writeBoundaryPreflight(directory)
+      const marker = path.join(directory, "executor-called")
+      const executor = path.join(directory, "executor.ts")
+      await Bun.write(executor, `#!/usr/bin/env bun\nawait Bun.write(${JSON.stringify(marker)}, "called")\nprocess.exit(1)\n`)
+      await chmod(executor, 0o755)
+      const artifacts = await Promise.all(
+        [
+          [path.join("raw", `${run.id}.jsonl`), '{"type":"executor-failed"}\n'],
+          [path.join("gateway", run.id, "requests.jsonl"), '{"sequence":0}\n'],
+          [path.join("gateway", run.id, "proxy.jsonl"), '{"type":"provider-response"}\n'],
+        ].map(async ([relative, content]) => {
+          const target = path.join(directory, relative!)
+          await Bun.write(target, content!)
+          return { path: relative!, sha256: digest(content!) }
+        }),
+      )
+      await Bun.write(
+        path.join(directory, "failures", run.id, "attempt-1.json"),
+        JSON.stringify({
+          schemaVersion: 1,
+          protocol: "auto-drive-swe-evo-v1.14",
+          classification: "excluded-charged-evaluation-failure",
+          stage: "final-grader-test-patch-conflict",
+          code: "model-patch-conflicts-frozen-test-patch",
+          runID: run.id,
+          taskID: run.taskID,
+          attempt: 1,
+          startedAt: "2026-08-30T20:19:23.273Z",
+          recordedAt: "2026-08-30T20:26:24.794Z",
+          error: { name: "Error", message: "Model patch conflicts with the frozen test patch" },
+          gateway: {
+            settlement: { attempted: true, completed: true },
+            requests: 1,
+            responses: 1,
+            non200Responses: 0,
+            proxyErrors: 0,
+            usageCompleteResponses: 1,
+            promptTokens: 100,
+            completionTokens: 20,
+            baselineSpendUSD: 1,
+            settledSpendUSD: 1.1,
+            observedSpendDeltaUSD: 0.1,
+          },
+          acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+          artifacts,
+          recordingErrors: [],
+        }),
+      )
+
+      const child = Bun.spawn(
+        [
+          Bun.which("bun")!,
+          "src/cli.ts",
+          "boundary-run",
+          "--execute",
+          "--executor",
+          executor,
+          "--preflight",
+          preflight,
+          "--artifact-root",
+          directory,
+          "--run-id",
+          run.id,
+        ],
+        { cwd: import.meta.dir + "/..", stdout: "pipe", stderr: "pipe" },
+      )
+      const [exitCode, stdout, stderr] = await Promise.all([
+        child.exited,
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+      ])
+
+      expect(exitCode, stderr).toBe(0)
+      expect(JSON.parse(stdout)).toMatchObject({ completed: 0, excluded: 1, remaining: 95 })
+      expect(await Bun.file(marker).exists()).toBeFalse()
+      expect(await Bun.file(path.join(directory, "boundary/exclusions", `${run.id}.json`)).exists()).toBeTrue()
+      expect((await Bun.file(path.join(directory, "boundary/ledger.jsonl")).text()).trim().split("\n")).toHaveLength(1)
+      expect(await Bun.file(path.join(directory, "boundary/trajectories.jsonl")).exists()).toBeFalse()
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("settles a strict charged exclusion produced by the current executor invocation", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-boundary-current-exclusion-"))
+    const run = createBoundaryRunPlan(parseManifest(manifestInput))[6]!
+    try {
+      const preflight = await writeBoundaryPreflight(directory)
+      const marker = path.join(directory, "executor-called")
+      const executor = path.join(directory, "executor.ts")
+      await Bun.write(
+        executor,
+        `#!/usr/bin/env bun
+import { mkdir } from "node:fs/promises"
+import path from "node:path"
+const input = JSON.parse(await Bun.stdin.text())
+const root = Bun.env.AUTODRIVE_EVAL_ARTIFACT_ROOT
+if (!root) process.exit(2)
+await Bun.write(${JSON.stringify(marker)}, "called")
+const entries = [
+  [path.join("raw", input.run.id + ".jsonl"), '{"type":"executor-failed"}\\n'],
+  [path.join("gateway", input.run.id, "requests.jsonl"), '{"sequence":0}\\n'],
+  [path.join("gateway", input.run.id, "proxy.jsonl"), '{"type":"provider-response"}\\n'],
+]
+const artifacts = []
+for (const [relative, content] of entries) {
+  const target = path.join(root, relative)
+  await mkdir(path.dirname(target), { recursive: true })
+  await Bun.write(target, content)
+  artifacts.push({ path: relative, sha256: new Bun.CryptoHasher("sha256").update(content).digest("hex") })
+}
+const receipt = path.join(root, "failures", input.run.id, "attempt-1.json")
+await mkdir(path.dirname(receipt), { recursive: true })
+await Bun.write(receipt, JSON.stringify({
+  schemaVersion: 1,
+  protocol: "auto-drive-swe-evo-v1.14",
+  classification: "excluded-charged-evaluation-failure",
+  stage: "final-grader-test-patch-conflict",
+  code: "model-patch-conflicts-frozen-test-patch",
+  runID: input.run.id,
+  taskID: input.run.taskID,
+  attempt: 1,
+  startedAt: "2026-08-30T20:19:23.273Z",
+  recordedAt: "2026-08-30T20:26:24.794Z",
+  error: { name: "Error", message: "Model patch conflicts with the frozen test patch" },
+  gateway: {
+    settlement: { attempted: true, completed: true },
+    requests: 1,
+    responses: 1,
+    non200Responses: 0,
+    proxyErrors: 0,
+    usageCompleteResponses: 1,
+    promptTokens: 100,
+    completionTokens: 20,
+    baselineSpendUSD: 1,
+    settledSpendUSD: 1.1,
+    observedSpendDeltaUSD: 0.1,
+  },
+  acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+  artifacts,
+  recordingErrors: [],
+}))
+console.error("Model patch conflicts with the frozen test patch")
+process.exit(1)
+`,
+      )
+      await chmod(executor, 0o755)
+
+      const child = Bun.spawn(
+        [
+          Bun.which("bun")!,
+          "src/cli.ts",
+          "boundary-run",
+          "--execute",
+          "--executor",
+          executor,
+          "--preflight",
+          preflight,
+          "--artifact-root",
+          directory,
+          "--run-id",
+          run.id,
+        ],
+        { cwd: import.meta.dir + "/..", stdout: "pipe", stderr: "pipe" },
+      )
+      const [exitCode, stdout, stderr] = await Promise.all([
+        child.exited,
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+      ])
+
+      expect(exitCode, stderr).toBe(0)
+      expect(JSON.parse(stdout)).toMatchObject({ completed: 0, excluded: 1, remaining: 95 })
+      expect(await Bun.file(marker).text()).toBe("called")
+      expect(await Bun.file(path.join(directory, "boundary/exclusions", `${run.id}.json`)).exists()).toBeTrue()
+      expect((await Bun.file(path.join(directory, "boundary/ledger.jsonl")).text()).trim().split("\n")).toHaveLength(1)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   test("keeps the non-primary pilot fail-closed without explicit execution", async () => {
     const child = Bun.spawn([Bun.which("bun")!, "src/cli.ts", "pilot"], {
       cwd: import.meta.dir + "/..",
@@ -464,3 +649,75 @@ describe("paid experiment CLI gates", () => {
     }
   })
 })
+
+async function writeBoundaryPreflight(directory: string) {
+  const preflight = path.join(directory, "preflight")
+  const metadata = path.join(preflight, "metadata/models.json")
+  const workerProbe = path.join(preflight, "probes/worker.json")
+  const controllerProbe = path.join(preflight, "probes/controller.json")
+  const model = (id: string, output: number) => ({
+    id,
+    name: id,
+    release_date: "2026-08-30",
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    limit: { context: 131_072, output },
+    modalities: { input: ["text"], output: ["text"] },
+  })
+  const metadataContent =
+    JSON.stringify({
+      "d-robotics": {
+        models: {
+          "deepseek-v4-pro": model("deepseek-v4-pro", 4_096),
+          "qwen3.8-max": model("qwen3.8-max", 1_024),
+        },
+      },
+    }) + "\n"
+  const workerContent = JSON.stringify({ billing: "paid", modelVersion: "deepseek-v4-pro", trajectoryCapacity: 96 }) + "\n"
+  const controllerContent = JSON.stringify({ billing: "paid", modelVersion: "qwen3.8-max", trajectoryCapacity: 96 }) + "\n"
+  await Promise.all([
+    Bun.write(metadata, metadataContent),
+    Bun.write(workerProbe, workerContent),
+    Bun.write(controllerProbe, controllerContent),
+  ])
+  const receipt = path.join(preflight, "receipt.json")
+  await Bun.write(
+    receipt,
+    JSON.stringify({
+      schemaVersion: 1,
+      protocol: "auto-drive-swe-evo-v1.14",
+      scope: "boundary",
+      capturedAt: new Date(Date.now() - 60_000).toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      models: [
+        {
+          model: "d-robotics/deepseek-v4-pro",
+          catalogModelID: "deepseek-v4-pro",
+          modelVersion: "deepseek-v4-pro",
+          credentialPresent: true,
+          billing: "paid",
+          trajectoryCapacity: 96,
+          probe: { path: "probes/worker.json", sha256: digest(workerContent) },
+        },
+        {
+          model: "d-robotics/qwen3.8-max",
+          catalogModelID: "qwen3.8-max",
+          modelVersion: "qwen3.8-max",
+          credentialPresent: true,
+          billing: "paid",
+          trajectoryCapacity: 96,
+          probe: { path: "probes/controller.json", sha256: digest(controllerContent) },
+        },
+      ],
+      modelMetadata: { path: "metadata/models.json", sha256: digest(metadataContent) },
+      runtime: { disableExternalSkills: true, disableClaudeCodeSkills: true, disableModelsFetch: true },
+    }) + "\n",
+  )
+  return receipt
+}
+
+function digest(content: string) {
+  return new Bun.CryptoHasher("sha256").update(content).digest("hex")
+}

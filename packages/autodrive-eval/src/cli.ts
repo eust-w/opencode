@@ -17,6 +17,7 @@ import {
   type Trajectory,
 } from "./artifact"
 import { caps, summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
+import { settlePendingBoundaryExclusions } from "./exclusion"
 import { parseTaskInput } from "./host-executor"
 import { renderTaskManifest } from "./paper"
 import { createPilotRun, loadPilotManifest } from "./pilot"
@@ -674,50 +675,91 @@ async function boundaryRun() {
   const resultsPath = path.join(resolvedArtifactRoot, "boundary", "trajectories.jsonl")
   const ledgerPath = path.join(resolvedArtifactRoot, "boundary", "ledger.jsonl")
   const existing = await readJSONL(resultsPath, parseTrajectory)
-  const completed = new Set(existing.map((record) => record.runID))
+  const accepted = new Set(existing.map((record) => record.runID))
+  const maxCostUSD = caps.boundary / boundaryPlan.length
+  const recovered = await settlePendingBoundaryExclusions({
+    artifactRoot: resolvedArtifactRoot,
+    ledgerPath,
+    runs: boundaryPlan,
+    accepted,
+    maxCostUSD,
+  })
+  const completed = new Set([...accepted, ...recovered.map((exclusion) => exclusion.runID)])
   const selected = boundaryPlan.filter(
     (run) => !completed.has(run.id) && (!requested.length || requested.includes(run.id)),
   )
+  if (!selected.length && requested.length && requested.every((runID) => completed.has(runID))) {
+    console.log(
+      JSON.stringify({
+        completed: 0,
+        excluded: requested.filter((runID) => recovered.some((exclusion) => exclusion.runID === runID)).length,
+        remaining: boundaryPlan.length - completed.size,
+        results: resultsPath,
+        category: "boundary",
+      }),
+    )
+    return
+  }
   if (!selected.length) fail("No pending frozen boundary runs match the selection")
   const ledger = await readJSONL(ledgerPath, parseLedger)
   await Promise.all([
     mkdir(path.dirname(resultsPath), { recursive: true }),
     mkdir(path.dirname(ledgerPath), { recursive: true }),
   ])
-  const records = await executeRuns(
-    selected,
-    createExecutor(path.resolve(executorPath), {
-      artifactRoot: resolvedArtifactRoot,
-      preflight,
-      preflightPath: resolvedPreflightPath,
-    }),
-    {
-      concurrency: protocol.concurrency,
-      ledger,
-      budget: () => ({ category: "boundary", maxCostUSD: caps.boundary / boundaryPlan.length }),
-      onRecord: async (record, entry) => {
-        const serialized = JSON.stringify(record)
-        assertSecretFree(serialized)
-        await appendFile(resultsPath, serialized + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
-        await appendFile(
-          ledgerPath,
-          JSON.stringify({
-            timestamp: record.endedAt,
-            runID: record.runID,
-            category: entry.category,
-            amountUSD: entry.amountUSD,
-            promptTokens: record.promptTokens,
-            completionTokens: record.completionTokens,
-          }) + "\n",
-          { encoding: "utf8", flag: "a", mode: 0o600 },
-        )
+  const executed = await Promise.allSettled([
+    executeRuns(
+      selected,
+      createExecutor(path.resolve(executorPath), {
+        artifactRoot: resolvedArtifactRoot,
+        preflight,
+        preflightPath: resolvedPreflightPath,
+      }),
+      {
+        concurrency: protocol.concurrency,
+        ledger,
+        budget: () => ({ category: "boundary", maxCostUSD }),
+        onRecord: async (record, entry) => {
+          const serialized = JSON.stringify(record)
+          assertSecretFree(serialized)
+          await appendFile(resultsPath, serialized + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
+          await appendFile(
+            ledgerPath,
+            JSON.stringify({
+              timestamp: record.endedAt,
+              runID: record.runID,
+              category: entry.category,
+              amountUSD: entry.amountUSD,
+              promptTokens: record.promptTokens,
+              completionTokens: record.completionTokens,
+            }) + "\n",
+            { encoding: "utf8", flag: "a", mode: 0o600 },
+          )
+        },
       },
-    },
+    ),
+  ])
+  const records = executed[0].status === "fulfilled" ? executed[0].value : []
+  const finalAccepted = new Set((await readJSONL(resultsPath, parseTrajectory)).map((record) => record.runID))
+  const finalExclusions = await settlePendingBoundaryExclusions({
+    artifactRoot: resolvedArtifactRoot,
+    ledgerPath,
+    runs: boundaryPlan,
+    accepted: finalAccepted,
+    maxCostUSD,
+  })
+  const finalCompleted = new Set([...finalAccepted, ...finalExclusions.map((exclusion) => exclusion.runID)])
+  const recoveredBeforeExecution = new Set(recovered.map((exclusion) => exclusion.runID))
+  const newExclusions = finalExclusions.filter((exclusion) => !recoveredBeforeExecution.has(exclusion.runID))
+  if (
+    executed[0].status === "rejected" &&
+    (!newExclusions.length || selected.some((run) => !finalCompleted.has(run.id)))
   )
+    throw executed[0].reason
   console.log(
     JSON.stringify({
       completed: records.length,
-      remaining: boundaryPlan.length - completed.size - records.length,
+      excluded: selected.filter((run) => finalExclusions.some((exclusion) => exclusion.runID === run.id)).length,
+      remaining: boundaryPlan.length - finalCompleted.size,
       results: resultsPath,
       category: "boundary",
     }),
