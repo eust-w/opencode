@@ -47,6 +47,15 @@ describe("SWE-EVO host executor", () => {
     expect(executionArtifactID(runID, 2)).toBe(`${runID}-attempt-2`)
   })
 
+  test("projects the retry artifact namespace into the gateway proxy", async () => {
+    const executor = await Bun.file(path.join(import.meta.dir, "../scripts/gateway-host-executor.ts")).text()
+    const proxy = await Bun.file(path.join(import.meta.dir, "../scripts/gateway-proxy.ts")).text()
+    expect(executor).toContain("`AUTODRIVE_GATEWAY_ARTIFACT_ID=${artifactID}`")
+    expect(proxy).toContain('requireValue("AUTODRIVE_GATEWAY_ARTIFACT_ID")')
+    expect(proxy).toMatch(/path\.join\(\s*"gateway",\s*artifactID,\s*"requests"/)
+    expect(proxy).toMatch(/path\.join\(\s*"gateway",\s*artifactID,\s*"responses"/)
+  })
+
   test("exposes startup-baseline patch capture", async () => {
     const module = await import("../src/host-executor")
     expect("captureRepositoryBaseline" in module).toBe(true)

@@ -137,6 +137,8 @@ try {
     "--env",
     `AUTODRIVE_RUN_ID=${input.run.id}`,
     "--env",
+    `AUTODRIVE_GATEWAY_ARTIFACT_ID=${artifactID}`,
+    "--env",
     `AUTODRIVE_GATEWAY_UPSTREAM=${gatewayUpstream}`,
     "--env",
     `AUTODRIVE_TASK_UPSTREAM=http://${taskName}:4096`,

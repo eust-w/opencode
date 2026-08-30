@@ -14,6 +14,7 @@ import {
 const keyFile = requireAbsolute("AUTODRIVE_GATEWAY_KEY_FILE")
 const artifactRoot = requireAbsolute("AUTODRIVE_EVAL_ARTIFACT_ROOT")
 const runID = requireValue("AUTODRIVE_RUN_ID")
+const artifactID = requireValue("AUTODRIVE_GATEWAY_ARTIFACT_ID")
 const upstream = Bun.env.AUTODRIVE_GATEWAY_UPSTREAM ?? "https://ai-api.d-robotics.cc"
 const taskUpstream = requireValue("AUTODRIVE_TASK_UPSTREAM")
 const baselineSpend = requireNumber("AUTODRIVE_GATEWAY_BASELINE_SPEND")
@@ -21,12 +22,13 @@ const maxSpendUSD = requireNumber("AUTODRIVE_GATEWAY_MAX_SPEND_USD")
 const port = Number(Bun.env.AUTODRIVE_GATEWAY_PROXY_PORT ?? "8080")
 
 if (!/^adr_[a-f0-9]{20}$/.test(runID)) fail("AUTODRIVE_RUN_ID is invalid")
+if (!/^adr_[a-f0-9]{20}(?:-attempt-2)?$/.test(artifactID)) fail("AUTODRIVE_GATEWAY_ARTIFACT_ID is invalid")
 if (!Number.isInteger(port) || port < 1 || port > 65_535) fail("AUTODRIVE_GATEWAY_PROXY_PORT is invalid")
 if ((await stat(keyFile)).mode & 0o077) fail("Gateway key file must not be accessible by group or other users")
 const key = (await Bun.file(keyFile).text()).trim()
 if (!key) fail("Gateway key file is empty")
 
-const runRoot = path.join(artifactRoot, "gateway", runID)
+const runRoot = path.join(artifactRoot, "gateway", artifactID)
 const requestRoot = path.join(runRoot, "requests")
 const responseRoot = path.join(runRoot, "responses")
 const manifestPath = path.join(runRoot, "requests.jsonl")
@@ -58,7 +60,12 @@ Bun.serve({
         sequence: current,
         onRequest: async (request) => {
           assertSecretFree(request.normalized)
-          const relative = path.join("gateway", runID, "requests", `${String(request.sequence).padStart(4, "0")}.json`)
+          const relative = path.join(
+            "gateway",
+            artifactID,
+            "requests",
+            `${String(request.sequence).padStart(4, "0")}.json`,
+          )
           await Bun.write(path.join(artifactRoot, relative), request.normalized)
           const record = JSON.stringify({
             sequence: request.sequence,
@@ -97,7 +104,7 @@ Bun.serve({
           assertSecretFree(response.content)
           const relative = path.join(
             "gateway",
-            runID,
+            artifactID,
             "responses",
             `${String(response.sequence).padStart(4, "0")}.txt`,
           )
