@@ -106,6 +106,12 @@ The authorized r7 attempt started exactly once from commit `2ab828e64f` with Lin
 
 Commit `8e4359a39a` projects the legacy key into the V2 runner credential field while retaining the protocol-specific authorization header; the runner removes the private field before building the outbound HTTP body. A test-first regression using the r7 configuration shape failed with the same `ModelUnavailableError` before the fix and passed afterward. A Linux AMD64 diagnostic then mounted r7's exact config and model metadata on a Docker-internal network without a proxy, gateway key, or published host port. It exposed both frozen models, created a Session, promoted a prompt, resolved the worker, and reached only the expected HTTP transport failure. Gateway spend and activity remained unchanged. This is offline implementation evidence, not an r7 retry or empirical result.
 
+## Legacy-credential pilot qualification deviation (v1.14-r8)
+
+After reviewing the r7 failure and its zero-provider Linux regression, the user explicitly classified r7 as a zero-cost pre-provider qualification failure and prospectively authorized exactly one additional pilot attempt from a fresh r8 artifact root based on fix commit `8e4359a39a`. This authorization does not reinterpret or retry r7: r4 through r7 remain excluded qualification evidence with no accepted trajectory or ledger row.
+
+The r8 attempt keeps the deterministic pilot run ID, SWE-bench Verified task and image, primary worker, controller, supervisor policy, prompts, temperature, reasoning effort, token limits, six-step segment size, five-continuation cap, 45-minute timeout, and USD 5 per-run ceiling unchanged. It does not modify the 384 formal run IDs, boundary source plan, outcomes, statistics, concurrency, category caps, or USD 800 total budget. r8 may start once and is not retryable under this deviation regardless of outcome; any further attempt requires another separate, prospective authorization.
+
 ## Claim boundary
 
 AutoDrive targets **premature conversational handoff** by a coding agent: the worker ends a provider turn while safe, in-scope, actionable work toward the admitted user goal remains. The claimed mechanism combines safe turn-boundary evaluation, a `continue | stop | defer` decision, and durable exactly-once continuation admission. It does not claim the first supervisor, memory mechanism, agent termination rule, abstention method, or loop bound.
