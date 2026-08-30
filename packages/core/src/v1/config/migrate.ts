@@ -182,7 +182,10 @@ function migrateProvider(info: ConfigProviderV1.Info) {
           settings: options.settings ?? {},
         }
       : undefined,
-    request: info.options && { headers: options.headers, body: options.body },
+    request: info.options && {
+      headers: options.headers,
+      body: typeof info.options.apiKey === "string" ? { ...options.body, apiKey: info.options.apiKey } : options.body,
+    },
     models:
       info.models &&
       Object.fromEntries(Object.entries(info.models).map(([name, model]) => [name, migrateModel(model, info.npm)])),

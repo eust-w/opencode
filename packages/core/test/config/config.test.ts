@@ -115,6 +115,32 @@ describe("Config", () => {
     }),
   )
 
+  it.effect("projects v1 provider keys into v2 runner credentials", () =>
+    Effect.sync(() => {
+      const migrated = ConfigMigrateV1.migrate({
+        provider: {
+          openai: {
+            npm: "@ai-sdk/openai",
+            options: { apiKey: "secret", baseURL: "https://example.test/v1" },
+          },
+          compatible: {
+            npm: "@ai-sdk/openai-compatible",
+            options: { apiKey: "secret", baseURL: "https://example.test/v1" },
+          },
+        },
+      })
+
+      expect(migrated.providers?.openai?.request).toEqual({
+        headers: { Authorization: "Bearer secret" },
+        body: { apiKey: "secret" },
+      })
+      expect(migrated.providers?.compatible?.request).toEqual({
+        headers: undefined,
+        body: { apiKey: "secret" },
+      })
+    }),
+  )
+
   it.effect("migrates v1 command configuration", () =>
     Effect.sync(() => {
       expect(
