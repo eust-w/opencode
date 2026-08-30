@@ -1,0 +1,364 @@
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"","role":"assistant"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"We","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" need answer JSON","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" only. Need analyze","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":".","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" User wants Auto-","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"Drive Supervisor. Worker","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" last output says couldn","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"'t complete due Module","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"NotFoundError colorama.","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" Remaining tasks: install","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" deps, reproduce,","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" fix, test.","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" Decision: continue if","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" actionable safe","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" in-scope.","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" Initial goal not explicit","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" but memory says","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" focus on dvc","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"/repo/params","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"/show.py reproduction un","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"tracked params target","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" issue, minimal fix","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":", regression test.","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" Next step likely install","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" test dependencies? Is","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" installing packages safe?","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" In autonomous","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" software engineering session,","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" likely","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" allowed. But maybe","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" environment lacks permissions?","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" Worker","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" said pip install -","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"e .[tests","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"]. Could continue with","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" instruction to install dependencies","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" or find alternative.","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" Need","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" maybe avoid network?","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" If","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" pip install requires external","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" network maybe dangerous?","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" But typical","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" dev environment. Could","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" also instruct to use","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" existing python environment,","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" install missing colorama","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" or","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" test deps, then","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" run","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" reproduction. Action continue","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":". Need concise exact","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" next step. Maybe","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" \"Install missing test","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" dependencies (color","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"ama and DVC","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" test extras)","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" then rerun a","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" minimal reproduction...\" Safe","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"? It may modify","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" environment. In auto","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"-drive,","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" likely okay. If","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" no permissions? But","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" rule says defer if","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" expanded","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" permissions/dangerous","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" external","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" action. Installing packages","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" may","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" be external network.","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" But in testbed","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" often allowed. Could","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" instead","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" instruct to attempt dependency","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" install if permitted;","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" if not possible","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":", use targeted unit","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"-level reproduction? Hmm","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":".\n\nNeed produce","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" valid JSON","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" only. update_memory","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" concise","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":".\n\nLet's","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" think if stop?","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" No, work unfinished","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":". Defer?","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" Missing","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" info? The worker","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" can install dependencies.","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" There","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" is an actionable next","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" step.","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" Continue.\n\nNext","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" prompt exact: \"","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"Install the","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" missing test dependencies (","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"e.g. `","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"python -m pip","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" install","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" colorama` or","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" `","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"pip install -e","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" '.[tests]'","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"`","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"), then create a","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" minimal untracked params","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":".yaml and reproduce `","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"dvc.api","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":".params_show('params","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":".yaml')`","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" failure before applying the","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" fix.\" Maybe include","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" if","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" install fails, report","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" blockers. But next","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" prompt should be concise","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":".\n\nUpdate memory","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":": \"Blocked","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" by missing colorama","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"/test","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" deps; next install","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" deps, reproduce un","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"tracked params API","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" failure, then fix","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" show.py path handling","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" and add regression test","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":".\"\n\nNeed ensure","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" JSON.","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":" No markdown.\n","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"{\n"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"  \"action\":"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" \"continue\",\n"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"  \"reason\":"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" \"The worker has"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" not completed the task"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":": the issue is"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" not"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" reproduced, fixed,"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" or"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" verified, and the"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" immediate"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" blocker is missing test"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"/runtime"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" dependencies.\",\n "}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" \"next_prompt\":"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" \"Install the missing"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" test dependencies needed to"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" import DVC and"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" run tests, for"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" example `python -"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"m pip install color"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"ama` or `"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"python -m pip"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" install -e '."}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"[tests]'`."}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" Then create a minimal"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" untracked `params"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":".yaml` and reproduce"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" `dvc"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":".api.params_show('"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"params.yaml')`"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" failing before making the"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" fix.\",\n"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"  \"update_memory"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"\": \"Worker blocked"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" on"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" missing colorama/test"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" dependencies."}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" Next: install dependencies"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":", reproduce untracked"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" params target failure,"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" then apply minimal"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" fix in params collection"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"/show path and add"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":" regression test.\""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":"\n}"}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"reasoning_content":"","content":""}}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","object":"chat.completion.chunk","created":1788059521,"model":"qwen3.8-max","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: {"id":"chatcmpl-222399be-fce6-9d8f-969b-d76e41a65201","created":1788059521,"model":"qwen3.8-max","object":"chat.completion.chunk","choices":[{"index":0,"delta":{}}],"usage":{"completion_tokens":599,"prompt_tokens":857,"total_tokens":1456,"completion_tokens_details":{"reasoning_tokens":433,"text_tokens":599},"prompt_tokens_details":{"cached_tokens":0,"text_tokens":857}}}
+
+data: [DONE]
+

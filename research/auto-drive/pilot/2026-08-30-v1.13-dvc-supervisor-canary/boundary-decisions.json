@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "runID": "adr_6bca459d36fdbfc8a428",
+  "source": {
+    "persistedEventType": "session.next.auto-drive.decided.1",
+    "sessionDatabaseIncluded": false,
+    "note": "The source Session database was queried read-only before export and then excluded from the sanitized research artifact. Provider timing and responses remain in the gateway trace."
+  },
+  "decisions": [
+    {
+      "boundary": 1,
+      "eventSequence": 42,
+      "decidedAt": "2026-08-30T03:11:14.991Z",
+      "action": "continue",
+      "reason": "The worker identified clear remaining work: inspect the underlying params show implementation, reproduce the untracked-target failure, implement a minimal fix, and validate with tests. This is actionable, safe, and in scope.",
+      "chainID": "msg_050a65c2e001jOSIrHG0zErGzL",
+      "continuationCount": 1,
+      "inputID": "msg_050a65c2e002aFs4rLLsrJqVNx",
+      "nextPrompt": "Inspect dvc/repo/params/show.py to determine how targets are collected and why untracked parameter files are omitted or cause failure. Then create a minimal reproduction for dvc.api.params_show with an untracked params file, implement the smallest fix to include valid untracked target files, add a regression test in tests/func/api/test_params.py, and run the relevant params tests.",
+      "memory": "Worker explored dvc/api/params.py and tests; remaining focus is dvc/repo/params/show.py, reproduction of untracked params target issue, minimal fix, and regression test validation.",
+      "controllerRequestSequence": 6,
+      "controllerRequestedAt": "2026-08-30T03:11:06.715Z",
+      "controllerReleasedAt": "2026-08-30T03:11:07.116Z",
+      "controllerCompletedAt": "2026-08-30T03:11:14.971Z",
+      "providerResultApplied": true,
+      "autoInput": {
+        "delivery": "queue",
+        "source": {
+          "type": "auto-drive",
+          "chainID": "msg_050a65c2e001jOSIrHG0zErGzL",
+          "decision": "continue",
+          "continuation": 1
+        },
+        "admittedSequence": 43,
+        "promotedSequence": 44
+      }
+    },
+    {
+      "boundary": 2,
+      "eventSequence": 89,
+      "decidedAt": "2026-08-30T03:12:15.399Z",
+      "action": "stop",
+      "reason": "No continuation cues found",
+      "chainID": "msg_050a65c2e001jOSIrHG0zErGzL",
+      "continuationCount": 1,
+      "memory": "Worker explored dvc/api/params.py and tests; remaining focus is dvc/repo/params/show.py, reproduction of untracked params target issue, minimal fix, and regression test validation.",
+      "controllerRequestSequence": 13,
+      "controllerRequestedAt": "2026-08-30T03:12:00.417Z",
+      "controllerReleasedAt": "2026-08-30T03:12:00.818Z",
+      "controllerCompletedAt": "2026-08-30T03:12:17.657Z",
+      "controllerReleaseToCompletionMS": 16839,
+      "providerResultApplied": false,
+      "fallback": "regex-timeout-fallback",
+      "lateProviderAction": "continue",
+      "lateProviderReason": "The worker has not completed the task: the issue is not reproduced, fixed, or verified, and the immediate blocker is missing test/runtime dependencies.",
+      "lateProviderNextPrompt": "Install the missing test dependencies needed to import DVC and run tests, for example `python -m pip install colorama` or `python -m pip install -e '.[tests]'`. Then create a minimal untracked `params.yaml` and reproduce `dvc.api.params_show('params.yaml')` failing before making the fix."
+    }
+  ]
+}
