@@ -311,7 +311,10 @@ describe("paid experiment CLI gates", () => {
       const preflight = await writeBoundaryPreflight(directory)
       const marker = path.join(directory, "executor-called")
       const executor = path.join(directory, "executor.ts")
-      await Bun.write(executor, `#!/usr/bin/env bun\nawait Bun.write(${JSON.stringify(marker)}, "called")\nprocess.exit(1)\n`)
+      await Bun.write(
+        executor,
+        `#!/usr/bin/env bun\nawait Bun.write(${JSON.stringify(marker)}, "called")\nprocess.exit(1)\n`,
+      )
       await chmod(executor, 0o755)
       const artifacts = await Promise.all(
         [
@@ -484,6 +487,143 @@ process.exit(1)
       expect(await Bun.file(marker).text()).toBe("called")
       expect(await Bun.file(path.join(directory, "boundary/exclusions", `${run.id}.json`)).exists()).toBeTrue()
       expect((await Bun.file(path.join(directory, "boundary/ledger.jsonl")).text()).trim().split("\n")).toHaveLength(1)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("resumes a recorded zero-cost setup failure as attempt two without overwriting attempt one", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-boundary-retry-"))
+    const run = createBoundaryRunPlan(parseManifest(manifestInput))[6]!
+    try {
+      const preflight = await writeBoundaryPreflight(directory)
+      const marker = path.join(directory, "attempt.txt")
+      const executor = path.join(directory, "executor.ts")
+      await Bun.write(
+        executor,
+        `#!/usr/bin/env bun
+const input = JSON.parse(await Bun.stdin.text())
+await Bun.write(${JSON.stringify(marker)}, String(input.attempt))
+console.error("stop after capturing the resumed attempt")
+process.exit(1)
+`,
+      )
+      await chmod(executor, 0o755)
+      const receipt = await writeZeroCostInfrastructureReceipt(directory, run)
+      const before = digest(await Bun.file(receipt).text())
+
+      const child = Bun.spawn(
+        [
+          Bun.which("bun")!,
+          "src/cli.ts",
+          "boundary-run",
+          "--execute",
+          "--resume-infrastructure",
+          "--executor",
+          executor,
+          "--preflight",
+          preflight,
+          "--artifact-root",
+          directory,
+          "--run-id",
+          run.id,
+        ],
+        { cwd: import.meta.dir + "/..", stdout: "pipe", stderr: "pipe" },
+      )
+      const [exitCode] = await Promise.all([child.exited, new Response(child.stderr).text()])
+
+      expect(exitCode).toBe(1)
+      expect(await Bun.file(marker).text()).toBe("2")
+      expect(digest(await Bun.file(receipt).text())).toBe(before)
+      expect(await Bun.file(path.join(directory, "boundary/trajectories.jsonl")).exists()).toBeFalse()
+      expect(await Bun.file(path.join(directory, "boundary/ledger.jsonl")).exists()).toBeFalse()
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("requires explicit retry adjudication before touching a pending failure receipt", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-boundary-retry-gate-"))
+    const run = createBoundaryRunPlan(parseManifest(manifestInput))[6]!
+    try {
+      const preflight = await writeBoundaryPreflight(directory)
+      const marker = path.join(directory, "executor-called")
+      const executor = path.join(directory, "executor.ts")
+      await Bun.write(
+        executor,
+        `#!/usr/bin/env bun\nawait Bun.write(${JSON.stringify(marker)}, "called")\nprocess.exit(1)\n`,
+      )
+      await chmod(executor, 0o755)
+      await writeZeroCostInfrastructureReceipt(directory, run)
+
+      const child = Bun.spawn(
+        [
+          Bun.which("bun")!,
+          "src/cli.ts",
+          "boundary-run",
+          "--execute",
+          "--executor",
+          executor,
+          "--preflight",
+          preflight,
+          "--artifact-root",
+          directory,
+          "--run-id",
+          run.id,
+        ],
+        { cwd: import.meta.dir + "/..", stdout: "pipe", stderr: "pipe" },
+      )
+      const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
+
+      expect(exitCode).toBe(1)
+      expect(stderr).toContain("requires explicit --resume-infrastructure adjudication")
+      expect(await Bun.file(marker).exists()).toBeFalse()
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test("rejects a retry receipt with any observed provider usage", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-boundary-retry-cost-"))
+    const run = createBoundaryRunPlan(parseManifest(manifestInput))[6]!
+    try {
+      const preflight = await writeBoundaryPreflight(directory)
+      const marker = path.join(directory, "executor-called")
+      const executor = path.join(directory, "executor.ts")
+      await Bun.write(
+        executor,
+        `#!/usr/bin/env bun\nawait Bun.write(${JSON.stringify(marker)}, "called")\nprocess.exit(1)\n`,
+      )
+      await chmod(executor, 0o755)
+      const receipt = await writeZeroCostInfrastructureReceipt(directory, run)
+      const content = await Bun.file(receipt).json()
+      content.gateway.requests = 1
+      content.gateway.promptTokens = 1
+      await Bun.write(receipt, JSON.stringify(content))
+
+      const child = Bun.spawn(
+        [
+          Bun.which("bun")!,
+          "src/cli.ts",
+          "boundary-run",
+          "--execute",
+          "--resume-infrastructure",
+          "--executor",
+          executor,
+          "--preflight",
+          preflight,
+          "--artifact-root",
+          directory,
+          "--run-id",
+          run.id,
+        ],
+        { cwd: import.meta.dir + "/..", stdout: "pipe", stderr: "pipe" },
+      )
+      const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
+
+      expect(exitCode).toBe(1)
+      expect(stderr).toContain("require complete zero-cost failure evidence")
+      expect(await Bun.file(marker).exists()).toBeFalse()
     } finally {
       await rm(directory, { recursive: true, force: true })
     }
@@ -675,8 +815,10 @@ async function writeBoundaryPreflight(directory: string) {
         },
       },
     }) + "\n"
-  const workerContent = JSON.stringify({ billing: "paid", modelVersion: "deepseek-v4-pro", trajectoryCapacity: 96 }) + "\n"
-  const controllerContent = JSON.stringify({ billing: "paid", modelVersion: "qwen3.8-max", trajectoryCapacity: 96 }) + "\n"
+  const workerContent =
+    JSON.stringify({ billing: "paid", modelVersion: "deepseek-v4-pro", trajectoryCapacity: 96 }) + "\n"
+  const controllerContent =
+    JSON.stringify({ billing: "paid", modelVersion: "qwen3.8-max", trajectoryCapacity: 96 }) + "\n"
   await Promise.all([
     Bun.write(metadata, metadataContent),
     Bun.write(workerProbe, workerContent),
@@ -714,6 +856,51 @@ async function writeBoundaryPreflight(directory: string) {
       modelMetadata: { path: "metadata/models.json", sha256: digest(metadataContent) },
       runtime: { disableExternalSkills: true, disableClaudeCodeSkills: true, disableModelsFetch: true },
     }) + "\n",
+  )
+  return receipt
+}
+
+async function writeZeroCostInfrastructureReceipt(
+  directory: string,
+  run: ReturnType<typeof createBoundaryRunPlan>[number],
+) {
+  const relative = path.join("raw", `${run.id}.jsonl`)
+  const content = '{"type":"executor-failed"}\n'
+  const receipt = path.join(directory, "failures", run.id, "attempt-1.json")
+  await Promise.all([
+    mkdir(path.dirname(path.join(directory, relative)), { recursive: true }),
+    mkdir(path.dirname(receipt), { recursive: true }),
+  ])
+  await Bun.write(path.join(directory, relative), content)
+  await Bun.write(
+    receipt,
+    JSON.stringify({
+      schemaVersion: 1,
+      protocol: "auto-drive-swe-evo-v1.14",
+      classification: "executor-failure",
+      stage: "setup",
+      code: "executor-error",
+      runID: run.id,
+      taskID: run.taskID,
+      attempt: 1,
+      startedAt: "2026-08-30T21:00:06.929Z",
+      recordedAt: "2026-08-30T21:03:56.711Z",
+      error: { name: "Error", message: "Gateway proxy did not become ready" },
+      gateway: {
+        settlement: { attempted: false, completed: true },
+        requests: 0,
+        responses: 0,
+        non200Responses: 0,
+        proxyErrors: 0,
+        usageCompleteResponses: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+        baselineSpendUSD: 4.8200276,
+      },
+      acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+      artifacts: [{ path: relative, sha256: digest(content) }],
+      recordingErrors: [],
+    }),
   )
   return receipt
 }

@@ -33,6 +33,8 @@ The evaluator launches one executable with a JSON object on standard input:
 
 The executable writes exactly one trajectory schema-v3 JSON object to standard output. Diagnostic text belongs on standard error and must not contain credentials. Exit code `75` means a predefined zero-cost infrastructure failure and permits one identical retry. Every other nonzero exit is final. Model timeout, loop, provider failure, grader failure, and budget exhaustion must be returned as classified trajectory outcomes rather than disguised as retryable infrastructure.
 
+If the evaluator process stops after writing an attempt-one receipt, it never silently starts attempt one again. Boundary recovery requires an explicit `--resume-infrastructure` invocation for exactly one run. The evaluator admits attempt two only when the receipt matches a predefined setup failure, contains zero requests, responses, tokens, and observed spend, references hash-valid artifacts, has no ledger row, and has no attempt-two receipt. Retry artifacts use a separate `-attempt-2` raw, gateway, patch, and grader namespace so the first receipt remains verifiable. Attempt two is terminal and can never advance to attempt three.
+
 ## Environment
 
 Real execution receives the artifact root, sealed preflight path and SHA-256, frozen protocol version, pinned model-metadata path, and isolation flags. Provider credentials may exist in the host process, but they must not enter task containers, artifacts, stdout, stderr, LaTeX, PDFs, or archives.

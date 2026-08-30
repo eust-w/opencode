@@ -15,6 +15,7 @@ import {
   classifyIdleSession,
   decideExternalContinuation,
   dockerPortPublish,
+  executionArtifactID,
   gradePytest,
   hasExperimentModels,
   parsePytestLog,
@@ -40,6 +41,12 @@ const task = {
 }
 
 describe("SWE-EVO host executor", () => {
+  test("keeps retry artifacts separate from the immutable first attempt", () => {
+    const runID = "adr_1234567890abcdef1234"
+    expect(executionArtifactID(runID, 1)).toBe(runID)
+    expect(executionArtifactID(runID, 2)).toBe(`${runID}-attempt-2`)
+  })
+
   test("exposes startup-baseline patch capture", async () => {
     const module = await import("../src/host-executor")
     expect("captureRepositoryBaseline" in module).toBe(true)

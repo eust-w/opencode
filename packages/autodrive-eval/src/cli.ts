@@ -23,6 +23,7 @@ import { renderTaskManifest } from "./paper"
 import { createPilotRun, loadPilotManifest } from "./pilot"
 import { createModelMetadataSnapshot, loadPreflight, PreflightScope } from "./preflight"
 import { createBoundaryRunPlan, createRunPlan, parseManifest, protocol, type Run } from "./protocol"
+import { admitBoundaryInfrastructureRetry } from "./retry"
 import { executeRuns, InfrastructureFailure, type ExecutionContext } from "./runner"
 
 const root = path.resolve(import.meta.dir, "../../..")
@@ -666,6 +667,8 @@ async function boundaryRun() {
   if (!executorPath) fail("--executor PATH is required")
   const requested = values("run-id")
   if (!requested.length && !flag("all")) fail("Select --run-id ID (repeatable) or explicitly pass --all")
+  if (flag("resume-infrastructure") && requested.length !== 1)
+    fail("--resume-infrastructure requires exactly one --run-id")
   const unknown = requested.filter((runID) => !boundaryPlan.some((run) => run.id === runID))
   if (unknown.length) fail(`Run IDs are outside the frozen boundary plan: ${unknown.join(", ")}`)
   const resolvedArtifactRoot = path.resolve(artifactRoot)
@@ -689,6 +692,7 @@ async function boundaryRun() {
     (run) => !completed.has(run.id) && (!requested.length || requested.includes(run.id)),
   )
   if (!selected.length && requested.length && requested.every((runID) => completed.has(runID))) {
+    if (flag("resume-infrastructure")) fail("Completed boundary runs cannot consume an infrastructure retry")
     console.log(
       JSON.stringify({
         completed: 0,
@@ -701,7 +705,20 @@ async function boundaryRun() {
     return
   }
   if (!selected.length) fail("No pending frozen boundary runs match the selection")
+  const retryRun = flag("resume-infrastructure") ? selected[0] : undefined
+  const pendingReceipts = await Promise.all(
+    selected.map((run) => Bun.file(path.join(resolvedArtifactRoot, "failures", run.id, "attempt-1.json")).exists()),
+  )
+  if (!retryRun && pendingReceipts.some(Boolean))
+    fail("A pending failure receipt requires explicit --resume-infrastructure adjudication")
   const ledger = await readJSONL(ledgerPath, parseLedger)
+  const retryAttempt = retryRun
+    ? await admitBoundaryInfrastructureRetry({
+        artifactRoot: resolvedArtifactRoot,
+        ledgerPath,
+        run: retryRun,
+      })
+    : 1
   await Promise.all([
     mkdir(path.dirname(resultsPath), { recursive: true }),
     mkdir(path.dirname(ledgerPath), { recursive: true }),
@@ -718,6 +735,7 @@ async function boundaryRun() {
         concurrency: protocol.concurrency,
         ledger,
         budget: () => ({ category: "boundary", maxCostUSD }),
+        attempt: (run) => (run.id === retryRun?.id ? retryAttempt : 1),
         onRecord: async (record, entry) => {
           const serialized = JSON.stringify(record)
           assertSecretFree(serialized)

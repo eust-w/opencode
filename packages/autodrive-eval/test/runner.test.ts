@@ -32,6 +32,38 @@ describe("bounded experiment runner", () => {
     expect(records[0]).toMatchObject({ runID: run.id, attempt: 2 })
   })
 
+  test("resumes a previously recorded zero-cost infrastructure retry at attempt two", async () => {
+    const run = createRunPlan(parseManifest(manifest))[0]!
+    const attempts: number[] = []
+    const records = await executeRuns(
+      [run],
+      async (input, attempt) => {
+        attempts.push(attempt)
+        return { runID: input.id, attempt, costUSD: 0.01 } as Trajectory
+      },
+      { attempt: () => 2 },
+    )
+
+    expect(attempts).toEqual([2])
+    expect(records[0]).toMatchObject({ runID: run.id, attempt: 2 })
+  })
+
+  test("never advances beyond attempt two after a resumed infrastructure failure", async () => {
+    const run = createRunPlan(parseManifest(manifest))[0]!
+    const attempts: number[] = []
+    await expect(
+      executeRuns(
+        [run],
+        async (_input, attempt) => {
+          attempts.push(attempt)
+          throw new InfrastructureFailure("second attempt failed")
+        },
+        { attempt: () => 2 },
+      ),
+    ).rejects.toThrow("second attempt failed")
+    expect(attempts).toEqual([2])
+  })
+
   test("does not rerun model timeouts or arbitrary errors", async () => {
     const run = createRunPlan(parseManifest(manifest))[0]!
     let calls = 0

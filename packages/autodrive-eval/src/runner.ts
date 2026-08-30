@@ -30,6 +30,7 @@ export async function executeRuns(
       readonly category: BudgetCategory
       readonly maxCostUSD: number
     }
+    readonly attempt?: (run: Run) => 1 | 2
     readonly onRecord?: (record: Trajectory, entry: LedgerEntry) => Promise<void>
   } = {},
 ) {
@@ -53,11 +54,16 @@ export async function executeRuns(
         const reservation: LedgerEntry = { category, amountUSD: maxCostUSD }
         const budget = summarizeBudget([...ledger, ...reservations, reservation])
         reservations.push(reservation)
-        const record = await execute(run, executor, {
-          category,
-          maxCostUSD,
-          remainingUSD: budget.remainingUSD,
-        }).finally(() => reservations.splice(reservations.indexOf(reservation), 1))
+        const record = await execute(
+          run,
+          executor,
+          {
+            category,
+            maxCostUSD,
+            remainingUSD: budget.remainingUSD,
+          },
+          options.attempt?.(run) ?? 1,
+        ).finally(() => reservations.splice(reservations.indexOf(reservation), 1))
         if (record.costUSD > maxCostUSD)
           throw new Error(`${run.id} cost $${record.costUSD} exceeds its preregistered $${maxCostUSD} ceiling`)
         ledger.push({ category, amountUSD: record.costUSD })
@@ -73,11 +79,11 @@ export async function executeRuns(
   return records
 }
 
-async function execute(run: Run, executor: Executor, context: ExecutionContext) {
+async function execute(run: Run, executor: Executor, context: ExecutionContext, attempt: 1 | 2) {
   try {
-    return await executor(run, 1, context)
+    return await executor(run, attempt, context)
   } catch (error) {
-    if (!(error instanceof InfrastructureFailure)) throw error
+    if (attempt === 2 || !(error instanceof InfrastructureFailure)) throw error
     if (error.costUSD > 0) throw new Error("Charged infrastructure failures require explicit ledger reconciliation")
     return executor(run, 2, context)
   }

@@ -373,6 +373,10 @@ export function classifyExecutorFailure(error: unknown, stage: string) {
   }
 }
 
+export function executionArtifactID(runID: string, attempt: 1 | 2) {
+  return attempt === 1 ? runID : `${runID}-attempt-${attempt}`
+}
+
 export function parseExecutorFailureReceipt(input: unknown) {
   return ExecutorFailureReceipt.parse(input)
 }

@@ -16,6 +16,7 @@ import {
   classifyTestPatch,
   decideExternalContinuation,
   dockerPortPublish,
+  executionArtifactID,
   gradePytest,
   hasExperimentModels,
   parseExecutorFailureReceipt,
@@ -56,6 +57,7 @@ if (task.instanceID !== input.run.taskID || task.image.length === 0) fail("Task 
 const workerModel = modelID(input.run.model)
 const controllerModel = modelID(input.run.controllerModel)
 const suffix = `${input.run.id.slice(4, 12)}-${input.attempt}`
+const artifactID = executionArtifactID(input.run.id, input.attempt)
 const networkName = `autodrive-${suffix}`
 const proxyName = `autodrive-proxy-${suffix}`
 const taskName = `autodrive-task-${suffix}`
@@ -63,9 +65,9 @@ const runtimeRoot = path.join(artifactRoot, "runtime", input.run.id, `attempt-${
 const configRoot = path.join(runtimeRoot, "config")
 const opencodeConfigRoot = path.join(configRoot, "opencode")
 const stateRoot = path.join(runtimeRoot, "state")
-const tracePath = path.join(artifactRoot, "raw", `${input.run.id}.jsonl`)
-const patchRoot = path.join(artifactRoot, "patches", input.run.id)
-const gatewayRoot = path.join(artifactRoot, "gateway", input.run.id)
+const tracePath = path.join(artifactRoot, "raw", `${artifactID}.jsonl`)
+const patchRoot = path.join(artifactRoot, "patches", artifactID)
+const gatewayRoot = path.join(artifactRoot, "gateway", artifactID)
 const requestManifest = path.join(gatewayRoot, "requests.jsonl")
 const proxyTrace = path.join(gatewayRoot, "proxy.jsonl")
 const controlRoot = path.join(gatewayRoot, "control")
@@ -606,7 +608,7 @@ try {
         timeoutMS: 20 * 60_000,
       })
       const content = test.stdout + test.stderr
-      const logPath = path.join(artifactRoot, "grader", input.run.id, `${label}.log`)
+      const logPath = path.join(artifactRoot, "grader", artifactID, `${label}.log`)
       await mkdir(path.dirname(logPath), { recursive: true })
       await Bun.write(logPath, content)
       const grade = gradePytest(task, parsePytestLog(content, task.logParser))
