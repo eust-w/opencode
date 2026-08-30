@@ -10,6 +10,7 @@ import {
   buildExperimentConfig,
   buildTaskPrompt,
   classifyIdleSession,
+  classifyTestPatch,
   decideExternalContinuation,
   gradePytest,
   parsePytestLog,
@@ -509,10 +510,52 @@ try {
           ["docker", "exec", "-i", graderName, "git", "-C", "/testbed", "apply", "--whitespace=nowarn", "-"],
           { stdin: modelPatch },
         )
-      await command(
-        ["docker", "exec", "-i", graderName, "git", "-C", "/testbed", "apply", "--whitespace=nowarn", "-"],
-        { stdin: task.testPatch },
+      const forward = await command(
+        [
+          "docker",
+          "exec",
+          "-i",
+          graderName,
+          "git",
+          "-C",
+          "/testbed",
+          "apply",
+          "--check",
+          "--whitespace=nowarn",
+          "-",
+        ],
+        { allowFailure: true, stdin: task.testPatch },
       )
+      const reverse =
+        forward.exitCode === 0
+          ? undefined
+          : await command(
+              [
+                "docker",
+                "exec",
+                "-i",
+                graderName,
+                "git",
+                "-C",
+                "/testbed",
+                "apply",
+                "--reverse",
+                "--check",
+                "--whitespace=nowarn",
+                "-",
+              ],
+              { allowFailure: true, stdin: task.testPatch },
+            )
+      const disposition = classifyTestPatch({
+        forwardApplies: forward.exitCode === 0,
+        reverseApplies: reverse?.exitCode === 0,
+      })
+      if (disposition === "apply")
+        await command(
+          ["docker", "exec", "-i", graderName, "git", "-C", "/testbed", "apply", "--whitespace=nowarn", "-"],
+          { stdin: task.testPatch },
+        )
+      await trace({ type: "test-patch-prepared", label, disposition })
       const test = await command(
         ["docker", "exec", graderName, "bash", "-lc", `cd /testbed && ${task.testCommand}`],
         { allowFailure: true, timeoutMS: 20 * 60_000 },

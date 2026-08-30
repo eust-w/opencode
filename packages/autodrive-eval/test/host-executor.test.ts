@@ -4,6 +4,7 @@ import {
   buildAutoDriveUpdate,
   buildExperimentConfig,
   buildTaskPrompt,
+  classifyTestPatch,
   classifyIdleSession,
   decideExternalContinuation,
   gradePytest,
@@ -144,6 +145,14 @@ describe("SWE-EVO host executor", () => {
     expect(prompt).toContain(task.problemStatement)
     expect(prompt).not.toContain(task.testPatch)
     expect(prompt).not.toContain("hidden marker")
+  })
+
+  test("applies missing test patches and accepts fully pre-applied test patches", () => {
+    expect(classifyTestPatch({ forwardApplies: true, reverseApplies: false })).toBe("apply")
+    expect(classifyTestPatch({ forwardApplies: false, reverseApplies: true })).toBe("already-applied")
+    expect(() => classifyTestPatch({ forwardApplies: false, reverseApplies: false })).toThrow(
+      "Model patch conflicts with the frozen test patch",
+    )
   })
 
   test("rejects task records that contain a gold patch", () => {

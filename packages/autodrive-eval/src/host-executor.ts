@@ -150,6 +150,12 @@ export function classifyIdleSession(input: {
   return input.usageComplete ? ("non-retryable-provider" as const) : ("retryable-provider" as const)
 }
 
+export function classifyTestPatch(input: { forwardApplies: boolean; reverseApplies: boolean }) {
+  if (input.forwardApplies) return "apply" as const
+  if (input.reverseApplies) return "already-applied" as const
+  throw new Error("Model patch conflicts with the frozen test patch")
+}
+
 function permissions() {
   return [
     { action: "*", resource: "*", effect: "allow" },

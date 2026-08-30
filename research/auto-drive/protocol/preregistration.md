@@ -1,4 +1,4 @@
-# AutoDrive Preregistration v1.12
+# AutoDrive Preregistration v1.13
 
 Frozen: 2026-08-30 (Asia/Shanghai)
 
@@ -73,6 +73,14 @@ The first accepted v1.11 paid pilot exercised the complete supervisor path on on
 That pilot also confirmed that the host executor still rejected the three preregistered non-supervisor strategies. Version 1.12 implements the already frozen policy definitions before any comparative result is accepted. `regex` uses the Session heuristic with contextual goal and memory disabled. The proxy temporarily gates post-initial regex worker requests so the executor can seal an exact patch at an automatically continued boundary before the next worker response changes the checkout. `blind` and `oracle` run with Session AutoDrive disabled and admit the same static queue prompt at a safe idle boundary; blind continues until the five-continuation cap, while oracle continues only when the official external task verifier reports unresolved. Oracle grading runs in a separate no-network task-image container and memoizes identical patch hashes, so validation cannot mutate the worker checkout. Every strategy records the first-boundary prefix, and the executor waits for one terminal proxy event per sealed provider request before acceptance.
 
 The supervisor prompt, regex rules, static baseline prompt, models, task inputs, temperature, output limits, six-step segment size, five-continuation cap, metrics, statistics, and budget are unchanged. The amendment completes missing executor coverage and strengthens artifact isolation; it is not selected based on a favorable pilot outcome. All v1.12 deterministic run IDs are regenerated, and the v1.11 pilot remains outside comparative estimates.
+
+## Overlapping test-patch amendment (v1.13)
+
+The first v1.12 regex pilot is retained as a negative pilot trajectory: the frozen tail heuristic stopped at an unresolved boundary because the opening maximum-step cue fell outside its 1,500-character tail and Markdown-prefixed remaining-work headings did not match. It is not admitted to the formal comparative matrix.
+
+The first v1.12 blind canary reached six boundaries, injected the frozen static continuation exactly five times, and produced a 1,495-byte final patch after the third continuation. All 28 worker responses settled with complete usage of 355,997 prompt and 7,345 completion tokens and zero proxy errors. The first-boundary empty patch was graded unresolved. Final grading then stopped before tests because the model patch already contained every hunk of the frozen test patch; mechanically applying the same test patch a second time failed. The run produced no accepted trajectory or ledger row. Its reconciled metered cost is USD 0.3887664, and it remains an excluded engineering canary rather than a same-ID retry.
+
+Version 1.13 changes only isolated grader preparation. After applying a model patch, the grader first checks whether the frozen test patch applies forward. If not, it requires the complete patch to pass `git apply --reverse --check`, records `already-applied`, and proceeds without duplicating it. If neither direction validates, grading fails closed as a real patch conflict. A no-network reproduction using the exact v1.12 blind patch observed forward conflict, successful reverse validation, and both the target fail-to-pass test and a related pass-to-pass test passing. Worker/controller policies, prompts, models, task inputs, request parameters, continuation limits, outcome definitions, statistics, and budget are unchanged. Because the charged v1.12 blind ID is historical evidence, all deterministic v1.13 run IDs are regenerated.
 
 ## Claim boundary
 
