@@ -314,6 +314,10 @@ Table~\ref{tab:results} is generated from the frozen trajectory index. The main 
   \end{tabular}
 \end{table}
 
+Before the formal matrix, we completed a paid v1.13 execution canary on one DVC task. Table~\ref{tab:canary-ablation} reports all four accepted policy trajectories. The canary used the qualified D-Robotics gateway with a DeepSeek worker and Qwen controller rather than the preregistered formal model matrix. Every trajectory was unresolved at its own first boundary; oracle and blind ultimately resolved, while regex stopped immediately and the supervisor resumed once before a controller timeout triggered the frozen regex fallback. These rows are independent, unpaired trajectories, so they establish mechanism and failure cases rather than a treatment effect.
+
+\input{generated/canary-v1.13}
+
 The supervisor's resolved-rate difference is \SupervisorDelta{}. We will not interpret a non-significant result as equivalence. A controller may reduce manual prompts without changing resolution, or raise Fix Rate without reaching full resolution. These outcomes are reported independently.
 
 \section{RQ3: Component Contributions}
@@ -332,6 +336,8 @@ The supervisor's token/cost difference is \CostDelta{} and latency difference is
 
 After the frozen run, two reviewers will assign one primary failure category and optional secondary categories to unresolved or unsafe cases. Planned categories are: worker capability failure; wrong continuation decision; correct continuation with ineffective next prompt; repeated strategy; stale or misleading summary; memory contamination within a Session; verifier mismatch; permission/defer error; provider/runtime failure; and benchmark defect.
 
+The v1.13 canary already supplies two observed cases without changing the frozen taxonomy. Regex produced a missed continuation: it persisted STOP on an empty patch even though the worker listed unfinished implementation and validation and the F2P test failed. The full supervisor correctly recovered that boundary and durably admitted one queue continuation. At the next boundary, its eventual semantic action was again CONTINUE, but the streamed response completed 16.839 seconds after release and missed the 15-second deadline; the preregistered regex fallback then persisted STOP. The extra segment produced no patch and is counted as redundant. This is classified as a provider/runtime latency failure with a secondary wrong fallback decision, not as evidence that supervision generally harms utility.
+
 We will sample both false continuations and missed continuations, preserving task and worker strata. Error categories are descriptive and cannot remove a failure from quantitative analysis. Suspected benchmark defects are reported with evidence and sensitivity analyses, but the primary frozen result remains intact.
 
 \section{Threats to Validity}\label{sec:threats}
@@ -339,6 +345,8 @@ We will sample both false continuations and missed continuations, preserving tas
 \textbf{Construct validity.} A static ``continue'' input is only an approximation to human follow-up. Manual continuation count measures interaction demand, not user satisfaction. The three labels compress nuanced states; the guide and dual annotation mitigate but do not eliminate disagreement.
 
 \textbf{Internal validity.} Provider services may be nondeterministic at temperature zero, and model aliases may move. We therefore record resolved model versions and request hashes, repeat the primary worker on a stratified subset, and pair each off prefix with its own trace. The same Gemini controller across workers isolates one source of variation but may favor outputs it understands better.
+
+The single-task canary is especially vulnerable to this threat: its policy rows are independent trajectories, not counterfactual replays. We therefore report its costs, continuations, and outcomes descriptively and do not include it in McNemar tests, bootstrap intervals, or Holm correction.
 
 \textbf{Benchmark validity.} SWE-EVO is public, Python-only, and uneven across repositories; DVC contributes many tasks. Public histories may be contaminated in model training. The benchmark's tests can still be incomplete or implementation-specific. We publish task-level results and do not generalize to all software development.
 

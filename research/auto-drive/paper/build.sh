@@ -2,8 +2,8 @@
 set -euo pipefail
 
 paper_dir="$(cd "$(dirname "$0")" && pwd)"
-image="opencode-autodrive-texlive@sha256:9d0f4661034103159dd1a82dfc9818ebbb83ced84a4bfc4378dbe681df1c75f8"
-expected_digest="sha256:9d0f4661034103159dd1a82dfc9818ebbb83ced84a4bfc4378dbe681df1c75f8"
+image="opencode-autodrive-texlive-locked@sha256:73c0d3f3b9d78663d7f549a8d1d113f153aa16b244338b6942e978a74baa70cd"
+expected_digest="sha256:73c0d3f3b9d78663d7f549a8d1d113f153aa16b244338b6942e978a74baa70cd"
 
 actual_digest="$(docker image inspect "$image" --format '{{.Id}}')"
 if [[ "$actual_digest" != "$expected_digest" ]]; then
