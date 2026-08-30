@@ -39,6 +39,26 @@ const ProviderProbe = z.object({
   trajectoryCapacity: z.number().int().nonnegative(),
 })
 
+const RunnableModelMetadata = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  release_date: z.string().min(1),
+  attachment: z.boolean(),
+  reasoning: z.boolean(),
+  temperature: z.boolean(),
+  tool_call: z.boolean(),
+  limit: z.object({
+    context: z.number().positive(),
+    output: z.number().positive(),
+  }),
+  modalities: z
+    .object({
+      input: z.array(z.enum(["text", "audio", "image", "video", "pdf"])),
+      output: z.array(z.enum(["text", "audio", "image", "video", "pdf"])),
+    })
+    .optional(),
+})
+
 export function parsePreflight(input: unknown, options: { scope: PreflightScope; now?: Date }) {
   const receipt = Preflight.parse(input)
   if (receipt.scope !== options.scope) throw new Error(`Preflight scope must be ${options.scope}`)
@@ -161,7 +181,10 @@ function verifyModelMetadata(receipt: Preflight, input: unknown) {
   const metadata = z.record(z.string(), z.object({ models: z.record(z.string(), z.unknown()) }).loose()).parse(input)
   receipt.models.forEach((model) => {
     const separator = model.model.indexOf("/")
-    if (!(model.catalogModelID in (metadata[model.model.slice(0, separator)]?.models ?? {})))
+    const value = metadata[model.model.slice(0, separator)]?.models?.[model.catalogModelID]
+    if (!value)
       throw new Error(`Model metadata does not contain catalog model: ${model.catalogModelID}`)
+    if (!RunnableModelMetadata.safeParse(value).success)
+      throw new Error(`${model.model} does not contain runnable model metadata`)
   })
 }

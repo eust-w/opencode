@@ -121,8 +121,26 @@ describe("experiment preflight gate", () => {
         mkdir(path.join(directory, "metadata"), { recursive: true }),
         mkdir(path.join(directory, "probes"), { recursive: true }),
       ])
+      const model = (id: string, output: number) => ({
+        id,
+        name: id,
+        release_date: "2023-03-01",
+        attachment: false,
+        reasoning: true,
+        temperature: true,
+        tool_call: true,
+        limit: { context: 131_072, output },
+        modalities: { input: ["text"], output: ["text"] },
+      })
       const metadata =
-        '{"d-robotics":{"models":{"deepseek-v4-pro":{"id":"deepseek-v4-pro"},"qwen3.8-max":{"id":"qwen3.8-max"}}}}\n'
+        JSON.stringify({
+          "d-robotics": {
+            models: {
+              "deepseek-v4-pro": model("deepseek-v4-pro", 4_096),
+              "qwen3.8-max": model("qwen3.8-max", 1_024),
+            },
+          },
+        }) + "\n"
       const probe = '{"billing":"sponsored","modelVersion":"deepseek-v4-pro","trajectoryCapacity":1}\n'
       const controllerProbe = '{"billing":"sponsored","modelVersion":"qwen3.8-max","trajectoryCapacity":1}\n'
       const digest = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
@@ -145,6 +163,30 @@ describe("experiment preflight gate", () => {
       await expect(
         loadPreflight(receiptPath, { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") }),
       ).resolves.toMatchObject({ sha256: digest(content), receipt: { scope: "canary" } })
+
+      const invalidMetadata =
+        JSON.stringify({
+          "d-robotics": {
+            models: {
+              "deepseek-v4-pro": { id: "deepseek-v4-pro" },
+              "qwen3.8-max": model("qwen3.8-max", 1_024),
+            },
+          },
+        }) + "\n"
+      await Bun.write(path.join(directory, base.modelMetadata.path), invalidMetadata)
+      await Bun.write(
+        receiptPath,
+        JSON.stringify({
+          ...receipt,
+          modelMetadata: { ...receipt.modelMetadata, sha256: digest(invalidMetadata) },
+        }),
+      )
+      await expect(
+        loadPreflight(receiptPath, { scope: "canary", now: new Date("2026-08-30T03:00:00.000Z") }),
+      ).rejects.toThrow("runnable model metadata")
+
+      await Bun.write(path.join(directory, base.modelMetadata.path), metadata)
+      await Bun.write(receiptPath, content)
 
       await Bun.write(path.join(directory, base.models[0].probe.path), '{"billing":"free"}\n')
       await expect(
