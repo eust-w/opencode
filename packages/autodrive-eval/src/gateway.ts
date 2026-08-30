@@ -97,11 +97,16 @@ export async function relayTaskRequest(input: Request, upstream: string) {
     if (value) headers.set(name, value)
   })
   const method = input.method.toUpperCase()
-  return fetch(new URL(source.pathname.slice(prefix.length) + source.search, upstream), {
+  const response = await fetch(new URL(source.pathname.slice(prefix.length) + source.search, upstream), {
     method,
     headers,
     body: method === "GET" || method === "HEAD" ? undefined : await input.arrayBuffer(),
     redirect: "manual",
+  })
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: decodedResponseHeaders(response.headers),
   })
 }
 
@@ -278,13 +283,19 @@ export async function proxyGatewayRequest(
     usageComplete: !!usage,
     ...usage,
   })
-  const headers = new Headers(upstream.headers)
-  ;["content-length", "set-cookie", "transfer-encoding"].forEach((name) => headers.delete(name))
   return new Response(content, {
     status: upstream.status,
     statusText: upstream.statusText,
-    headers,
+    headers: decodedResponseHeaders(upstream.headers),
   })
+}
+
+function decodedResponseHeaders(input: Headers) {
+  const headers = new Headers(input)
+  ;["connection", "content-encoding", "content-length", "set-cookie", "transfer-encoding"].forEach((name) =>
+    headers.delete(name),
+  )
+  return headers
 }
 
 function tryParseGatewayUsage(content: string) {

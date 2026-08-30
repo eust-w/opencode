@@ -256,6 +256,29 @@ describe("gateway experiment transport", () => {
     }
   })
 
+  test("does not advertise task response compression after Bun decodes the body", async () => {
+    const upstream = Bun.serve({
+      port: 0,
+      fetch: () =>
+        new Response(Bun.gzipSync(JSON.stringify({ providers: [{ id: "openai" }] })), {
+          headers: { "content-encoding": "gzip", "content-type": "application/json" },
+        }),
+    })
+    const proxy = Bun.serve({
+      port: 0,
+      fetch: (request) => relayTaskRequest(request, `http://127.0.0.1:${upstream.port}`),
+    })
+    try {
+      const response = await fetch(`http://127.0.0.1:${proxy.port}/_autodrive/task/config/providers`)
+
+      expect(response.headers.get("content-encoding")).toBeNull()
+      expect(await response.json()).toEqual({ providers: [{ id: "openai" }] })
+    } finally {
+      await proxy.stop(true)
+      await upstream.stop(true)
+    }
+  })
+
   test("extracts model and token usage from streaming or JSON responses", () => {
     expect(
       parseGatewayUsage(
@@ -310,11 +333,16 @@ describe("gateway experiment transport", () => {
       fetch: async (request) => {
         receivedAuthorization = request.headers.get("authorization") ?? ""
         receivedBody = await request.text()
-        return Response.json({
-          model: "deepseek-v4-pro",
-          choices: [{ finish_reason: "stop", message: { role: "assistant", content: "OK" } }],
-          usage: { prompt_tokens: 4, completion_tokens: 1, total_tokens: 5 },
-        })
+        return new Response(
+          Bun.gzipSync(
+            JSON.stringify({
+              model: "deepseek-v4-pro",
+              choices: [{ finish_reason: "stop", message: { role: "assistant", content: "OK" } }],
+              usage: { prompt_tokens: 4, completion_tokens: 1, total_tokens: 5 },
+            }),
+          ),
+          { headers: { "content-encoding": "gzip", "content-type": "application/json" } },
+        )
       },
     })
     const requests: unknown[] = []
@@ -344,6 +372,7 @@ describe("gateway experiment transport", () => {
         },
       )
       expect(response.status).toBe(200)
+      expect(response.headers.get("content-encoding")).toBeNull()
       expect(await response.json()).toMatchObject({ model: "deepseek-v4-pro" })
       expect(receivedAuthorization).toBe("Bearer host-key")
       expect(receivedBody).toBe(
