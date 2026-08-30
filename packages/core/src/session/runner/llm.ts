@@ -542,8 +542,10 @@ const layer = Layer.effect(
                     Effect.timeout("15 seconds"),
                     Effect.catch(() => Effect.succeed(undefined)),
                   )
-                : AutoDrive.decideHeuristic(autoDriveContext)
-            }).pipe(Effect.map((value) => value ?? AutoDrive.decideHeuristic(autoDriveContext)))
+                : AutoDrive.supervisorFallback(
+                    "Session unavailable for supervisor decision; returning control to the user",
+                  )
+            }).pipe(Effect.map((value) => value ?? AutoDrive.supervisorFallback()))
             const source = yield* getLastUserSource(input.sessionID)
             const state = yield* autoDrive.decide({
               sessionID: input.sessionID,

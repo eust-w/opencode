@@ -3550,4 +3550,45 @@ describe("SessionRunnerLLM", () => {
       expect(requests[3]!.generation).toMatchObject({ maxTokens: 1_024, temperature: 0 })
     }),
   )
+
+  it.effect("defers when the supervisor provider fails instead of guessing with the heuristic", () =>
+    Effect.gen(function* () {
+      yield* setup
+      autoDrivePolicy = "supervisor"
+      const failureSessionID = SessionV2.ID.make("ses_runner_auto_drive_supervisor_failure")
+      yield* insertSession(failureSessionID)
+      const session = yield* SessionV2.Service
+      yield* session.prompt({
+        sessionID: failureSessionID,
+        prompt: Prompt.make({ text: "Build the feature" }),
+        resume: false,
+      })
+
+      requests.length = 0
+      responses = [
+        [
+          LLMEvent.textStart({ id: "worker-1" }),
+          LLMEvent.textDelta({ id: "worker-1", text: "Part 1 completed. Next steps: write tests." }),
+          LLMEvent.textEnd({ id: "worker-1" }),
+          LLMEvent.finish({ reason: "stop" }),
+        ],
+        [LLMEvent.providerError({ message: "Supervisor unavailable" })],
+      ]
+
+      yield* session.resume(failureSessionID)
+
+      expect(requests).toHaveLength(2)
+      const { db } = yield* Database.Service
+      const state = yield* db
+        .select({ autoDrive: SessionTable.auto_drive })
+        .from(SessionTable)
+        .where(eq(SessionTable.id, failureSessionID))
+        .get()
+        .pipe(Effect.orDie)
+      expect(state?.autoDrive?.status).toMatchObject({
+        action: "defer",
+        reason: "Supervisor unavailable or timed out; returning control to the user",
+      })
+    }),
+  )
 })

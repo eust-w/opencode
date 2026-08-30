@@ -24,6 +24,10 @@ export interface Decision {
   readonly updateMemory?: string
 }
 
+export const supervisorFallback = (
+  reason = "Supervisor unavailable or timed out; returning control to the user",
+): Decision => ({ action: "defer", reason })
+
 const SupervisorOutput = Schema.Struct({
   action: Action.pipe(Schema.optional),
   continue: Schema.Boolean.pipe(Schema.optional),
@@ -183,7 +187,7 @@ export const parseSupervisorDecision = (raw: string, context: Context): Decision
     }
   }
 
-  return decideHeuristic(context)
+  return supervisorFallback("Supervisor response was invalid; returning control to the user")
 }
 
 export const defaultPlaybookTemplate = (projectName?: string): string => {

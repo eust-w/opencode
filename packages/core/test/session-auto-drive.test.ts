@@ -180,7 +180,7 @@ describe("AutoDrive.parseSupervisorDecision", () => {
     expect(decision.nextPrompt).toBeUndefined()
   })
 
-  test("gracefully falls back to heuristic detection on malformed JSON", () => {
+  test("defers on malformed supervisor JSON instead of guessing with the heuristic", () => {
     const raw = "I think we should proceed because next steps are listed."
     const context: AutoDrive.Context = {
       lastText: "Next steps: write test cases and verify",
@@ -188,8 +188,9 @@ describe("AutoDrive.parseSupervisorDecision", () => {
       contextual: true,
     }
     const decision = AutoDrive.parseSupervisorDecision(raw, context)
-    expect(decision.action).toBe("continue")
-    expect(decision.nextPrompt).toContain("[Auto-Drive Directive]")
+    expect(decision.action).toBe("defer")
+    expect(decision.reason).toContain("invalid")
+    expect(decision.nextPrompt).toBeUndefined()
   })
 })
 
