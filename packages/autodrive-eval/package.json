@@ -15,6 +15,7 @@
     "gateway-proxy": "bun scripts/gateway-proxy.ts",
     "gateway-host-executor": "bun scripts/gateway-host-executor.ts",
     "canary": "bun src/cli.ts canary",
+    "canary:analyze": "bun scripts/canary-ablation.ts",
     "validate": "bun src/cli.ts validate",
     "analyze": "bun src/cli.ts analyze",
     "run-eval": "bun src/cli.ts run"
