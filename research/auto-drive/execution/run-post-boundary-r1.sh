@@ -6,10 +6,8 @@ umask 077
 workspace=${AUTODRIVE_WORKSPACE:?AUTODRIVE_WORKSPACE is required}
 artifact=${AUTODRIVE_EVAL_ARTIFACT_ROOT:?AUTODRIVE_EVAL_ARTIFACT_ROOT is required}
 key_file=${AUTODRIVE_GATEWAY_KEY_FILE:?AUTODRIVE_GATEWAY_KEY_FILE is required}
-augmentation_preflight=${AUTODRIVE_BOUNDARY_AUGMENTATION_PREFLIGHT:?AUTODRIVE_BOUNDARY_AUGMENTATION_PREFLIGHT is required}
-annotation_preflight=${AUTODRIVE_ANNOTATION_PREFLIGHT:?AUTODRIVE_ANNOTATION_PREFLIGHT is required}
-ablation_preflight=${AUTODRIVE_ABLATION_PREFLIGHT:?AUTODRIVE_ABLATION_PREFLIGHT is required}
-full_preflight=${AUTODRIVE_EVAL_PREFLIGHT_PATH:?AUTODRIVE_EVAL_PREFLIGHT_PATH is required}
+metadata=${AUTODRIVE_MODEL_METADATA_SOURCE:?AUTODRIVE_MODEL_METADATA_SOURCE is required}
+preflight_max=${AUTODRIVE_PREFLIGHT_MAX_COST_USD:?AUTODRIVE_PREFLIGHT_MAX_COST_USD is required}
 annotation_max=${AUTODRIVE_ANNOTATION_MAX_COST_USD:?AUTODRIVE_ANNOTATION_MAX_COST_USD is required}
 annotation_call_max=${AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD:?AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD is required}
 ablation_max=${AUTODRIVE_ABLATION_MAX_COST_USD:?AUTODRIVE_ABLATION_MAX_COST_USD is required}
@@ -28,13 +26,36 @@ chmod 700 "$annotations" "$artifact/orchestration"
 exec >>"$log" 2>&1
 
 echo "$(date -u +%FT%TZ) pipeline-start"
-bash "$workspace/research/auto-drive/execution/run-boundary-augmentation-r1.sh"
-
 cd "$workspace/packages/autodrive-eval"
+export AUTODRIVE_GATEWAY_KEY_FILE="$key_file"
+export AUTODRIVE_EVAL_BUDGET_LEDGER="$ledger"
+export AUTODRIVE_BOUNDARY_FIXED_COST_USD="$fixed_cost"
+export AUTODRIVE_PREFLIGHT_MAX_COST_USD="$preflight_max"
+
+ensure_preflight() {
+  local scope=$1
+  local directory="$artifact/preflight/$scope-r1"
+  if [ -f "$directory/receipt.json" ]; then
+    bun src/cli.ts preflight --scope "$scope" --receipt "$directory/receipt.json" >/dev/null
+  else
+    bun scripts/research-preflight.ts --scope "$scope" --output "$directory" --metadata "$metadata" >&2
+  fi
+  echo "$directory/receipt.json"
+}
+
+candidate_count=$(wc -l < "$initial_candidates" | tr -d ' ')
+if [ "$candidate_count" -lt 180 ]; then
+  augmentation_preflight=$(ensure_preflight boundary-augmentation)
+  export AUTODRIVE_BOUNDARY_AUGMENTATION_PREFLIGHT="$augmentation_preflight"
+  bash "$workspace/research/auto-drive/execution/run-boundary-augmentation-r1.sh"
+fi
+
 bun src/cli.ts annotations-extract \
   --results "$artifact/boundary/trajectories.jsonl" \
   --artifact-root "$artifact" \
   --output "$frame"
+
+annotation_preflight=$(ensure_preflight annotation)
 
 run_judge() {
   local identity=$1
@@ -47,9 +68,6 @@ run_judge() {
     --preflight "$annotation_preflight"
 }
 
-export AUTODRIVE_GATEWAY_KEY_FILE="$key_file"
-export AUTODRIVE_EVAL_BUDGET_LEDGER="$ledger"
-export AUTODRIVE_BOUNDARY_FIXED_COST_USD="$fixed_cost"
 export AUTODRIVE_ANNOTATION_MAX_COST_USD="$annotation_max"
 export AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD="$annotation_call_max"
 run_judge model-qwen3.7-max d-robotics/qwen3.7-max
@@ -77,6 +95,7 @@ bun src/cli.ts annotations-freeze \
 
 export AUTODRIVE_ABLATION_MAX_COST_USD="$ablation_max"
 export AUTODRIVE_ABLATION_PER_CALL_CEILING_USD="$ablation_call_max"
+ablation_preflight=$(ensure_preflight ablation)
 bun scripts/ablation-runner.ts \
   --test "$frozen/test.jsonl" \
   --output "$artifact/ablation" \
@@ -87,6 +106,7 @@ bun src/cli.ts ablation-analyze \
   --output "$artifact/ablation/statistics.json"
 
 export AUTODRIVE_ANNOTATIONS_ROOT="$frozen"
+full_preflight=$(ensure_preflight full)
 export AUTODRIVE_EVAL_PREFLIGHT_PATH="$full_preflight"
 bash "$workspace/research/auto-drive/execution/run-formal-r1.sh"
 bun src/cli.ts analyze \

@@ -33,6 +33,8 @@ describe("paid experiment CLI gates", () => {
       new URL("../../../research/auto-drive/execution/run-post-boundary-r1.sh", import.meta.url),
     ).text()
     expect(script).toContain("set -euo pipefail")
+    expect(script).toContain("ensure_preflight")
+    expect(script).toContain("research-preflight.ts")
     expect(script).toContain("run-boundary-augmentation-r1.sh")
     expect(script).toContain("model-qwen3.7-max")
     expect(script).toContain("model-deepseek-v4-flash")
