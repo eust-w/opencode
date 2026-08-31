@@ -85,6 +85,63 @@ export interface Boundary {
   readonly label: BoundaryLabel
 }
 
+export function selectBalancedAnnotations(input: {
+  candidates: readonly unknown[]
+  first: string
+  second: string
+  adjudicated: string
+  seed: string
+}) {
+  const candidates = z.array(BoundaryCandidate).parse(input.candidates)
+  if (new Set(candidates.map((candidate) => candidate.id)).size !== candidates.length)
+    throw new Error("Boundary candidate IDs must be unique")
+  const ids = new Set(candidates.map((candidate) => candidate.id))
+  const first = parseAnnotationFile(input.first, ids)
+  const second = parseAnnotationFile(input.second, ids)
+  const adjudicated = parseAnnotationFile(input.adjudicated, ids)
+  if (new Set([first.annotator, second.annotator, adjudicated.annotator]).size !== 3)
+    throw new Error("Annotation files require independent annotator identities")
+  const selected = labels.flatMap((label) => {
+    const matching = candidates
+      .filter((candidate) => adjudicated.labels.get(candidate.id) === label)
+      .map((candidate) => ({
+        candidate,
+        rank: createHash("sha256").update(`${input.seed}\0${candidate.id}`).digest("hex"),
+      }))
+      .sort((left, right) => left.rank.localeCompare(right.rank))
+    if (matching.length < 60) throw new Error(`Adjudicated boundary frame contains fewer than 60 ${label} examples`)
+    return matching.slice(0, 60).map((item) => item.candidate)
+  })
+  const selectedIDs = new Set(selected.map((candidate) => candidate.id))
+  const subset = (source: ReturnType<typeof parseAnnotationFile>) =>
+    [
+      annotationHeader,
+      ...candidates
+        .filter((candidate) => selectedIDs.has(candidate.id))
+        .map((candidate) =>
+          [
+            candidate.id,
+            source.annotator,
+            source.labels.get(candidate.id)!,
+            source.confidence.get(candidate.id)!,
+            source.reasons.get(candidate.id)!,
+            source.nextActions.get(candidate.id)!,
+            source.timestamps.get(candidate.id)!,
+          ]
+            .map(csvField)
+            .join(","),
+        ),
+    ].join("\n")
+  return {
+    candidates: selected,
+    first: subset(first),
+    second: subset(second),
+    adjudicated: subset(adjudicated),
+    screened: candidates.length,
+    counts: { continue: 60, stop: 60, defer: 60 } as const,
+  }
+}
+
 export function splitBoundaries<T extends Boundary>(
   boundaries: readonly T[],
   options: { readonly developmentSize: number; readonly seed: string },

@@ -55,6 +55,17 @@ describe("paid experiment CLI gates", () => {
     expect(stderr).toContain("--results PATH is required")
   })
 
+  test("requires explicit labeled inputs before balanced annotation selection", async () => {
+    const child = Bun.spawn([Bun.which("bun")!, "src/cli.ts", "annotations-select"], {
+      cwd: import.meta.dir + "/..",
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+    const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
+    expect(exitCode).toBe(1)
+    expect(stderr).toContain("--candidates PATH is required")
+  })
+
   test("keeps post-session spend reconciliation explicit and single-run", async () => {
     const child = Bun.spawn([Bun.which("bun")!, "src/cli.ts", "boundary-reconcile-spend"], {
       cwd: import.meta.dir + "/..",

@@ -4,6 +4,7 @@ import {
   freezeAnnotations,
   renderBoundaryPacket,
   renderLabelTemplate,
+  selectBalancedAnnotations,
   splitBoundaries,
   validateFrozenAnnotationCorpus,
 } from "../src/annotation"
@@ -40,6 +41,51 @@ describe("boundary dataset split", () => {
 })
 
 describe("independent boundary annotation freeze", () => {
+  test("deterministically selects 60 adjudicated examples per class from a larger labeled frame", () => {
+    const candidates = ["continue", "stop", "defer"].flatMap((label, labelIndex) =>
+      Array.from({ length: 70 }, (_, index) => ({
+        id: `screen-${labelIndex * 70 + index}`,
+        baseTrajectoryID: `screen-trajectory-${labelIndex * 70 + index}`,
+        taskID: `task-${index}`,
+        boundaryIndex: 0,
+        initialGoal: "Fix the task",
+        workerOutput: "Work remains.",
+        trajectorySummary: "Inspected the code.",
+        patch: "",
+        continuationCount: 0,
+        memory: "",
+        gold: label as "continue" | "stop" | "defer",
+      })),
+    )
+    const csv = (annotator: string) =>
+      [
+        "boundary_id,annotator_id,label,confidence,reason,next_action,timestamp",
+        ...candidates.map(
+          (candidate) =>
+            `${candidate.id},${annotator},${candidate.gold},high,screened,next step,2026-08-31T00:00:00.000Z`,
+        ),
+      ].join("\n")
+    const selected = selectBalancedAnnotations({
+      candidates,
+      first: csv("annotator-a"),
+      second: csv("annotator-b"),
+      adjudicated: csv("adjudicator"),
+      seed: "auto-drive-boundary-v1",
+    })
+
+    expect(selected.candidates).toHaveLength(180)
+    expect(selected.counts).toEqual({ continue: 60, stop: 60, defer: 60 })
+    expect(selected.screened).toBe(210)
+    expect(selectBalancedAnnotations({
+      candidates,
+      first: csv("annotator-a"),
+      second: csv("annotator-b"),
+      adjudicated: csv("adjudicator"),
+      seed: "auto-drive-boundary-v1",
+    })).toEqual(selected)
+    expect(selected.first.split("\n")).toHaveLength(181)
+  })
+
   test("validates a content-addressed 54/126 frozen corpus before formal execution", () => {
     const candidates = boundaryCandidates()
     const development = candidates.slice(0, 18).concat(candidates.slice(60, 78), candidates.slice(120, 138))

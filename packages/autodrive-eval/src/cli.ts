@@ -8,6 +8,7 @@ import {
   freezeAnnotations,
   renderBoundaryPacket,
   renderLabelTemplate,
+  selectBalancedAnnotations,
   validateFrozenAnnotationCorpus,
 } from "./annotation"
 import {
@@ -43,6 +44,7 @@ if (command === "validate") await validate()
 if (command === "analyze") await analyze()
 if (command === "annotations-extract") await annotationsExtract()
 if (command === "annotations-prepare") await annotationsPrepare()
+if (command === "annotations-select") await annotationsSelect()
 if (command === "annotations-freeze") await annotationsFreeze()
 if (command === "boundary-plan") await printBoundaryPlan()
 if (command === "boundary-run") await boundaryRun()
@@ -62,6 +64,7 @@ if (
     "analyze",
     "annotations-extract",
     "annotations-prepare",
+    "annotations-select",
     "annotations-freeze",
     "boundary-plan",
     "boundary-run",
@@ -362,6 +365,70 @@ async function annotationsPrepare() {
     Bun.write(path.join(resolvedOutput, "labels.csv"), renderLabelTemplate(candidates, annotator) + "\n"),
   ])
   console.log(JSON.stringify({ output: resolvedOutput, examples: candidates.length, annotator }))
+}
+
+async function annotationsSelect() {
+  const candidatesPath = option("candidates")
+  if (!candidatesPath) fail("--candidates PATH is required")
+  const firstPath = option("first")
+  if (!firstPath) fail("--first PATH is required")
+  const secondPath = option("second")
+  if (!secondPath) fail("--second PATH is required")
+  const adjudicatedPath = option("adjudicated")
+  if (!adjudicatedPath) fail("--adjudicated PATH is required")
+  const output = option("output")
+  if (!output) fail("--output PATH is required")
+  const [candidatesContent, first, second, adjudicated] = await Promise.all(
+    [candidatesPath, firstPath, secondPath, adjudicatedPath].map(async (filePath) => {
+      const content = await Bun.file(path.resolve(filePath)).text()
+      assertSecretFree(content)
+      return content
+    }),
+  )
+  const candidates = candidatesContent
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => BoundaryCandidate.parse(JSON.parse(line)))
+  const selected = selectBalancedAnnotations({
+    candidates,
+    first,
+    second,
+    adjudicated,
+    seed: "auto-drive-boundary-v1",
+  })
+  const resolvedOutput = path.resolve(output)
+  const selectedCandidates = renderBoundaryPacket(selected.candidates)
+  const sha256 = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
+  await mkdir(resolvedOutput, { recursive: true })
+  await Promise.all([
+    Bun.write(path.join(resolvedOutput, "candidates.jsonl"), selectedCandidates),
+    Bun.write(path.join(resolvedOutput, "first.csv"), selected.first + "\n"),
+    Bun.write(path.join(resolvedOutput, "second.csv"), selected.second + "\n"),
+    Bun.write(path.join(resolvedOutput, "adjudicated.csv"), selected.adjudicated + "\n"),
+    Bun.write(
+      path.join(resolvedOutput, "selection.json"),
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          protocol: protocol.version,
+          seed: "auto-drive-boundary-v1",
+          screened: selected.screened,
+          selected: selected.candidates.length,
+          counts: selected.counts,
+          candidatesSHA256: sha256(selectedCandidates),
+          inputs: {
+            candidatesSHA256: sha256(candidatesContent),
+            firstSHA256: sha256(first),
+            secondSHA256: sha256(second),
+            adjudicatedSHA256: sha256(adjudicated),
+          },
+        },
+        null,
+        2,
+      ) + "\n",
+    ),
+  ])
+  console.log(JSON.stringify({ output: resolvedOutput, screened: selected.screened, selected: 180 }))
 }
 
 async function annotationsFreeze() {

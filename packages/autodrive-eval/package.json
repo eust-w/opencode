@@ -15,6 +15,7 @@
     "pilot": "bun src/cli.ts pilot",
     "annotations:extract": "bun src/cli.ts annotations-extract",
     "annotations:prepare": "bun src/cli.ts annotations-prepare",
+    "annotations:select": "bun src/cli.ts annotations-select",
     "annotations:freeze": "bun src/cli.ts annotations-freeze",
     "boundary:plan": "bun src/cli.ts boundary-plan",
     "boundary:run": "bun src/cli.ts boundary-run",
