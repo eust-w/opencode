@@ -62,3 +62,20 @@ Commit `b10ed952e1` makes pending exclusion recovery prefer a charged attempt-tw
 ## Candidate pipeline preview
 
 The 21 accepted trajectories produce 38 blinded boundary candidates after complete trajectory artifact, patch, request, and Session transcript verification. They cover 21 base trajectories and 13 tasks. Continuation counts zero through three contribute 21, 8, 5, and 4 candidates respectively. The preview SHA-256 is `1b9b20e0a80c51be8b382418f1697cee662a75d3529f54fee5e198ec0f8ad87f`. These examples are unlabelled previews, not the frozen 180-example boundary dataset, and no macro-F1 or ablation result can yet be computed.
+
+## Checkpoint after 38 dispositions
+
+Snapshot time: `2026-08-31T14:22:56Z`
+
+| Disposition                         | Rows | Boundary ledger USD |
+| ----------------------------------- | ---: | ------------------: |
+| Accepted empirical trajectory       |   30 |           8.0768995 |
+| Excluded charged evaluation failure |    6 |           2.2996083 |
+| Excluded charged budget overrun     |    2 |           2.4717564 |
+| Total                               |   38 |          12.8482642 |
+
+The 30 accepted rows contain 2,600,185 prompt tokens, 154,460 completion tokens, 21 continuations, seven redundant turns, and zero first-boundary or final resolutions. These remain acquisition facts rather than policy-effect estimates.
+
+Run `adr_c97a34de41f747996bb3` completed its Session, first-boundary grader, seven successful usage-complete requests, and initial gateway settlement. A redundant cumulative-spend sample then raised the exact `TimeoutError: The operation timed out.` before trajectory admission. The immutable attempt-one receipt SHA-256 is `021fc3fdc2004bcea420d2d42394346a21292be95f02e0c4e92ee7ab3453705d`; it records USD 0.1005699 and no trajectory or ledger row. Recovery commit `58d0f71eb8` passed 133 tests, 489 assertions, and type checking locally and from source archive SHA-256 `a282fdcafa0b2939724cf091ec52c927af2c61a40d7da61b4ae4b653045ff6f9`. The strict reconciliation receipt SHA-256 is `43097cad3c4779ad91d1b07c6c307a97d3cf6a198cd4c570393a7619fe9f3aee`; the exclusion SHA-256 is `b6cf572cf4f3c6208036e48b034e225165ead28efe6e2b0327c4bb316ff88593`. Reconciliation made no provider call and preserved the original source workspace.
+
+Runner v8 resumed the unchanged execution archive at `2026-08-31T14:22:55Z`. A separately deployed bounded finalizer waits for that runner, refuses any campaign below 96 dispositions, and only then writes the artifact-verified final `annotations/candidates.jsonl`.
