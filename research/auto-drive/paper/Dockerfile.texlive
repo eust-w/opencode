@@ -29,4 +29,7 @@ RUN tlmgr repository remove tlcontrib \
       xcolor \
       zref
 
+RUN tlmgr install --reinstall environ \
+    && kpsewhich environ.sty
+
 WORKDIR /work

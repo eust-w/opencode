@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-30T11:36:58+08:00",
+  "capturedAt": "2026-08-31T11:41:07+08:00",
   "host": {
     "os": "macOS 15.7.7 (24G720)",
     "architecture": "arm64",
@@ -16,7 +16,8 @@
   "repository": {
     "remote": "https://github.com/anomalyco/opencode",
     "branch": "auto-drive-engine",
-    "implementationCommit": "4df3520f763bdb211d627df1473a06129f4070ef",
+    "implementationCommit": "e0d2e2b913209ec6265d4797808d9462188acba3",
+    "paperSourceCommit": "ddac3ef99253c28c513381cba2fbf11057f43ffb",
     "freezeRule": "Set only after the implementation and evaluation harness commits are clean and verified."
   },
   "dataset": {
@@ -26,9 +27,9 @@
   },
   "latex": {
     "baseImage": "texlive/texlive@sha256:38264b1965ee35d4080013256358d174cdf40e1570ba3a4c24f8e450d5fe1f7a",
-    "image": "opencode-autodrive-texlive-locked@sha256:73c0d3f3b9d78663d7f549a8d1d113f153aa16b244338b6942e978a74baa70cd",
-    "digest": "sha256:73c0d3f3b9d78663d7f549a8d1d113f153aa16b244338b6942e978a74baa70cd",
-    "dockerfileSHA256": "85ce7482a38291ad9590a7f564d291b20c8218f48eef6369f637144134f688dd",
+    "image": "opencode-autodrive-texlive-locked:2026-08-31",
+    "digest": "sha256:0d7318da40803ad67f4ee8baac619d6192fc7b7314e4b9de0ccb1cc64b39995c",
+    "dockerfileSHA256": "338c47cb4642a33f01515460da77311cd61cf911af1ffe617169fe653eb1700e",
     "texLive": "2026",
     "pdfTeX": "3.141592653-2.6-1.40.29",
     "latexmk": "4.88",
