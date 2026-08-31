@@ -6,6 +6,8 @@ External artifact root: `/root/autodrive-artifacts/2026-08-31-v1.14-boundary-r1`
 
 ## Frozen execution identity
 
+This block records the runner-v4 checkpoint. Later source changes are hash-locked recovery lineages described below; they do not change the frozen model, task, prompt, budget, or statistical settings.
+
 - Evaluation source commit: `e0d2e2b913`
 - Source archive SHA-256: `3f07ca0f200b18a6fedde0cd42012ef760a3ef075b96f1a1c554c1f3a3779ee1`
 - Runner SHA-256: `b08a5b20620f34853d91ba05fe8ee89787ce1966f87c744373d40237104d23b9`
@@ -37,6 +39,25 @@ The earlier attempt-one receipt SHA-256 for `adr_b4f6b34e814ed8b91d54` remains `
 ## Resumption gate
 
 Commit `e0d2e2b913` fixes the settlement predicate, adds prospective per-run spend rejection, reconstructs the historical overrun from immutable evidence, and enforces the category cap during exclusion settlement. The evaluation package passed 122/122 tests, 458 assertions, and type checking locally and on the experiment host. A zero-provider dry-run executor contract also passed from the exact extracted source archive. Runner v4 refuses to start unless the source archive hash matches and the historical overrun exclusion is already present. It passed those gates and resumed at `2026-08-31T03:39:29Z`. Run `adr_a1936920fd08b60d0a73` for `iterative__dvc_0.35.3_0.35.4` completed and was accepted at `2026-08-31T03:54:42Z`: first-boundary and final Fix Rate are both zero, three continuations were admitted, one turn is redundant, usage is complete at 257,712 prompt and 9,848 completion tokens, and settled cost is USD 0.8560248. The runner then started `adr_338bd04e6e4e225c9e73`; this checkpoint does not claim that new run has completed or entered the ledger.
+
+## Checkpoint after 30 dispositions
+
+Snapshot time: `2026-08-31T13:21:51Z`
+
+| Disposition                         | Rows | Boundary ledger USD |
+| ----------------------------------- | ---: | ------------------: |
+| Accepted empirical trajectory       |   24 |           6.6891676 |
+| Excluded charged evaluation failure |    4 |           1.4986374 |
+| Excluded charged budget overrun     |    2 |           2.4717564 |
+| Total                               |   30 |          10.6595614 |
+
+Including the USD 0.0900565 boundary preflight, campaign spend at this checkpoint is USD 10.7496179. The 24 accepted trajectories cover 15 tasks and contain 2,094,303 prompt and 124,969 completion tokens. They contain 18 automatic continuations, six redundant turns, zero manual continuations, and zero unsafe continuations. First-boundary and final task resolutions remain zero. These are acquisition facts, not a policy comparison, and accepted means artifact-valid rather than task-resolved.
+
+The official image for `iterative__dvc_0.89.0_0.90.0` had an image-build-time tracked change to `setup.py` while its `HEAD` still matched the frozen base commit. Commit `f2cbb23f32` added an explicit tracked reset after verifying that exact `HEAD`, without deleting untracked startup artifacts. A no-network run against image `xingyaoww/sweb.eval.x86_64.iterative_s_dvc-3493` changed `beforeTracked=["setup.py"]` to `afterTracked=[]`, retained the expected base commit, and imported DVC 0.89.0. The exact extracted source passed 123 tests, 463 assertions, and type checking locally and remotely.
+
+The immutable attempt-one failure receipt for `adr_e46155c850e8ff98cdc5` has SHA-256 `35d0b51cab2e20ef528e3ebb7c7157d98d9fac3b1eb175aadb3d8c4fa575d8dc` and records zero requests, responses, tokens, spend delta, trajectory rows, and ledger rows. Commit `22391753d2` restricted retry admission to the exact `(startup-baseline, Task image has tracked startup changes)` pair while retaining every zero-cost evidence gate. Its only attempt two crossed the clean-baseline gate, made 28 completely settled requests, and then conflicted with the frozen test patch. The terminal receipt SHA-256 is `09ccf1d6ea1ab56ccebc7c91fe81fc141d221ef597d55375e949fdd4bfe6d554`; it records 343,835 prompt tokens, 12,446 completion tokens, and USD 0.7139073. The run is sealed as an attempt-two charged evaluation exclusion and cannot be retried.
+
+Commit `b10ed952e1` makes pending exclusion recovery prefer a charged attempt-two receipt over the earlier zero-cost attempt-one receipt. The evaluation package passes 125 tests, 467 assertions, and type checking locally and from the exact remote archive. Runner v8 locks source archive SHA-256 `1bea8f5525dfba361293c8fb0f4264d606fb461a7692d3f32e8c34cac41fbce8`, runner SHA-256 `e1ffe07057d059fb44f37f79ee914ddf91d1560dab48e8aeb692b5169939a439`, and the terminal retry receipt hash. It reconciled the exclusion without invoking the executor, accepted `adr_0158ae8c675f3da4026d` at final Fix Rate zero, and then started `adr_5cb28f11d1b0468f6929`. This checkpoint does not claim a disposition for that in-progress run.
 
 ## Candidate pipeline preview
 
