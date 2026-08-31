@@ -4,6 +4,7 @@ import os from "node:os"
 import path from "node:path"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
 import { createBoundaryRunPlan, createRunPlan, parseManifest } from "../src/protocol"
+import { admitBoundaryInfrastructureRetry } from "../src/retry"
 
 describe("paid experiment CLI gates", () => {
   test("requires indexed trajectories before extracting boundary candidates", async () => {
@@ -583,6 +584,37 @@ process.exit(1)
     }
   })
 
+  test("admits only the exact tracked startup-baseline infrastructure failure", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-boundary-retry-baseline-"))
+    const run = createBoundaryRunPlan(parseManifest(manifestInput))[6]!
+    try {
+      const receipt = await writeZeroCostInfrastructureReceipt(directory, run, {
+        stage: "startup-baseline",
+        message: "Task image has tracked startup changes",
+      })
+      expect(
+        await admitBoundaryInfrastructureRetry({
+          artifactRoot: directory,
+          ledgerPath: path.join(directory, "boundary/ledger.jsonl"),
+          run,
+        }),
+      ).toBe(2)
+
+      const content = await Bun.file(receipt).json()
+      content.stage = "setup"
+      await Bun.write(receipt, JSON.stringify(content))
+      await expect(
+        admitBoundaryInfrastructureRetry({
+          artifactRoot: directory,
+          ledgerPath: path.join(directory, "boundary/ledger.jsonl"),
+          run,
+        }),
+      ).rejects.toThrow("not a predefined zero-cost infrastructure failure")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   test("rejects a retry receipt with any observed provider usage", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-boundary-retry-cost-"))
     const run = createBoundaryRunPlan(parseManifest(manifestInput))[6]!
@@ -863,6 +895,7 @@ async function writeBoundaryPreflight(directory: string) {
 async function writeZeroCostInfrastructureReceipt(
   directory: string,
   run: ReturnType<typeof createBoundaryRunPlan>[number],
+  failure = { stage: "setup", message: "Gateway proxy did not become ready" },
 ) {
   const relative = path.join("raw", `${run.id}.jsonl`)
   const content = '{"type":"executor-failed"}\n'
@@ -878,14 +911,14 @@ async function writeZeroCostInfrastructureReceipt(
       schemaVersion: 1,
       protocol: "auto-drive-swe-evo-v1.14",
       classification: "executor-failure",
-      stage: "setup",
+      stage: failure.stage,
       code: "executor-error",
       runID: run.id,
       taskID: run.taskID,
       attempt: 1,
       startedAt: "2026-08-30T21:00:06.929Z",
       recordedAt: "2026-08-30T21:03:56.711Z",
-      error: { name: "Error", message: "Gateway proxy did not become ready" },
+      error: { name: "Error", message: failure.message },
       gateway: {
         settlement: { attempted: false, completed: true },
         requests: 0,

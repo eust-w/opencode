@@ -3,7 +3,10 @@ import { assertSecretFree } from "./artifact"
 import { parseExecutorFailureReceipt } from "./host-executor"
 import { protocol, type Run } from "./protocol"
 
-const retryableSetupFailures = new Set(["Gateway proxy did not become ready"])
+const retryableInfrastructureFailures = new Set([
+  "setup\0Gateway proxy did not become ready",
+  "startup-baseline\0Task image has tracked startup changes",
+])
 
 export async function admitBoundaryInfrastructureRetry(input: { artifactRoot: string; ledgerPath: string; run: Run }) {
   const receiptPath = path.join(input.artifactRoot, "failures", input.run.id, "attempt-1.json")
@@ -15,14 +18,13 @@ export async function admitBoundaryInfrastructureRetry(input: { artifactRoot: st
   if (
     receipt.protocol !== protocol.version ||
     receipt.classification !== "executor-failure" ||
-    receipt.stage !== "setup" ||
     receipt.code !== "executor-error" ||
     receipt.runID !== input.run.id ||
     receipt.taskID !== input.run.taskID ||
     receipt.attempt !== 1 ||
-    !retryableSetupFailures.has(receipt.error.message)
+    !retryableInfrastructureFailures.has(`${receipt.stage}\0${receipt.error.message}`)
   )
-    throw new Error("Failure receipt is not a predefined setup infrastructure failure")
+    throw new Error("Failure receipt is not a predefined zero-cost infrastructure failure")
   if (
     receipt.gateway.settlement.attempted ||
     !receipt.gateway.settlement.completed ||
