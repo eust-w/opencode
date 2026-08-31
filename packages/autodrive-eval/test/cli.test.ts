@@ -78,6 +78,17 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("52428800")
   })
 
+  test("ships a deadline-safe runner pinned to the exact reconciled exclusion", async () => {
+    const script = await Bun.file(
+      path.resolve(import.meta.dir, "../../../research/auto-drive/execution/run-boundary-r1-v11.sh"),
+    ).text()
+    expect(script).toContain("autodrive-workspace-8b90c2f545")
+    expect(script).toContain("b2a4108c66a6a3955315dd33286322917869a6f0c1f3d33d9947eb331dc929e5")
+    expect(script).toContain("deadline_receipt_sha256=67996df4")
+    expect(script).toContain("deadline_exclusion_sha256=325d7f01")
+    expect(script).toContain("DOCKER_HOST=unix:///run/autodrive-docker2.sock")
+  })
+
   test("admits the same sealed zero-cost retry contract for formal runs", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-formal-retry-"))
     try {
