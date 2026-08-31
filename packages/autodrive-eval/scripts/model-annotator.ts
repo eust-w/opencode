@@ -15,6 +15,7 @@ import {
 } from "../src/model-annotation"
 import { loadPreflight } from "../src/preflight"
 import { protocol } from "../src/protocol"
+import { admitBoundaryResearchCost, assertBoundaryResearchReservation } from "../src/research-budget"
 
 const concurrency = 2
 const candidatesPath = requireOption("candidates")
@@ -25,8 +26,10 @@ const model = requireOption("model")
 const modelID = frozenWorkerModelID(model)
 const preflightPath = path.resolve(requireOption("preflight"))
 const keyFile = requireAbsolute("AUTODRIVE_GATEWAY_KEY_FILE")
+const budgetLedger = requireAbsolute("AUTODRIVE_EVAL_BUDGET_LEDGER")
 const maxCostUSD = requirePositive("AUTODRIVE_ANNOTATION_MAX_COST_USD")
 const perCallCeilingUSD = requirePositive("AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD")
+const fixedBoundaryCostUSD = requireNonnegative("AUTODRIVE_BOUNDARY_FIXED_COST_USD")
 const gateway = (Bun.env.AUTODRIVE_GATEWAY_BASE_URL ?? "https://ai-api.d-robotics.cc/v1").replace(/\/+$/, "")
 const candidatesContent = await Bun.file(path.resolve(candidatesPath)).text()
 assertSecretFree(candidatesContent)
@@ -37,6 +40,7 @@ const candidates = candidatesContent
 if (!candidates.length || candidates.length > 480) fail("Candidate frame must contain 1-480 real boundaries")
 if (new Set(candidates.map((candidate) => candidate.id)).size !== candidates.length) fail("Candidate IDs are not unique")
 const preflight = await loadPreflight(preflightPath, { scope: "annotation" })
+assertBoundaryResearchReservation(await readOptional(budgetLedger), maxCostUSD, fixedBoundaryCostUSD)
 const resolved = preflight.receipt.models.find((item) => item.model === model)
 if (!resolved || resolved.trajectoryCapacity < candidates.length) fail("Annotation preflight does not cover the selected model and frame")
 
@@ -122,6 +126,11 @@ await Promise.all([
     mode: 0o600,
   }),
 ])
+await admitBoundaryResearchCost(budgetLedger, `annotation:${annotator}`, {
+  amountUSD: final.costUSD,
+  promptTokens: final.promptTokens,
+  completionTokens: final.completionTokens,
+}, undefined, fixedBoundaryCostUSD)
 console.log(JSON.stringify({ output, annotator, model, examples: candidates.length, costUSD: final.costUSD }))
 
 async function annotate(candidate: z.infer<typeof BoundaryCandidate>) {
@@ -307,7 +316,18 @@ function requirePositive(name: string) {
   return value
 }
 
+function requireNonnegative(name: string) {
+  const value = Number(Bun.env[name])
+  if (!Number.isFinite(value) || value < 0) fail(`${name} must be a nonnegative number`)
+  return value
+}
+
 function fail(message: string): never {
   console.error(message)
   process.exit(1)
+}
+
+async function readOptional(filePath: string) {
+  const file = Bun.file(filePath)
+  return (await file.exists()) ? file.text() : ""
 }

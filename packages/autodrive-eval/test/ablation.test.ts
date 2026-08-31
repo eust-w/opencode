@@ -27,6 +27,7 @@ describe("boundary component ablations", () => {
     const script = await Bun.file(path.join(import.meta.dir, "../scripts/ablation-runner.ts")).text()
     expect(script).toContain('scope: "ablation"')
     expect(script).toContain("AUTODRIVE_ABLATION_MAX_COST_USD")
+    expect(script).toContain("AUTODRIVE_EVAL_BUDGET_LEDGER")
     expect(script).toContain("concurrency = 2")
     expect(script).toContain("createAblationPrediction")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)

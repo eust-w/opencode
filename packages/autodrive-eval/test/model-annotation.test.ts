@@ -26,6 +26,7 @@ describe("disclosed model annotation", () => {
     const script = await Bun.file(path.join(import.meta.dir, "../scripts/model-annotator.ts")).text()
     expect(script).toContain('scope: "annotation"')
     expect(script).toContain("AUTODRIVE_ANNOTATION_MAX_COST_USD")
+    expect(script).toContain("AUTODRIVE_EVAL_BUDGET_LEDGER")
     expect(script).toContain("AUTODRIVE_GATEWAY_KEY_FILE")
     expect(script).toContain("concurrency = 2")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)

@@ -129,6 +129,8 @@ bun run annotations:prepare -- --candidates /artifact-root/annotations/candidate
 ```bash
 bun run preflight -- --scope annotation --receipt /artifact-root/preflight/annotation.json
 AUTODRIVE_GATEWAY_KEY_FILE=/absolute/path/to/key \
+AUTODRIVE_EVAL_BUDGET_LEDGER=/artifact-root/boundary/ledger.jsonl \
+AUTODRIVE_BOUNDARY_FIXED_COST_USD=<all-boundary-preflight-cost> \
 AUTODRIVE_ANNOTATION_MAX_COST_USD=20 \
 AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD=0.10 \
 bun run annotations:model -- --candidates /artifact-root/annotations/candidates.jsonl --output /artifact-root/annotations/model-a --annotator model-a --model d-robotics/deepseek-v4-pro --preflight /artifact-root/preflight/annotation.json
@@ -158,12 +160,14 @@ Run the five frozen boundary classifier variants only on the sealed 126-example 
 ```bash
 bun run preflight -- --scope ablation --receipt /artifact-root/preflight/ablation.json
 AUTODRIVE_GATEWAY_KEY_FILE=/absolute/path/to/key \
+AUTODRIVE_EVAL_BUDGET_LEDGER=/artifact-root/boundary/ledger.jsonl \
+AUTODRIVE_BOUNDARY_FIXED_COST_USD=<all-boundary-preflight-cost> \
 AUTODRIVE_ABLATION_MAX_COST_USD=40 \
 AUTODRIVE_ABLATION_PER_CALL_CEILING_USD=0.08 \
 bun run ablation:run -- --test /artifact-root/annotations/frozen/test.jsonl --output /artifact-root/ablation --preflight /artifact-root/preflight/ablation.json
 ```
 
-The executor runs at concurrency two, validates complete usage, checkpoints settled account spend, stores hash-bound request/response records, and refuses to overwrite a partially issued call. The `summary` row is an offline information ablation built from the blinded trajectory summary; the `memory` row omits that summary and matches the deployed goal, memory, and last-output information sources.
+The annotation and ablation executors reserve against the shared boundary ledger plus the explicitly reconciled sum of preflight charges, then append one idempotent campaign row after their manifest is sealed. They run at concurrency two, validate complete usage, checkpoint settled account spend, store hash-bound request/response records, and refuse to overwrite a partially issued call. The `summary` row is an offline information ablation built from the blinded trajectory summary; the `memory` row omits that summary and matches the deployed goal, memory, and last-output information sources.
 
 ## 6. Analyze and build
 

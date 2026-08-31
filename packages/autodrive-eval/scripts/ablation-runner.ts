@@ -14,14 +14,17 @@ import { BoundaryCandidate } from "../src/annotation"
 import { assertSecretFree } from "../src/artifact"
 import { loadPreflight } from "../src/preflight"
 import { protocol } from "../src/protocol"
+import { admitBoundaryResearchCost, assertBoundaryResearchReservation } from "../src/research-budget"
 
 const concurrency = 2
 const testPath = path.resolve(requireOption("test"))
 const output = path.resolve(requireOption("output"))
 const preflightPath = path.resolve(requireOption("preflight"))
 const keyFile = requireAbsolute("AUTODRIVE_GATEWAY_KEY_FILE")
+const budgetLedger = requireAbsolute("AUTODRIVE_EVAL_BUDGET_LEDGER")
 const maxCostUSD = requirePositive("AUTODRIVE_ABLATION_MAX_COST_USD")
 const perCallCeilingUSD = requirePositive("AUTODRIVE_ABLATION_PER_CALL_CEILING_USD")
+const fixedBoundaryCostUSD = requireNonnegative("AUTODRIVE_BOUNDARY_FIXED_COST_USD")
 const gateway = (Bun.env.AUTODRIVE_GATEWAY_BASE_URL ?? "https://ai-api.d-robotics.cc/v1").replace(/\/+$/, "")
 const testContent = await Bun.file(testPath).text()
 assertSecretFree(testContent)
@@ -32,6 +35,7 @@ const candidates = testContent
 if (candidates.length !== 126) fail("Frozen ablation test must contain exactly 126 boundaries")
 if (new Set(candidates.map((candidate) => candidate.id)).size !== candidates.length) fail("Boundary IDs are not unique")
 const preflight = await loadPreflight(preflightPath, { scope: "ablation" })
+assertBoundaryResearchReservation(await readOptional(budgetLedger), maxCostUSD, fixedBoundaryCostUSD)
 const controller = preflight.receipt.models.find((item) => item.model === protocol.models.controller)
 if (!controller || controller.trajectoryCapacity < candidates.length * 4)
   fail("Ablation preflight does not cover all 504 controller calls")
@@ -133,6 +137,11 @@ await Promise.all([
   writeFile(path.join(output, "predictions.jsonl"), serialized, { encoding: "utf8", mode: 0o600 }),
   writeFile(path.join(output, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", { encoding: "utf8", mode: 0o600 }),
 ])
+await admitBoundaryResearchCost(budgetLedger, "boundary-ablation:r1", {
+  amountUSD: manifest.costUSD,
+  promptTokens: manifest.promptTokens,
+  completionTokens: manifest.completionTokens,
+}, undefined, fixedBoundaryCostUSD)
 console.log(JSON.stringify({ output, predictions: predictions.length, costUSD: manifest.costUSD }))
 
 async function runModelVariant(item: { candidate: z.infer<typeof BoundaryCandidate>; variant: Exclude<z.infer<typeof AblationVariant>, "regex"> }) {
@@ -268,9 +277,20 @@ function requirePositive(name: string) {
   return value
 }
 
+function requireNonnegative(name: string) {
+  const value = Number(Bun.env[name])
+  if (!Number.isFinite(value) || value < 0) fail(`${name} must be a nonnegative number`)
+  return value
+}
+
 function fail(message: string): never {
   console.error(message)
   process.exit(1)
+}
+
+async function readOptional(filePath: string) {
+  const file = Bun.file(filePath)
+  return (await file.exists()) ? file.text() : ""
 }
 
 const Reference = z.object({ path: z.string().min(1), sha256: z.string().regex(/^[a-f0-9]{64}$/) })
