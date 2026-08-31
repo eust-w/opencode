@@ -4,6 +4,7 @@ import os from "node:os"
 import path from "node:path"
 import {
   loadBoundaryExclusions,
+  reconcilePostSessionSpendSamplingFailure,
   reconcileRetryGatewayNamespaceFailure,
   settleBoundaryExclusion,
   settlePendingBoundaryExclusions,
@@ -19,6 +20,76 @@ afterEach(async () => {
 })
 
 describe("charged boundary exclusion settlement", () => {
+  test("reconciles a fully settled post-session spend sampling timeout without rerunning", async () => {
+    const directory = await temporaryDirectory()
+    const run = createBoundaryRunPlan(parseManifest(manifest))[12]
+    const raw = [
+      { type: "executor-started", runID: run.id, attempt: 1 },
+      { type: "grader-finished", label: "first-boundary" },
+      { type: "session-finished" },
+      { type: "gateway-settled", requests: 7 },
+      { type: "executor-failed", classification: "executor-failure", stage: "gateway-settlement" },
+    ]
+      .map((event) => JSON.stringify({ timestamp: "2026-08-31T13:58:00.000Z", ...event }))
+      .join("\n") + "\n"
+    const relative = `raw/${run.id}.jsonl`
+    await Bun.write(path.join(directory, relative), raw)
+    const receiptPath = path.join(directory, "failures", run.id, "attempt-1.json")
+    await Bun.write(
+      receiptPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        protocol: protocol.version,
+        classification: "executor-failure",
+        stage: "gateway-settlement",
+        code: "executor-error",
+        runID: run.id,
+        taskID: run.taskID,
+        attempt: 1,
+        startedAt: "2026-08-31T13:55:03.497Z",
+        recordedAt: "2026-08-31T13:58:09.763Z",
+        error: { name: "TimeoutError", message: "The operation timed out." },
+        gateway: {
+          settlement: { attempted: true, completed: true },
+          requests: 7,
+          responses: 7,
+          non200Responses: 0,
+          proxyErrors: 0,
+          usageCompleteResponses: 7,
+          promptTokens: 27_028,
+          completionTokens: 2_276,
+          baselineSpendUSD: 10.1838435,
+          settledSpendUSD: 10.2844134,
+          observedSpendDeltaUSD: 0.1005699,
+        },
+        acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+        artifacts: [{ path: relative, sha256: digest(raw) }],
+        recordingErrors: [],
+      }),
+    )
+
+    const reconciled = await reconcilePostSessionSpendSamplingFailure({
+      artifactRoot: directory,
+      originalReceiptPath: receiptPath,
+      run,
+      maxCostUSD: 1.0625,
+      recordedAt: new Date("2026-08-31T14:00:00.000Z"),
+    })
+    const receipt = parseExecutorFailureReceipt(await Bun.file(reconciled).json())
+    expect(receipt).toMatchObject({
+      classification: "excluded-charged-evaluation-failure",
+      stage: "post-session-spend-sampling-timeout",
+      runID: run.id,
+      gateway: { observedSpendDeltaUSD: 0.1005699 },
+    })
+    expect(await reconcilePostSessionSpendSamplingFailure({
+      artifactRoot: directory,
+      originalReceiptPath: receiptPath,
+      run,
+      maxCostUSD: 1.0625,
+    })).toBe(reconciled)
+  })
+
   test("recovers one strict charged exclusion without duplicating its budget row", async () => {
     const directory = await temporaryDirectory()
     const run = createBoundaryRunPlan(parseManifest(manifest))[5]

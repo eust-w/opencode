@@ -17,6 +17,16 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("accepted=384")
   })
 
+  test("ships an autonomous boundary finalizer that refuses incomplete campaigns", async () => {
+    const script = await Bun.file(
+      path.resolve(import.meta.dir, "../../../research/auto-drive/execution/finalize-boundary-r1.sh"),
+    ).text()
+    expect(script).toContain("completed" )
+    expect(script).toContain("-ne 96")
+    expect(script).toContain("annotations-extract")
+    expect(script).toContain("candidates.jsonl")
+  })
+
   test("admits the same sealed zero-cost retry contract for formal runs", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-formal-retry-"))
     try {
@@ -43,6 +53,17 @@ describe("paid experiment CLI gates", () => {
     const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
     expect(exitCode).toBe(1)
     expect(stderr).toContain("--results PATH is required")
+  })
+
+  test("keeps post-session spend reconciliation explicit and single-run", async () => {
+    const child = Bun.spawn([Bun.which("bun")!, "src/cli.ts", "boundary-reconcile-spend"], {
+      cwd: import.meta.dir + "/..",
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+    const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
+    expect(exitCode).toBe(1)
+    expect(stderr).toContain("--artifact-root PATH is required")
   })
 
   test("prepares blinded boundary packets without provider access", async () => {

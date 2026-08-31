@@ -164,6 +164,14 @@ The immutable evidence records 496,162 prompt and 14,355 completion tokens, four
 
 Prospectively, settlement evaluates only sequence numbers present in the sealed request manifest and still requires one successful, usage-complete terminal response for every sealed request. After stable spend is read, the executor rejects any run above its per-run ceiling before trajectory admission, preserves its complete charged evidence as the same non-empirical exclusion type, and rechecks the USD 102 category cap before appending the exclusion budget row. This changes only failure classification and accounting. Models, tasks, prompts, policies, request parameters, run IDs, continuation rules, timeouts, outcomes, statistics, concurrency, and all frozen budgets remain unchanged. No previously accepted trajectory is reinterpreted.
 
+## 2026-08-31 post-session spend-sampling amendment
+
+After 37 boundary-source dispositions, `adr_c97a34de41f747996bb3` completed its worker/controller session, first-boundary grader, transcript capture, and seven sealed provider requests. Every request had one HTTP 200 terminal response with complete usage, and the failure receipt recorded 27,028 prompt tokens, 2,276 completion tokens, and a settled USD 0.1005699 delta. A later redundant cumulative-spend sample timed out before trajectory construction, so the immutable executor correctly admitted neither a trajectory nor a ledger row.
+
+This amendment permits only that exact post-session failure shape to become a non-empirical charged exclusion: protocol/run/task/attempt must match; the stage, code, timeout name, and message must match; all sealed requests must be successful and usage-complete; settled cost must remain within USD 102/96; all referenced artifacts must hash-verify; and the trace must contain executor start, grader completion, Session completion, gateway settlement, and executor failure. Reconciliation preserves the original receipt, creates one content-addressed `reconciled-attempt-1.json`, then uses the existing idempotent exclusion-before-ledger transaction. It never reconstructs or accepts a trajectory and never calls the provider. Any weaker or different receipt still stops the campaign.
+
+Models, tasks, prompts, policies, request parameters, run IDs, continuation rules, timeouts, statistical estimands, concurrency, and budgets remain unchanged. This amendment avoids a charged rerun and records harness attrition explicitly; it does not reinterpret any accepted task outcome.
+
 ## Claim boundary
 
 AutoDrive targets **premature conversational handoff** by a coding agent: the worker ends a provider turn while safe, in-scope, actionable work toward the admitted user goal remains. The claimed mechanism combines safe turn-boundary evaluation, a `continue | stop | defer` decision, and durable exactly-once continuation admission. It does not claim the first supervisor, memory mechanism, agent termination rule, abstention method, or loop bound.

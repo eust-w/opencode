@@ -20,6 +20,7 @@
     "boundary:run": "bun src/cli.ts boundary-run",
     "boundary:reconcile-budget": "bun scripts/reconcile-boundary-budget.ts",
     "boundary:reconcile-retry": "bun scripts/reconcile-retry-gateway.ts",
+    "boundary:reconcile-spend": "bun src/cli.ts boundary-reconcile-spend",
     "verify-executor": "bun src/cli.ts verify-executor",
     "gateway-proxy": "bun scripts/gateway-proxy.ts",
     "gateway-host-executor": "bun scripts/gateway-host-executor.ts",

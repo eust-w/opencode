@@ -28,6 +28,94 @@ export const BoundaryExclusion = z
   .strict()
 export type BoundaryExclusion = z.infer<typeof BoundaryExclusion>
 
+export async function reconcilePostSessionSpendSamplingFailure(input: {
+  artifactRoot: string
+  originalReceiptPath: string
+  run: Run
+  maxCostUSD: number
+  recordedAt?: Date
+}) {
+  const receiptPath = path.join(input.artifactRoot, "failures", input.run.id, "reconciled-attempt-1.json")
+  const existing = Bun.file(receiptPath)
+  if (await existing.exists()) {
+    const receipt = parseExecutorFailureReceipt(await existing.json())
+    requireSettledExclusion(receipt, input.run, input.maxCostUSD)
+    await Promise.all(receipt.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
+    return receiptPath
+  }
+
+  const originalContent = await readArtifact(
+    input.artifactRoot,
+    relativePath(input.artifactRoot, input.originalReceiptPath),
+  )
+  const original = parseExecutorFailureReceipt(JSON.parse(originalContent))
+  if (
+    original.protocol !== protocol.version ||
+    original.classification !== "executor-failure" ||
+    original.stage !== "gateway-settlement" ||
+    original.code !== "executor-error" ||
+    original.runID !== input.run.id ||
+    original.taskID !== input.run.taskID ||
+    original.attempt !== 1 ||
+    original.error.name !== "TimeoutError" ||
+    original.error.message !== "The operation timed out."
+  )
+    throw new Error("Original receipt is not the frozen post-session spend sampling failure")
+  if (
+    !original.gateway.settlement.completed ||
+    original.gateway.requests === 0 ||
+    original.gateway.responses !== original.gateway.requests ||
+    original.gateway.non200Responses !== 0 ||
+    original.gateway.proxyErrors !== 0 ||
+    original.gateway.usageCompleteResponses !== original.gateway.responses ||
+    original.gateway.observedSpendDeltaUSD === undefined ||
+    original.gateway.observedSpendDeltaUSD > input.maxCostUSD ||
+    original.gateway.captureErrors?.length ||
+    original.recordingErrors.length
+  )
+    throw new Error("Post-session spend sampling recovery requires complete settled usage within budget")
+  await Promise.all(original.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
+  const raw = original.artifacts.find((artifact) => artifact.path.startsWith("raw/") && artifact.path.endsWith(".jsonl"))
+  if (!raw) throw new Error("Post-session spend sampling recovery is missing the executor trace")
+  const events = (await readArtifact(input.artifactRoot, raw.path))
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => z.object({ type: z.string(), runID: z.string().optional(), attempt: z.number().optional() }).loose().parse(JSON.parse(line)))
+  const started = events.find((event) => event.type === "executor-started")
+  if (
+    started?.runID !== input.run.id ||
+    started.attempt !== 1 ||
+    !events.some((event) => event.type === "grader-finished") ||
+    !events.some((event) => event.type === "session-finished") ||
+    !events.some((event) => event.type === "gateway-settled") ||
+    !events.some((event) => event.type === "executor-failed")
+  )
+    throw new Error("Post-session spend sampling recovery trace is incomplete")
+
+  const receipt = parseExecutorFailureReceipt({
+    ...original,
+    classification: "excluded-charged-evaluation-failure",
+    stage: "post-session-spend-sampling-timeout",
+    code: "settled-run-excluded-after-spend-sample-timeout",
+    recordedAt: (input.recordedAt ?? new Date()).toISOString(),
+    error: {
+      name: "PostSessionSpendSamplingTimeout",
+      message: "The settled run is excluded because final cumulative-spend sampling timed out before trajectory admission",
+    },
+    artifacts: [
+      ...original.artifacts,
+      {
+        path: relativePath(input.artifactRoot, input.originalReceiptPath),
+        sha256: digest(originalContent),
+      },
+    ],
+  })
+  const content = JSON.stringify(receipt, null, 2) + "\n"
+  assertSecretFree(content)
+  await writeFile(receiptPath, content, { encoding: "utf8", flag: "wx", mode: 0o600 })
+  return receiptPath
+}
+
 const MisroutedGatewayRequest = z
   .object({
     sequence: z.number().int().nonnegative(),
