@@ -28,6 +28,20 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain('dispositions" -ne 48')
   })
 
+  test("ships a fail-closed post-boundary pipeline", async () => {
+    const script = await Bun.file(
+      new URL("../../../research/auto-drive/execution/run-post-boundary-r1.sh", import.meta.url),
+    ).text()
+    expect(script).toContain("set -euo pipefail")
+    expect(script).toContain("run-boundary-augmentation-r1.sh")
+    expect(script).toContain("model-qwen3.7-max")
+    expect(script).toContain("model-deepseek-v4-flash")
+    expect(script).toContain("model-deepseek-v4-pro-adjudicator")
+    expect(script).toContain("annotations-freeze")
+    expect(script).toContain("ablation-runner.ts")
+    expect(script).toContain("run-formal-r1.sh")
+  })
+
   test("ships an autonomous boundary finalizer that refuses incomplete campaigns", async () => {
     const script = await Bun.file(
       path.resolve(import.meta.dir, "../../../research/auto-drive/execution/finalize-boundary-r1.sh"),
