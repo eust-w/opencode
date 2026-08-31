@@ -1,8 +1,16 @@
 import path from "node:path"
 import { z } from "zod"
-import type { Strategy } from "./protocol"
+import { protocol, type Strategy } from "./protocol"
 
 export const BASELINE_CONTINUATION_PROMPT = "Please proceed with the next step."
+
+const FrozenWorkerModel = z.enum([protocol.models.primary, ...protocol.models.replication])
+
+export function frozenWorkerModelID(value: string) {
+  const parsed = FrozenWorkerModel.safeParse(value)
+  if (!parsed.success) throw new Error(`Expected a frozen worker model, received ${value}`)
+  return parsed.data.slice(parsed.data.indexOf("/") + 1)
+}
 
 export const LogParser = z.enum([
   "parse_log_pytest",

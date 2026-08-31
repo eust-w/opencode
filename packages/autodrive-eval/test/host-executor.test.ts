@@ -16,6 +16,7 @@ import {
   decideExternalContinuation,
   dockerPortPublish,
   executionArtifactID,
+  frozenWorkerModelID,
   gradePytest,
   hasExperimentModels,
   parsePytestLog,
@@ -42,6 +43,14 @@ const task = {
 }
 
 describe("SWE-EVO host executor", () => {
+  test("admits every frozen worker model and rejects controller or unknown models", () => {
+    expect(frozenWorkerModelID("d-robotics/deepseek-v4-pro")).toBe("deepseek-v4-pro")
+    expect(frozenWorkerModelID("d-robotics/qwen3.7-max")).toBe("qwen3.7-max")
+    expect(frozenWorkerModelID("d-robotics/deepseek-v4-flash")).toBe("deepseek-v4-flash")
+    expect(() => frozenWorkerModelID("d-robotics/qwen3.8-max")).toThrow("frozen worker model")
+    expect(() => frozenWorkerModelID("other/deepseek-v4-pro")).toThrow("frozen worker model")
+  })
+
   test("keeps retry artifacts separate from the immutable first attempt", () => {
     const runID = "adr_1234567890abcdef1234"
     expect(executionArtifactID(runID, 1)).toBe(runID)

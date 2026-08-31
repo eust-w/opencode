@@ -17,6 +17,7 @@ import {
   dockerPortPublish,
   executionArtifactID,
   gradePytest,
+  frozenWorkerModelID,
   hasExperimentModels,
   parseExecutorFailureReceipt,
   parsePytestLog,
@@ -50,12 +51,11 @@ const opencodeCommit = requireCommit("AUTODRIVE_OPENCODE_COMMIT")
 const gatewayUpstream = Bun.env.AUTODRIVE_GATEWAY_UPSTREAM ?? "https://ai-api.d-robotics.cc"
 
 if (Bun.env.AUTODRIVE_EVAL_PROTOCOL !== protocol.version) fail("Frozen protocol mismatch")
-if (input.run.model !== protocol.models.primary) fail("This canary executor accepts only the primary worker")
 if (input.budget.maxCostUSD <= 0) fail("Real execution requires a positive run cost ceiling")
 
 const task = parseTaskInput(await Bun.file(path.join(taskRoot, `${input.run.taskID}.json`)).json())
 if (task.instanceID !== input.run.taskID || task.image.length === 0) fail("Task input does not match the run")
-const workerModel = modelID(input.run.model)
+const workerModel = frozenWorkerModelID(input.run.model)
 const controllerModel = modelID(input.run.controllerModel)
 const suffix = `${input.run.id.slice(4, 12)}-${input.attempt}`
 const artifactID = executionArtifactID(input.run.id, input.attempt)
