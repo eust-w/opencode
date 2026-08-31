@@ -114,6 +114,18 @@ bash research/auto-drive/execution/run-boundary-augmentation-r1.sh
 
 The original 96 rows alone define RQ1 frequency. Supplemental boundaries are source-marked and may enter only the balanced RQ3 classifier frame.
 
+After source collection is idle, capture fresh paid compatibility receipts instead of hand-authoring capacity claims. The capture uses one harmless request per required model/transport, stores the raw terminal response and complete usage, self-validates the receipt, charges the shared boundary ledger, and expires after 48 hours:
+
+```bash
+AUTODRIVE_GATEWAY_KEY_FILE=/absolute/path/to/key \
+AUTODRIVE_EVAL_BUDGET_LEDGER=/artifact-root/boundary/ledger.jsonl \
+AUTODRIVE_BOUNDARY_FIXED_COST_USD=<initial-boundary-preflight-cost> \
+AUTODRIVE_PREFLIGHT_MAX_COST_USD=2 \
+bun run preflight:capture -- --scope annotation --output /artifact-root/preflight/annotation --metadata /absolute/path/to/frozen-models.json
+```
+
+Repeat for `boundary-augmentation` only if its trigger fires, and for `ablation` and `full` immediately before those stages. Do not run compatibility probes concurrently with an empirical trajectory because the gateway spend endpoint is account-cumulative.
+
 Extract only from accepted, artifact-verifiable trajectories. The command checks the trajectory, request, trace, patch, model metadata, and preflight hashes; drops reasoning and prior supervisor decisions; and emits deterministic `adb_...` IDs:
 
 ```bash

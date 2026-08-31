@@ -11,6 +11,7 @@
     "paper:protocol": "bun src/cli.ts paper-protocol",
     "snapshot-models": "bun src/cli.ts snapshot-models",
     "preflight": "bun src/cli.ts preflight",
+    "preflight:capture": "bun scripts/research-preflight.ts",
     "pilot:plan": "bun src/cli.ts pilot-plan",
     "pilot": "bun src/cli.ts pilot",
     "annotations:extract": "bun src/cli.ts annotations-extract",
