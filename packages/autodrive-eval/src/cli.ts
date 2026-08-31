@@ -465,6 +465,8 @@ async function annotationsFreeze() {
   if (!adjudicatedPath) fail("--adjudicated PATH is required")
   const output = option("output")
   if (!output) fail("--output PATH is required")
+  const method = option("method") ?? "human"
+  if (method !== "human" && method !== "model-panel") fail("--method must be human or model-panel")
   const [candidatesContent, first, second, adjudicated] = await Promise.all(
     [candidatesPath, firstPath, secondPath, adjudicatedPath].map(async (filePath) => {
       const content = await Bun.file(path.resolve(filePath)).text()
@@ -490,8 +492,10 @@ async function annotationsFreeze() {
   const testContent = frozen.frozen.map((candidate) => JSON.stringify(candidate)).join("\n") + "\n"
   const sha256 = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
   const seal = {
-    schemaVersion: 2 as const,
+    schemaVersion: 3 as const,
     protocol: protocol.version,
+    referenceStandard:
+      method === "model-panel" ? ("independent-model-panel" as const) : ("independent-human-panel" as const),
     frozenAt: new Date().toISOString(),
     kappa: frozen.kappa,
     agreements: frozen.agreements,

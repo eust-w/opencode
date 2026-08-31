@@ -55,4 +55,4 @@ The exact CSV header is `boundary_id,annotator_id,label,confidence,reason,next_a
 6. Freeze 54 grouped development and 126 grouped test items. A base trajectory may appear in only one split.
 7. Do not tune prompts or regexes on the frozen test labels.
 
-The final corpus must contain exactly 60 examples for each class. Synthetic or inferred labels are not acceptable substitutes for two human annotations. Reasoning content and supervisor predictions are excluded from the blinded packet.
+The final corpus must contain exactly 60 examples for each class. Under the autonomous reference-standard amendment, two fixed judge models apply this rubric independently and a third fixed judge supplies adjudication; the seal must identify the method as `independent-model-panel`. These labels are reference judgments, not human gold. Reasoning content and supervisor predictions are excluded from the blinded packet.

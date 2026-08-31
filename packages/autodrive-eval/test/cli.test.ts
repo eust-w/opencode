@@ -187,6 +187,8 @@ describe("paid experiment CLI gates", () => {
           adjudicated,
           "--output",
           output,
+          "--method",
+          "model-panel",
         ],
         { cwd: import.meta.dir + "/..", stdout: "pipe", stderr: "pipe" },
       )
@@ -195,7 +197,8 @@ describe("paid experiment CLI gates", () => {
       expect((await Bun.file(path.join(output, "development.jsonl")).text()).trim().split("\n")).toHaveLength(54)
       expect((await Bun.file(path.join(output, "test.jsonl")).text()).trim().split("\n")).toHaveLength(126)
       expect(await Bun.file(path.join(output, "seal.json")).json()).toMatchObject({
-        schemaVersion: 2,
+        schemaVersion: 3,
+        referenceStandard: "independent-model-panel",
         kappa: 1,
         counts: { continue: 60, stop: 60, defer: 60 },
         corpusSHA256: expect.stringMatching(/^[a-f0-9]{64}$/),

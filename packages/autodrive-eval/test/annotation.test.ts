@@ -101,8 +101,9 @@ describe("independent boundary annotation freeze", () => {
       .update(testContent)
       .digest("hex")
     const seal = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       protocol: "auto-drive-swe-evo-v1.14",
+      referenceStandard: "independent-model-panel",
       frozenAt: "2026-08-31T00:00:00.000Z",
       kappa: 0.9,
       agreements: 168,

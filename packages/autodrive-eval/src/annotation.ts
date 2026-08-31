@@ -25,8 +25,9 @@ const LabeledBoundaryCandidate = BoundaryCandidate.extend({ label: Label })
 
 export const AnnotationSeal = z
   .object({
-    schemaVersion: z.literal(2),
+    schemaVersion: z.literal(3),
     protocol: z.literal(protocol.version),
+    referenceStandard: z.enum(["independent-human-panel", "independent-model-panel"]),
     frozenAt: z.iso.datetime(),
     kappa: z.number().min(0.75).max(1),
     agreements: z.number().int().min(0).max(180),

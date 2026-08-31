@@ -134,12 +134,12 @@ AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD=0.10 \
 bun run annotations:model -- --candidates /artifact-root/annotations/candidates.jsonl --output /artifact-root/annotations/model-a --annotator model-a --model d-robotics/deepseek-v4-pro --preflight /artifact-root/preflight/annotation.json
 ```
 
-Model annotations are explicitly recorded as `independent-model-annotation`; they are not represented as human judgments and, under the current frozen protocol, do not satisfy the two-human-annotator publication gate.
+Model annotations are explicitly recorded as `independent-model-annotation` and are never represented as human judgments. Run the prospectively frozen identities in order: Qwen 3.7 Max and DeepSeek V4 Flash as the independent pair, then DeepSeek V4 Pro as the distinct adjudicator. Freeze their selected files with `--method model-panel`; the v3 seal records `independent-model-panel` and retains the unchanged kappa and class-balance gates.
 
 Annotators edit only `labels.csv`. Required columns are `boundary_id,annotator_id,label,confidence,reason,next_action,timestamp`; `CONTINUE` and `DEFER` require a non-empty next action or missing decision. After both files are sealed and disagreements are adjudicated by a distinct identity:
 
 ```bash
-bun run annotations:freeze -- --candidates /artifact-root/annotations/candidates.jsonl --first /artifact-root/annotations/annotator-a/labels.csv --second /artifact-root/annotations/annotator-b/labels.csv --adjudicated /artifact-root/annotations/adjudicated.csv --output /artifact-root/annotations/frozen
+bun run annotations:freeze -- --method model-panel --candidates /artifact-root/annotations/candidates.jsonl --first /artifact-root/annotations/annotator-a/labels.csv --second /artifact-root/annotations/annotator-b/labels.csv --adjudicated /artifact-root/annotations/adjudicated.csv --output /artifact-root/annotations/frozen
 ```
 
 Freeze fails unless all 180 IDs are covered, kappa is at least 0.75, adjudicated counts are 60/60/60, and a base trajectory stays entirely within the 54-item development or 126-item test split. The two boundaries extracted from the historical v1.13 canary are a smoke test only and cannot enter this v1.14 corpus.

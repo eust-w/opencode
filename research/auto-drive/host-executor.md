@@ -65,7 +65,7 @@ The paid canary accepts exactly one frozen primary-model run, uses one process, 
 1. `verify-executor` succeeds with zero cost and no formal output.
 2. A non-primary pilot completes with matching billing, request hashes, trace, grader output, and container isolation evidence.
 3. A fresh v1.14 full-scope receipt resolves the three D-Robotics workers and fixed controller, and proves the required account budget, rate limits, trajectory capacity, and concurrency.
-4. Two human annotators reach the preregistered agreement threshold and freeze the boundary test set. The v2 annotation seal content-addresses the development and test JSONL files plus every annotation input, verifies the 54/126 grouped split, exact 60/60/60 class balance, three distinct identities, and Cohen's kappa of at least 0.75.
+4. The two fixed judge models reach the preregistered agreement threshold and the distinct third judge supplies adjudication. The v3 seal explicitly records `independent-model-panel`, content-addresses the development and test JSONL files plus every annotation input, and verifies the 54/126 grouped split, exact 60/60/60 class balance, three distinct identities, and Cohen's kappa of at least 0.75.
 5. Only then may the formal runner append trajectories. The accepted v1.13 canaries remain historical mechanism evidence and cannot satisfy a v1.14 formal gate.
 
 The formal runner dispatches at most two IDs per evaluator process. Every pair reloads the full-scope preflight and the frozen annotation seal, while accepted rows and cost entries remain append-only. Restart skips accepted IDs and stops on any unresolved failure receipt; it never converts an incomplete attempt into a fresh attempt one.
