@@ -19,6 +19,7 @@ import {
 } from "./artifact"
 import { caps, summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
 import { reconcilePostSessionSpendSamplingFailure, settlePendingBoundaryExclusions } from "./exclusion"
+import { analyzeFormalMatrix } from "./formal-analysis"
 import { parseTaskInput } from "./host-executor"
 import { renderTaskManifest } from "./paper"
 import { createPilotRun, loadPilotManifest } from "./pilot"
@@ -256,9 +257,15 @@ async function analyze() {
   const analysis = analyzeTrajectories(records)
   const output = path.resolve(option("output") ?? path.join(root, "research/auto-drive/results/derived"))
   await mkdir(output, { recursive: true })
-  await Bun.write(path.join(output, "summary.json"), JSON.stringify(analysis, null, 2) + "\n")
-  await Bun.write(path.join(output, "runs.csv"), toCSV(records))
-  console.log(JSON.stringify({ output, trajectories: records.length }))
+  const formal = records.length === plan.length ? analyzeFormalMatrix(records, plan) : undefined
+  await Promise.all([
+    Bun.write(path.join(output, "summary.json"), JSON.stringify(analysis, null, 2) + "\n"),
+    Bun.write(path.join(output, "runs.csv"), toCSV(records)),
+    ...(formal
+      ? [Bun.write(path.join(output, "formal-statistics.json"), JSON.stringify(formal, null, 2) + "\n")]
+      : []),
+  ])
+  console.log(JSON.stringify({ output, trajectories: records.length, formal: !!formal }))
 }
 
 async function annotationsExtract() {

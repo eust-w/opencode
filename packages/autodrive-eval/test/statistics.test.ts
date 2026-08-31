@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { cohenKappa, exactMcNemar, holm, macroF1, pairedBootstrap } from "../src/statistics"
+import { classificationReport, cohenKappa, exactMcNemar, holm, macroF1, pairedBootstrap } from "../src/statistics"
 
 describe("preregistered statistics", () => {
   test("computes the exact two-sided McNemar test", () => {
@@ -24,5 +24,15 @@ describe("preregistered statistics", () => {
     const expected = ["continue", "stop", "defer", "continue"] as const
     expect(cohenKappa(expected, expected)).toBe(1)
     expect(macroF1(expected, ["continue", "stop", "stop", "defer"])).toBeCloseTo(0.4444444444, 8)
+    expect(classificationReport(expected, ["continue", "continue", "continue", "defer"])).toMatchObject({
+      examples: 4,
+      stopUnsafeContinuationRate: 1,
+      deferUnsafeContinuationRate: 1,
+      confusion: {
+        continue: { continue: 1, stop: 0, defer: 1 },
+        stop: { continue: 1, stop: 0, defer: 0 },
+        defer: { continue: 1, stop: 0, defer: 0 },
+      },
+    })
   })
 })

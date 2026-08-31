@@ -75,6 +75,49 @@ export function macroF1(expected: readonly BoundaryLabel[], predicted: readonly 
   )
 }
 
+export function classificationReport(expected: readonly BoundaryLabel[], predicted: readonly BoundaryLabel[]) {
+  if (!expected.length || expected.length !== predicted.length)
+    throw new Error("Classification report requires equal, non-empty label arrays")
+  const confusion = Object.fromEntries(
+    labels.map((actual) => [
+      actual,
+      Object.fromEntries(
+        labels.map((prediction) => [
+          prediction,
+          expected.filter((value, index) => value === actual && predicted[index] === prediction).length,
+        ]),
+      ),
+    ]),
+  ) as Record<BoundaryLabel, Record<BoundaryLabel, number>>
+  const classes = Object.fromEntries(
+    labels.map((label) => {
+      const truePositive = confusion[label][label]
+      const falsePositive = labels
+        .filter((actual) => actual !== label)
+        .reduce((sum, actual) => sum + confusion[actual][label], 0)
+      const falseNegative = labels
+        .filter((prediction) => prediction !== label)
+        .reduce((sum, prediction) => sum + confusion[label][prediction], 0)
+      const precision = truePositive + falsePositive ? truePositive / (truePositive + falsePositive) : 0
+      const recall = truePositive + falseNegative ? truePositive / (truePositive + falseNegative) : 0
+      return [label, { precision, recall, f1: precision + recall ? (2 * precision * recall) / (precision + recall) : 0 }]
+    }),
+  ) as Record<BoundaryLabel, { precision: number; recall: number; f1: number }>
+  const unsafe = (label: "stop" | "defer") =>
+    expected.filter((value) => value === label).length
+      ? expected.filter((value, index) => value === label && predicted[index] === "continue").length /
+        expected.filter((value) => value === label).length
+      : 0
+  return {
+    examples: expected.length,
+    macroF1: mean(labels.map((label) => classes[label].f1)),
+    classes,
+    confusion,
+    stopUnsafeContinuationRate: unsafe("stop"),
+    deferUnsafeContinuationRate: unsafe("defer"),
+  }
+}
+
 function combination(total: number, selected: number) {
   return Array.from({ length: selected }, (_, index) => (total - index) / (index + 1)).reduce(
     (value, factor) => value * factor,
