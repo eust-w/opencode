@@ -141,6 +141,29 @@ export function createBoundaryRunPlan(manifest: Manifest) {
     )
 }
 
+export function createBoundaryAugmentationPlan(manifest: Manifest) {
+  return z
+    .array(Run)
+    .length(48)
+    .parse(
+      manifest.tasks.map((task) => {
+        const key = [protocol.version, "boundary-corpus-augmentation", task.instanceID, 2].join("\0")
+        return Run.parse({
+          id: `adr_${createHash("sha256").update(key).digest("hex").slice(0, 20)}`,
+          taskID: task.instanceID,
+          model: protocol.models.primary,
+          controllerModel: protocol.models.controller,
+          strategy: "supervisor",
+          repeat: 2,
+          temperature: protocol.temperature,
+          segmentSteps: protocol.segmentSteps,
+          maxContinuations: protocol.maxContinuations,
+          timeoutMinutes: protocol.timeoutMinutes,
+        })
+      }),
+    )
+}
+
 function makeRun(taskID: string, model: string, strategy: Strategy, repeat: number) {
   const key = [protocol.version, taskID, model, strategy, repeat].join("\0")
   return Run.parse({

@@ -97,6 +97,23 @@ bun run boundary:run -- --execute --executor /absolute/path/to/host-executor --p
 
 The runner reserves at most USD 102/96 per source trajectory and writes only `/artifact-root/boundary/{trajectories.jsonl,ledger.jsonl}` plus content-addressed artifacts. These rows are excluded from the formal result validator and every RQ2 estimate.
 
+After all 96 dispositions, the bounded finalizer writes the complete initial candidate frame. The prospectively sealed, label-blind contingency runs only when that file contains fewer than 180 candidates. It then executes every row in the committed 48-run augmentation plan; it never stops early based on labels or yield:
+
+```bash
+bun run boundary:augmentation-plan -- --output /artifact-root/boundary/augmentation-plan.jsonl
+bun run preflight -- --scope boundary-augmentation --receipt /artifact-root/preflight/boundary-augmentation.json
+AUTODRIVE_WORKSPACE=/absolute/source \
+AUTODRIVE_RUNTIME=/absolute/runtime \
+AUTODRIVE_EVAL_ARTIFACT_ROOT=/artifact-root \
+AUTODRIVE_BOUNDARY_AUGMENTATION_PREFLIGHT=/artifact-root/preflight/boundary-augmentation.json \
+AUTODRIVE_BOUNDARY_CANDIDATES=/artifact-root/annotations/candidates.jsonl \
+AUTODRIVE_SOURCE_ARCHIVE=/absolute/source.tar.gz \
+AUTODRIVE_SOURCE_SHA256=<sha256> \
+bash research/auto-drive/execution/run-boundary-augmentation-r1.sh
+```
+
+The original 96 rows alone define RQ1 frequency. Supplemental boundaries are source-marked and may enter only the balanced RQ3 classifier frame.
+
 Extract only from accepted, artifact-verifiable trajectories. The command checks the trajectory, request, trace, patch, model metadata, and preflight hashes; drops reasoning and prior supervisor decisions; and emits deterministic `adb_...` IDs:
 
 ```bash

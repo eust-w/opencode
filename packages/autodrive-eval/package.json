@@ -20,6 +20,7 @@
     "annotations:model": "bun scripts/model-annotator.ts",
     "ablation:run": "bun scripts/ablation-runner.ts",
     "boundary:plan": "bun src/cli.ts boundary-plan",
+    "boundary:augmentation-plan": "bun src/cli.ts boundary-augmentation-plan",
     "boundary:run": "bun src/cli.ts boundary-run",
     "boundary:reconcile-budget": "bun scripts/reconcile-boundary-budget.ts",
     "boundary:reconcile-retry": "bun scripts/reconcile-retry-gateway.ts",

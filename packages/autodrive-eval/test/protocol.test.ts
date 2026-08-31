@@ -1,7 +1,13 @@
 import { describe, expect, test } from "bun:test"
 import manifest from "../../../research/auto-drive/protocol/swe-evo-48.json"
 import { parseTaskInput } from "../src/host-executor"
-import { createBoundaryRunPlan, createRunPlan, parseManifest, protocol } from "../src/protocol"
+import {
+  createBoundaryAugmentationPlan,
+  createBoundaryRunPlan,
+  createRunPlan,
+  parseManifest,
+  protocol,
+} from "../src/protocol"
 
 describe("frozen AutoDrive protocol", () => {
   test("records all pre-execution protocol amendments", async () => {
@@ -129,6 +135,24 @@ describe("frozen AutoDrive protocol", () => {
         .split("\n")
         .map((line) => JSON.parse(line)),
     ).toEqual(boundary)
+  })
+
+  test("prepares a label-blind 48-run boundary augmentation", async () => {
+    const parsed = parseManifest(manifest)
+    const formal = createRunPlan(parsed)
+    const boundary = createBoundaryRunPlan(parsed)
+    const augmentation = createBoundaryAugmentationPlan(parsed)
+    expect(augmentation).toHaveLength(48)
+    expect(new Set(augmentation.map((run) => run.id)).size).toBe(48)
+    expect(augmentation.every((run) => run.repeat === 2 && run.strategy === "supervisor")).toBeTrue()
+    expect(augmentation.some((run) => boundary.some((item) => item.id === run.id))).toBeFalse()
+    expect(augmentation.some((run) => formal.some((item) => item.id === run.id))).toBeFalse()
+    expect(
+      (await Bun.file("../../research/auto-drive/protocol/boundary-augmentation-plan.jsonl").text())
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line)),
+    ).toEqual(augmentation)
   })
 
   test("uses four continuation strategies and derives off from the first-boundary prefix", () => {

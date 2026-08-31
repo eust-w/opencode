@@ -25,7 +25,14 @@ import { parseTaskInput } from "./host-executor"
 import { renderTaskManifest } from "./paper"
 import { createPilotRun, loadPilotManifest } from "./pilot"
 import { createModelMetadataSnapshot, loadPreflight, PreflightScope } from "./preflight"
-import { createBoundaryRunPlan, createRunPlan, parseManifest, protocol, type Run } from "./protocol"
+import {
+  createBoundaryAugmentationPlan,
+  createBoundaryRunPlan,
+  createRunPlan,
+  parseManifest,
+  protocol,
+  type Run,
+} from "./protocol"
 import { admitBoundaryInfrastructureRetry, admitInfrastructureRetry } from "./retry"
 import { executeRuns, InfrastructureFailure, type ExecutionContext } from "./runner"
 
@@ -33,6 +40,7 @@ const root = path.resolve(import.meta.dir, "../../..")
 const manifest = parseManifest(manifestInput)
 const plan = createRunPlan(manifest)
 const boundaryPlan = createBoundaryRunPlan(manifest)
+const boundaryAugmentationPlan = createBoundaryAugmentationPlan(manifest)
 const command = Bun.argv[2] ?? "validate"
 const args = Bun.argv.slice(3)
 
@@ -47,6 +55,7 @@ if (command === "annotations-prepare") await annotationsPrepare()
 if (command === "annotations-select") await annotationsSelect()
 if (command === "annotations-freeze") await annotationsFreeze()
 if (command === "boundary-plan") await printBoundaryPlan()
+if (command === "boundary-augmentation-plan") await printBoundaryAugmentationPlan()
 if (command === "boundary-run") await boundaryRun()
 if (command === "boundary-reconcile-spend") await boundaryReconcileSpend()
 if (command === "verify-executor") await verifyExecutor()
@@ -67,6 +76,7 @@ if (
     "annotations-select",
     "annotations-freeze",
     "boundary-plan",
+    "boundary-augmentation-plan",
     "boundary-run",
     "boundary-reconcile-spend",
     "verify-executor",
@@ -100,6 +110,18 @@ async function printBoundaryPlan() {
   await mkdir(path.dirname(path.resolve(output)), { recursive: true })
   await Bun.write(path.resolve(output), content)
   console.log(JSON.stringify({ output: path.resolve(output), trajectories: boundaryPlan.length }))
+}
+
+async function printBoundaryAugmentationPlan() {
+  const content = boundaryAugmentationPlan.map((run) => JSON.stringify(run)).join("\n") + "\n"
+  const output = option("output")
+  if (!output) {
+    process.stdout.write(content)
+    return
+  }
+  await mkdir(path.dirname(path.resolve(output)), { recursive: true })
+  await Bun.write(path.resolve(output), content)
+  console.log(JSON.stringify({ output: path.resolve(output), trajectories: boundaryAugmentationPlan.length }))
 }
 
 async function paperProtocol() {
@@ -141,7 +163,8 @@ async function checkPreflight() {
   const receipt = option("receipt")
   if (!receipt) fail("--receipt PATH is required")
   const scope = PreflightScope.safeParse(option("scope") ?? "canary")
-  if (!scope.success) fail("--scope must be canary, boundary, annotation, ablation, or full")
+  if (!scope.success)
+    fail("--scope must be canary, boundary, boundary-augmentation, annotation, ablation, or full")
   const loaded = await loadPreflight(path.resolve(receipt), {
     scope: scope.data,
   })
@@ -749,26 +772,30 @@ async function boundaryRun() {
   if (!requested.length && !flag("all")) fail("Select --run-id ID (repeatable) or explicitly pass --all")
   if (flag("resume-infrastructure") && requested.length !== 1)
     fail("--resume-infrastructure requires exactly one --run-id")
-  const unknown = requested.filter((runID) => !boundaryPlan.some((run) => run.id === runID))
+  const sourcePlan = flag("augmentation") ? boundaryAugmentationPlan : boundaryPlan
+  const unknown = requested.filter((runID) => !sourcePlan.some((run) => run.id === runID))
   if (unknown.length) fail(`Run IDs are outside the frozen boundary plan: ${unknown.join(", ")}`)
   const resolvedArtifactRoot = path.resolve(artifactRoot)
   const resolvedPreflightPath = path.resolve(preflightPath)
   assertInside(resolvedArtifactRoot, resolvedPreflightPath, "Preflight receipt")
-  const preflight = await loadPreflight(resolvedPreflightPath, { scope: "boundary" })
+  const preflight = await loadPreflight(resolvedPreflightPath, {
+    scope: flag("augmentation") ? "boundary-augmentation" : "boundary",
+  })
   const resultsPath = path.join(resolvedArtifactRoot, "boundary", "trajectories.jsonl")
   const ledgerPath = path.join(resolvedArtifactRoot, "boundary", "ledger.jsonl")
   const existing = await readJSONL(resultsPath, parseTrajectory)
-  const accepted = new Set(existing.map((record) => record.runID))
+  const sourceIDs = new Set(sourcePlan.map((run) => run.id))
+  const accepted = new Set(existing.filter((record) => sourceIDs.has(record.runID)).map((record) => record.runID))
   const maxCostUSD = caps.boundary / boundaryPlan.length
   const recovered = await settlePendingBoundaryExclusions({
     artifactRoot: resolvedArtifactRoot,
     ledgerPath,
-    runs: boundaryPlan,
+    runs: sourcePlan,
     accepted,
     maxCostUSD,
   })
   const completed = new Set([...accepted, ...recovered.map((exclusion) => exclusion.runID)])
-  const selected = boundaryPlan.filter(
+  const selected = sourcePlan.filter(
     (run) => !completed.has(run.id) && (!requested.length || requested.includes(run.id)),
   )
   if (!selected.length && requested.length && requested.every((runID) => completed.has(runID))) {
@@ -777,7 +804,7 @@ async function boundaryRun() {
       JSON.stringify({
         completed: 0,
         excluded: requested.filter((runID) => recovered.some((exclusion) => exclusion.runID === runID)).length,
-        remaining: boundaryPlan.length - completed.size,
+        remaining: sourcePlan.length - completed.size,
         results: resultsPath,
         category: "boundary",
       }),
@@ -837,11 +864,15 @@ async function boundaryRun() {
     ),
   ])
   const records = executed[0].status === "fulfilled" ? executed[0].value : []
-  const finalAccepted = new Set((await readJSONL(resultsPath, parseTrajectory)).map((record) => record.runID))
+  const finalAccepted = new Set(
+    (await readJSONL(resultsPath, parseTrajectory))
+      .filter((record) => sourceIDs.has(record.runID))
+      .map((record) => record.runID),
+  )
   const finalExclusions = await settlePendingBoundaryExclusions({
     artifactRoot: resolvedArtifactRoot,
     ledgerPath,
-    runs: boundaryPlan,
+    runs: sourcePlan,
     accepted: finalAccepted,
     maxCostUSD,
   })
@@ -857,7 +888,7 @@ async function boundaryRun() {
     JSON.stringify({
       completed: records.length,
       excluded: selected.filter((run) => finalExclusions.some((exclusion) => exclusion.runID === run.id)).length,
-      remaining: boundaryPlan.length - finalCompleted.size,
+      remaining: sourcePlan.length - finalCompleted.size,
       results: resultsPath,
       category: "boundary",
     }),
@@ -869,7 +900,8 @@ async function boundaryReconcileSpend() {
   if (!artifactRoot) fail("--artifact-root PATH is required")
   const runID = option("run-id")
   if (!runID) fail("--run-id ID is required")
-  const run = boundaryPlan.find((candidate) => candidate.id === runID)
+  const sourcePlan = flag("augmentation") ? boundaryAugmentationPlan : boundaryPlan
+  const run = sourcePlan.find((candidate) => candidate.id === runID)
   if (!run) fail(`Run ID is outside the frozen boundary plan: ${runID}`)
   const resolvedArtifactRoot = path.resolve(artifactRoot)
   const resultsPath = path.join(resolvedArtifactRoot, "boundary", "trajectories.jsonl")

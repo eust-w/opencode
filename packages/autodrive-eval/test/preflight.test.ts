@@ -122,6 +122,18 @@ describe("experiment preflight gate", () => {
       scope: "ablation",
       models: [{ trajectoryCapacity: 504 }],
     })
+
+    const augmentation = {
+      ...base,
+      scope: "boundary-augmentation",
+      models: base.models.map((model) => ({ ...model, trajectoryCapacity: 48 })),
+    }
+    expect(
+      parsePreflight(augmentation, {
+        scope: "boundary-augmentation",
+        now: new Date("2026-08-30T03:00:00.000Z"),
+      }),
+    ).toMatchObject({ scope: "boundary-augmentation", models: [{ trajectoryCapacity: 48 }, { trajectoryCapacity: 48 }] })
   })
 
   test("creates a minimal cache with explicit logical-to-catalog resolutions", () => {

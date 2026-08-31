@@ -17,6 +17,17 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("accepted=384")
   })
 
+  test("ships a label-blind bounded boundary augmentation runner", async () => {
+    const script = await Bun.file(
+      new URL("../../../research/auto-drive/execution/run-boundary-augmentation-r1.sh", import.meta.url),
+    ).text()
+    expect(script).toContain("candidate_count")
+    expect(script).toContain('if [ "$candidate_count" -ge 180 ]')
+    expect(script).toContain("--augmentation")
+    expect(script).toContain("batch_size=2")
+    expect(script).toContain('dispositions" -ne 48')
+  })
+
   test("ships an autonomous boundary finalizer that refuses incomplete campaigns", async () => {
     const script = await Bun.file(
       path.resolve(import.meta.dir, "../../../research/auto-drive/execution/finalize-boundary-r1.sh"),
