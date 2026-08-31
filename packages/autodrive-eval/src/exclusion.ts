@@ -37,7 +37,7 @@ const DeadlineSpendLog = z
     spend: z.number().nonnegative(),
     startTime: z.iso.datetime(),
     endTime: z.iso.datetime(),
-    status: z.literal("success"),
+    status: z.string().min(1),
   })
   .loose()
 
@@ -133,6 +133,8 @@ export async function reconcileExecutorDeadlineFailure(input: {
     return timestamp >= startedMS && timestamp <= endedMS && expectedModels.has(row.model)
   })
   if (spendRows.length !== requests.length) throw new Error("Executor deadline spend rows do not match request count")
+  if (spendRows.some((row) => row.status !== "success"))
+    throw new Error("Executor deadline spend rows are not all successful")
   const modelCounts = (models: readonly string[]) =>
     JSON.stringify(
       [...new Set(models)].sort().map((model) => [model, models.filter((candidate) => candidate === model).length]),

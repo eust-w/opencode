@@ -82,7 +82,7 @@ async function readSpendLogs() {
           spend: z.number().nonnegative(),
           startTime: z.iso.datetime(),
           endTime: z.iso.datetime(),
-          status: z.literal("success"),
+          status: z.string().min(1),
         })
         .loose(),
     )

@@ -69,7 +69,10 @@ describe("charged boundary exclusion settlement", () => {
       endedAt,
       maxCostUSD: 1.0625,
       recordedAt: new Date("2026-08-31T23:00:00.000Z"),
-      spendLogs,
+      spendLogs: [
+        ...spendLogs,
+        { request_id: "unrelated", model: "openai/other", prompt_tokens: 1, completion_tokens: 0, spend: 0, startTime: "2026-08-31T22:05:00.000Z", endTime: "2026-08-31T22:05:01.000Z", status: "failure" },
+      ],
     })
     const receipt = parseExecutorFailureReceipt(await Bun.file(receiptPath).json())
     expect(receipt).toMatchObject({
