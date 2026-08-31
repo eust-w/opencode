@@ -66,6 +66,18 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("candidates.jsonl")
   })
 
+  test("ships a boundary runner pinned to the isolated Docker storage gate", async () => {
+    const script = await Bun.file(
+      path.resolve(import.meta.dir, "../../../research/auto-drive/execution/run-boundary-r1-v10.sh"),
+    ).text()
+    expect(script).toContain("DOCKER_HOST=unix:///run/autodrive-docker2.sock")
+    expect(script).toContain("AUTODRIVE_DOCKER_EGRESS_NETWORK=autodrive-egress")
+    expect(script).toContain("docker_storage=/dev/shm/autodrive-docker2-data")
+    expect(script).toContain('docker info --format "{{.Driver}} {{.DockerRootDir}}"')
+    expect(script).toContain('df --output=avail -k "$docker_storage"')
+    expect(script).toContain("52428800")
+  })
+
   test("admits the same sealed zero-cost retry contract for formal runs", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-formal-retry-"))
     try {
