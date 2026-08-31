@@ -1,9 +1,11 @@
 import { appendFile, mkdir } from "node:fs/promises"
 import path from "node:path"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
+import { analyzeBoundaryAblations } from "./ablation"
 import { assertTrajectoryProvenance } from "./acceptance"
 import {
   BoundaryCandidate,
+  analyzePrematureHandoffs,
   extractSupervisorBoundaries,
   freezeAnnotations,
   renderBoundaryPacket,
@@ -23,6 +25,7 @@ import { reconcilePostSessionSpendSamplingFailure, settlePendingBoundaryExclusio
 import { analyzeFormalMatrix } from "./formal-analysis"
 import { parseTaskInput } from "./host-executor"
 import { renderTaskManifest } from "./paper"
+import { renderPaperResults } from "./paper-results"
 import { createPilotRun, loadPilotManifest } from "./pilot"
 import { createModelMetadataSnapshot, loadPreflight, PreflightScope } from "./preflight"
 import {
@@ -31,7 +34,7 @@ import {
   createRunPlan,
   parseManifest,
   protocol,
-  type Run,
+  Run,
 } from "./protocol"
 import { admitBoundaryInfrastructureRetry, admitInfrastructureRetry } from "./retry"
 import { executeRuns, InfrastructureFailure, type ExecutionContext } from "./runner"
@@ -54,6 +57,9 @@ if (command === "annotations-extract") await annotationsExtract()
 if (command === "annotations-prepare") await annotationsPrepare()
 if (command === "annotations-select") await annotationsSelect()
 if (command === "annotations-freeze") await annotationsFreeze()
+if (command === "ablation-analyze") await ablationAnalyze()
+if (command === "boundary-frequency") await boundaryFrequency()
+if (command === "paper-results") await paperResults()
 if (command === "boundary-plan") await printBoundaryPlan()
 if (command === "boundary-augmentation-plan") await printBoundaryAugmentationPlan()
 if (command === "boundary-run") await boundaryRun()
@@ -75,6 +81,9 @@ if (
     "annotations-prepare",
     "annotations-select",
     "annotations-freeze",
+    "ablation-analyze",
+    "boundary-frequency",
+    "paper-results",
     "boundary-plan",
     "boundary-augmentation-plan",
     "boundary-run",
@@ -527,6 +536,68 @@ async function annotationsFreeze() {
       sha256: seal.corpusSHA256,
     }),
   )
+}
+
+async function ablationAnalyze() {
+  const testPath = option("test")
+  if (!testPath) fail("--test PATH is required")
+  const predictionsPath = option("predictions")
+  if (!predictionsPath) fail("--predictions PATH is required")
+  const output = option("output")
+  if (!output) fail("--output PATH is required")
+  const analysis = analyzeBoundaryAblations(
+    await readJSONL(path.resolve(testPath), (input) => input),
+    await readJSONL(path.resolve(predictionsPath), (input) => input),
+  )
+  const resolvedOutput = path.resolve(output)
+  await mkdir(path.dirname(resolvedOutput), { recursive: true })
+  await Bun.write(resolvedOutput, JSON.stringify(analysis, null, 2) + "\n")
+  console.log(JSON.stringify({ output: resolvedOutput, examples: analysis.examples }))
+}
+
+async function boundaryFrequency() {
+  const candidatesPath = option("candidates")
+  if (!candidatesPath) fail("--candidates PATH is required")
+  const adjudicatedPath = option("adjudicated")
+  if (!adjudicatedPath) fail("--adjudicated PATH is required")
+  const sourcePlanPath = option("source-plan")
+  if (!sourcePlanPath) fail("--source-plan PATH is required")
+  const output = option("output")
+  if (!output) fail("--output PATH is required")
+  const analysis = analyzePrematureHandoffs(
+    await readJSONL(path.resolve(candidatesPath), (input) => input),
+    await Bun.file(path.resolve(adjudicatedPath)).text(),
+    (await readJSONL(path.resolve(sourcePlanPath), (input) => Run.parse(input))).map((run) => run.id),
+  )
+  const resolvedOutput = path.resolve(output)
+  await mkdir(path.dirname(resolvedOutput), { recursive: true })
+  await Bun.write(resolvedOutput, JSON.stringify(analysis, null, 2) + "\n")
+  console.log(JSON.stringify({ output: resolvedOutput, ...analysis }))
+}
+
+async function paperResults() {
+  const paths = ["formal", "ablation", "frequency", "summary"] as const
+  const inputs = await Promise.all(
+    paths.map(async (name) => {
+      const filePath = option(name)
+      if (!filePath) fail(`--${name} PATH is required`)
+      const content = await Bun.file(path.resolve(filePath)).text()
+      assertSecretFree(content)
+      return JSON.parse(content)
+    }),
+  )
+  const output = option("output")
+  if (!output) fail("--output PATH is required")
+  const content = renderPaperResults({
+    formal: inputs[0],
+    ablation: inputs[1],
+    frequency: inputs[2],
+    summary: inputs[3],
+  })
+  const resolvedOutput = path.resolve(output)
+  await mkdir(path.dirname(resolvedOutput), { recursive: true })
+  await Bun.write(resolvedOutput, content)
+  console.log(JSON.stringify({ output: resolvedOutput, sha256: new Bun.CryptoHasher("sha256").update(content).digest("hex") }))
 }
 
 async function verifyExecutor() {

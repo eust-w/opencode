@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import {
+  analyzePrematureHandoffs,
   extractSupervisorBoundaries,
   freezeAnnotations,
   renderBoundaryPacket,
@@ -41,6 +42,29 @@ describe("boundary dataset split", () => {
 })
 
 describe("independent boundary annotation freeze", () => {
+  test("estimates first-boundary handoff frequency only on the initial source frame", () => {
+    const candidates = [
+      { ...boundaryCandidate("b1", "r1"), boundaryIndex: 1 },
+      { ...boundaryCandidate("b0", "r1"), boundaryIndex: 0 },
+      boundaryCandidate("b2", "r2"),
+      boundaryCandidate("b3", "augmentation"),
+    ]
+    const labels = [
+      "boundary_id,annotator_id,label,confidence,reason,next_action,timestamp",
+      "b1,panel,stop,high,done,,2026-08-31T00:00:00.000Z",
+      "b0,panel,continue,high,work remains,next,2026-08-31T00:00:00.000Z",
+      "b2,panel,defer,high,input needed,ask,2026-08-31T00:00:00.000Z",
+      "b3,panel,continue,high,work remains,next,2026-08-31T00:00:00.000Z",
+    ].join("\n")
+    expect(analyzePrematureHandoffs(candidates, labels, ["r1", "r2", "r3"])).toEqual({
+      plannedSourceTrajectories: 3,
+      labeledFirstBoundaries: 2,
+      missingSourceTrajectories: 1,
+      counts: { continue: 1, stop: 0, defer: 1 },
+      prematureHandoffRate: 0.5,
+    })
+  })
+
   test("deterministically selects 60 adjudicated examples per class from a larger labeled frame", () => {
     const candidates = ["continue", "stop", "defer"].flatMap((label, labelIndex) =>
       Array.from({ length: 70 }, (_, index) => ({
@@ -264,6 +288,21 @@ describe("independent boundary annotation freeze", () => {
     expect(JSON.stringify(candidates)).not.toContain("decision")
   })
 })
+
+function boundaryCandidate(id: string, baseTrajectoryID: string) {
+  return {
+    id,
+    baseTrajectoryID,
+    taskID: "task",
+    boundaryIndex: 0,
+    initialGoal: "Fix the task",
+    workerOutput: "Work remains.",
+    trajectorySummary: "Inspected code.",
+    patch: "",
+    continuationCount: 0,
+    memory: "",
+  }
+}
 
 function boundaryCandidates() {
   const labels = ["continue", "stop", "defer"] as const

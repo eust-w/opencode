@@ -39,6 +39,7 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("model-deepseek-v4-pro-adjudicator")
     expect(script).toContain("annotations-freeze")
     expect(script).toContain("ablation-runner.ts")
+    expect(script).toContain("ablation-analyze")
     expect(script).toContain("run-formal-r1.sh")
   })
 

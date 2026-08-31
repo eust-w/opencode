@@ -55,6 +55,11 @@ export AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD="$annotation_call_max"
 run_judge model-qwen3.7-max d-robotics/qwen3.7-max
 run_judge model-deepseek-v4-flash d-robotics/deepseek-v4-flash
 run_judge model-deepseek-v4-pro-adjudicator d-robotics/deepseek-v4-pro
+bun src/cli.ts boundary-frequency \
+  --candidates "$frame" \
+  --adjudicated "$annotations/model-deepseek-v4-pro-adjudicator/labels.csv" \
+  --source-plan "$workspace/research/auto-drive/protocol/boundary-run-plan.jsonl" \
+  --output "$artifact/boundary/frequency.json"
 
 bun src/cli.ts annotations-select \
   --candidates "$frame" \
@@ -76,8 +81,21 @@ bun scripts/ablation-runner.ts \
   --test "$frozen/test.jsonl" \
   --output "$artifact/ablation" \
   --preflight "$ablation_preflight"
+bun src/cli.ts ablation-analyze \
+  --test "$frozen/test.jsonl" \
+  --predictions "$artifact/ablation/predictions.jsonl" \
+  --output "$artifact/ablation/statistics.json"
 
 export AUTODRIVE_ANNOTATIONS_ROOT="$frozen"
 export AUTODRIVE_EVAL_PREFLIGHT_PATH="$full_preflight"
 bash "$workspace/research/auto-drive/execution/run-formal-r1.sh"
+bun src/cli.ts analyze \
+  --results "$artifact/formal/trajectories.jsonl" \
+  --output "$artifact/formal/derived"
+bun src/cli.ts paper-results \
+  --formal "$artifact/formal/derived/formal-statistics.json" \
+  --ablation "$artifact/ablation/statistics.json" \
+  --frequency "$artifact/boundary/frequency.json" \
+  --summary "$artifact/formal/derived/summary.json" \
+  --output "$workspace/research/auto-drive/paper/generated/results.tex"
 echo "$(date -u +%FT%TZ) pipeline-complete"

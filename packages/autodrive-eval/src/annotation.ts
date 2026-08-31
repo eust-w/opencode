@@ -86,6 +86,36 @@ export interface Boundary {
   readonly label: BoundaryLabel
 }
 
+export function analyzePrematureHandoffs(
+  candidateInput: readonly unknown[],
+  adjudicatedContent: string,
+  initialRunIDs: readonly string[],
+) {
+  const candidates = z.array(BoundaryCandidate).parse(candidateInput)
+  const initial = new Set(initialRunIDs)
+  if (initial.size !== initialRunIDs.length) throw new Error("Initial boundary source IDs must be unique")
+  const labels = parseAnnotationFile(adjudicatedContent, new Set(candidates.map((candidate) => candidate.id))).labels
+  const first = Array.from(
+    Map.groupBy(
+      candidates.filter((candidate) => initial.has(candidate.baseTrajectoryID)),
+      (candidate) => candidate.baseTrajectoryID,
+    ).values(),
+  ).map((items) => items.toSorted((left, right) => left.boundaryIndex - right.boundaryIndex)[0]!)
+  const counts = Object.fromEntries(
+    (["continue", "stop", "defer"] as const).map((label) => [
+      label,
+      first.filter((candidate) => labels.get(candidate.id) === label).length,
+    ]),
+  ) as Record<BoundaryLabel, number>
+  return {
+    plannedSourceTrajectories: initialRunIDs.length,
+    labeledFirstBoundaries: first.length,
+    missingSourceTrajectories: initialRunIDs.length - first.length,
+    counts,
+    prematureHandoffRate: first.length ? counts.continue / first.length : null,
+  }
+}
+
 export function selectBalancedAnnotations(input: {
   candidates: readonly unknown[]
   first: string
