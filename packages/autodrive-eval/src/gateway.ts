@@ -111,9 +111,7 @@ export async function relayTaskRequest(input: Request, upstream: string) {
 }
 
 export function parseGatewayUsage(input: string) {
-  const data = input
-    .split("\n")
-    .filter((line) => line.startsWith("data: ") && line !== "data: [DONE]")
+  const data = input.split("\n").filter((line) => line.startsWith("data: ") && line !== "data: [DONE]")
   const values = data.length
     ? input
         .split("\n")
@@ -160,11 +158,7 @@ const UsageResponse = z
 
 const UsageEvent = UsageResponse.extend({ response: UsageResponse.optional() }).loose()
 
-export function requireGatewayBudget(input: {
-  baselineSpend: number
-  currentSpend: number
-  maxSpendUSD: number
-}) {
+export function requireGatewayBudget(input: { baselineSpend: number; currentSpend: number; maxSpendUSD: number }) {
   if (![input.baselineSpend, input.currentSpend, input.maxSpendUSD].every(Number.isFinite))
     throw new Error("Gateway spend is unavailable")
   const spent = input.currentSpend - input.baselineSpend
@@ -198,11 +192,9 @@ export function gatewayRequestsSettled(events: readonly unknown[], requestCount:
   if (!Number.isInteger(requestCount) || requestCount < 0) throw new Error("Gateway request count is invalid")
   const terminal = new Set(
     events.flatMap((event) => {
-      const parsed = z
-        .object({ type: z.string(), sequence: z.number().int().nonnegative() })
-        .loose()
-        .safeParse(event)
+      const parsed = z.object({ type: z.string(), sequence: z.number().int().nonnegative() }).loose().safeParse(event)
       if (!parsed.success || !new Set(["provider-response", "proxy-error"]).has(parsed.data.type)) return []
+      if (parsed.data.sequence >= requestCount) return []
       return [parsed.data.sequence]
     }),
   )

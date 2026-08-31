@@ -442,6 +442,29 @@ describe("SWE-EVO host executor", () => {
       name: "Error",
       message: "Gateway requests did not settle",
     })
+    expect(
+      classifyExecutorFailure(
+        new Error("Gateway spend exceeded the frozen per-run ceiling: $1.2186096 > $1.0625"),
+        "gateway-settlement",
+      ),
+    ).toEqual({
+      classification: "excluded-charged-budget-overrun",
+      stage: "gateway-settlement-budget-overrun",
+      code: "gateway-spend-exceeded-frozen-per-run-ceiling",
+      name: "Error",
+      message: "Gateway spend exceeded the frozen per-run ceiling: $1.2186096 > $1.0625",
+    })
+  })
+
+  test("fails before trajectory admission when settled spend exceeds the frozen run ceiling", async () => {
+    const module: Record<string, unknown> = await import("../src/host-executor")
+    const requireGatewaySpendWithinCeiling = module.requireGatewaySpendWithinCeiling
+    expect(requireGatewaySpendWithinCeiling).toBeFunction()
+    if (typeof requireGatewaySpendWithinCeiling !== "function") return
+    expect(requireGatewaySpendWithinCeiling({ spentUSD: 1.0625, maxCostUSD: 1.0625 })).toBe(1.0625)
+    expect(() => requireGatewaySpendWithinCeiling({ spentUSD: 1.2186096, maxCostUSD: 1.0625 })).toThrow(
+      "Gateway spend exceeded the frozen per-run ceiling: $1.2186096 > $1.0625",
+    )
   })
 
   test("requires failure receipts to remain machine-readable and unaccepted", () => {
@@ -486,6 +509,14 @@ describe("SWE-EVO host executor", () => {
         acceptance: { trajectoryAccepted: true, ledgerRowWritten: false },
       }),
     ).toThrow()
+    expect(() =>
+      parseExecutorFailureReceipt({
+        ...receipt,
+        classification: "excluded-charged-budget-overrun",
+        stage: "gateway-settlement-budget-overrun",
+        code: "gateway-spend-exceeded-frozen-per-run-ceiling",
+      }),
+    ).not.toThrow()
   })
 
   test("rejects task records that contain a gold patch", () => {

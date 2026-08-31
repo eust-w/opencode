@@ -18,6 +18,7 @@
     "annotations:freeze": "bun src/cli.ts annotations-freeze",
     "boundary:plan": "bun src/cli.ts boundary-plan",
     "boundary:run": "bun src/cli.ts boundary-run",
+    "boundary:reconcile-budget": "bun scripts/reconcile-boundary-budget.ts",
     "boundary:reconcile-retry": "bun scripts/reconcile-retry-gateway.ts",
     "verify-executor": "bun src/cli.ts verify-executor",
     "gateway-proxy": "bun scripts/gateway-proxy.ts",

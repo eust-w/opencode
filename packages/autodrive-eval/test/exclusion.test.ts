@@ -106,6 +106,149 @@ describe("charged boundary exclusion settlement", () => {
     })
   })
 
+  test("accounts for a charged budget overrun without accepting an empirical trajectory", async () => {
+    const directory = await temporaryDirectory()
+    const run = createBoundaryRunPlan(parseManifest(manifest))[7]
+    const receiptPath = await writeFailureReceipt(directory, run, {
+      requests: 40,
+      responses: 40,
+      proxyErrors: 3,
+      usageCompleteResponses: 40,
+      observedSpendDeltaUSD: 1.2186096,
+    })
+    const receipt = await Bun.file(receiptPath).json()
+    await Bun.write(
+      receiptPath,
+      JSON.stringify({
+        ...receipt,
+        classification: "excluded-charged-budget-overrun",
+        stage: "gateway-settlement-budget-overrun",
+        code: "gateway-spend-exceeded-frozen-per-run-ceiling",
+      }),
+    )
+
+    const exclusion = await settleBoundaryExclusion({
+      artifactRoot: directory,
+      ledgerPath: path.join(directory, "boundary/ledger.jsonl"),
+      receiptPath,
+      run,
+      maxCostUSD: 1.0625,
+    })
+
+    expect(exclusion).toMatchObject({
+      classification: "excluded-charged-budget-overrun",
+      runID: run.id,
+      costUSD: 1.2186096,
+      acceptance: { trajectoryAccepted: false, trajectoryLedgerRowWritten: false },
+    })
+    expect(JSON.parse((await Bun.file(path.join(directory, "boundary/ledger.jsonl")).text()).trim())).toMatchObject({
+      runID: run.id,
+      disposition: "excluded-charged-budget-overrun",
+      amountUSD: 1.2186096,
+    })
+  })
+
+  test("rejects a charged exclusion before it would exceed the frozen category budget", async () => {
+    const directory = await temporaryDirectory()
+    const run = createBoundaryRunPlan(parseManifest(manifest))[7]
+    const ledgerPath = path.join(directory, "boundary/ledger.jsonl")
+    await Bun.write(
+      ledgerPath,
+      JSON.stringify({
+        timestamp: "2026-08-31T00:00:00.000Z",
+        runID: "adr_00000000000000000000",
+        category: "boundary",
+        amountUSD: 101,
+        promptTokens: 0,
+        completionTokens: 0,
+      }) + "\n",
+    )
+    const receiptPath = await writeFailureReceipt(directory, run, {
+      requests: 40,
+      responses: 40,
+      usageCompleteResponses: 40,
+      observedSpendDeltaUSD: 1.2186096,
+    })
+    const receipt = await Bun.file(receiptPath).json()
+    await Bun.write(
+      receiptPath,
+      JSON.stringify({
+        ...receipt,
+        classification: "excluded-charged-budget-overrun",
+        stage: "gateway-settlement-budget-overrun",
+        code: "gateway-spend-exceeded-frozen-per-run-ceiling",
+      }),
+    )
+
+    await expect(
+      settleBoundaryExclusion({
+        artifactRoot: directory,
+        ledgerPath,
+        receiptPath,
+        run,
+        maxCostUSD: 1.0625,
+      }),
+    ).rejects.toThrow("boundary budget exceeds $102")
+    expect(await Bun.file(path.join(directory, "boundary/exclusions", `${run.id}.json`)).exists()).toBe(false)
+    expect((await Bun.file(ledgerPath).text()).trim().split("\n")).toHaveLength(1)
+  })
+
+  test("reconciles the observed settlement false negative into an immutable budget-overrun receipt", async () => {
+    const module: Record<string, unknown> = await import("../src/exclusion")
+    expect(module.reconcileBoundaryBudgetOverrunFailure).toBeFunction()
+    if (typeof module.reconcileBoundaryBudgetOverrunFailure !== "function") return
+    const directory = await temporaryDirectory()
+    const run = createBoundaryRunPlan(parseManifest(manifest))[7]
+    const originalReceiptPath = await writeBudgetOverrunSettlementFailure(directory, run)
+
+    const receiptPath = await module.reconcileBoundaryBudgetOverrunFailure({
+      artifactRoot: directory,
+      run,
+      originalReceiptPath,
+      maxCostUSD: 1.0625,
+      spendSamples: [4.0391964, 4.0391964, 4.0391964, 4.0391964],
+      recordedAt: new Date("2026-08-31T03:00:00.000Z"),
+    })
+    const receipt = parseExecutorFailureReceipt(await Bun.file(receiptPath).json())
+
+    expect(receipt).toMatchObject({
+      classification: "excluded-charged-budget-overrun",
+      stage: "gateway-settlement-budget-overrun",
+      code: "gateway-spend-exceeded-frozen-per-run-ceiling",
+      runID: run.id,
+      attempt: 1,
+      gateway: {
+        settlement: { attempted: true, completed: true },
+        requests: 2,
+        responses: 2,
+        proxyErrors: 2,
+        usageCompleteResponses: 2,
+        observedSpendDeltaUSD: 1.2186096,
+      },
+    })
+    expect(receipt.artifacts.map((artifact) => artifact.path)).toEqual([
+      `failures/${run.id}/attempt-1.json`,
+      `raw/${run.id}.jsonl`,
+      `gateway/${run.id}/requests.jsonl`,
+      `gateway/${run.id}/proxy.jsonl`,
+      `gateway/${run.id}/requests/0000.json`,
+      `gateway/${run.id}/responses/0000.txt`,
+      `gateway/${run.id}/requests/0001.json`,
+      `gateway/${run.id}/responses/0001.txt`,
+      `failures/${run.id}/attempt-1-settlement.json`,
+    ])
+    await expect(
+      module.reconcileBoundaryBudgetOverrunFailure({
+        artifactRoot: directory,
+        run,
+        originalReceiptPath,
+        maxCostUSD: 1.0625,
+        spendSamples: [4.0391964, 4.0391964, 4.0391964, 4.0391964],
+        recordedAt: new Date("2026-08-31T04:00:00.000Z"),
+      }),
+    ).resolves.toBe(receiptPath)
+  })
+
   test("reconstructs a strict charged retry receipt from a misrouted gateway namespace", async () => {
     const directory = await temporaryDirectory()
     const run = createBoundaryRunPlan(parseManifest(manifest))[6]
@@ -286,7 +429,7 @@ describe("charged boundary exclusion settlement", () => {
 
   test("discovers pending strict receipts while leaving accepted and ordinary failures untouched", async () => {
     const directory = await temporaryDirectory()
-    const runs = createBoundaryRunPlan(parseManifest(manifest)).slice(4, 7)
+    const runs = createBoundaryRunPlan(parseManifest(manifest)).slice(4, 8)
     await writeFailureReceipt(directory, runs[1], {
       requests: 1,
       responses: 1,
@@ -301,6 +444,22 @@ describe("charged boundary exclusion settlement", () => {
     })
     const ordinary = await Bun.file(ordinaryPath).json()
     await Bun.write(ordinaryPath, JSON.stringify({ ...ordinary, classification: "executor-failure" }))
+    const overrunPath = await writeFailureReceipt(directory, runs[3], {
+      requests: 1,
+      responses: 1,
+      usageCompleteResponses: 1,
+      observedSpendDeltaUSD: 1.2186096,
+    })
+    const overrun = await Bun.file(overrunPath).json()
+    await Bun.write(
+      overrunPath,
+      JSON.stringify({
+        ...overrun,
+        classification: "excluded-charged-budget-overrun",
+        stage: "gateway-settlement-budget-overrun",
+        code: "gateway-spend-exceeded-frozen-per-run-ceiling",
+      }),
+    )
 
     const exclusions = await settlePendingBoundaryExclusions({
       artifactRoot: directory,
@@ -310,7 +469,7 @@ describe("charged boundary exclusion settlement", () => {
       maxCostUSD: 1.0625,
     })
 
-    expect(exclusions.map((exclusion) => exclusion.runID)).toEqual([runs[1].id])
+    expect(exclusions.map((exclusion) => exclusion.runID)).toEqual([runs[1].id, runs[3].id].sort())
     expect(await loadBoundaryExclusions(directory)).toEqual(exclusions)
   })
 })
@@ -475,6 +634,115 @@ async function writeMisroutedGatewayArtifacts(
         .join("\n") + "\n",
     ),
   ])
+}
+
+async function writeBudgetOverrunSettlementFailure(
+  directory: string,
+  run: ReturnType<typeof createBoundaryRunPlan>[number],
+) {
+  const requestContents = ['{"model":"worker"}\n', '{"model":"controller"}\n']
+  const responseContents = ['{"usage":"worker"}\n', '{"usage":"controller"}\n']
+  const requests = requestContents.map((content, sequence) => ({
+    sequence,
+    kind: sequence === 0 ? "worker" : "controller",
+    provider: "d-robotics-gateway",
+    modelID: sequence === 0 ? "deepseek-v4-pro" : "qwen3.8-max",
+    modelVersion: sequence === 0 ? "deepseek-v4-pro" : "qwen3.8-max",
+    requestSHA256: digest(content),
+    normalizedRequest: {
+      path: `gateway/${run.id}/requests/${String(sequence).padStart(4, "0")}.json`,
+      sha256: digest(content),
+    },
+    temperature: 0,
+    maxOutputTokens: sequence === 0 ? 4096 : 1024,
+  }))
+  const events: Record<string, unknown>[] = requests.flatMap((request, sequence) => [
+    { timestamp: `2026-08-31T02:40:4${sequence}.000Z`, type: "provider-request", ...request },
+    {
+      timestamp: `2026-08-31T02:40:5${sequence}.000Z`,
+      type: "provider-raw-response",
+      sequence,
+      status: 200,
+      response: {
+        path: `gateway/${run.id}/responses/${String(sequence).padStart(4, "0")}.txt`,
+        sha256: digest(responseContents[sequence]),
+      },
+    },
+    {
+      timestamp: `2026-08-31T02:40:5${sequence}.100Z`,
+      type: "provider-response",
+      sequence,
+      status: 200,
+      usageComplete: true,
+      promptTokens: 100 + sequence,
+      completionTokens: 20 + sequence,
+    },
+  ])
+  events.push(
+    { timestamp: "2026-08-31T02:41:00.000Z", type: "proxy-error", sequence: 2, name: "Error" },
+    { timestamp: "2026-08-31T02:41:01.000Z", type: "proxy-error", sequence: 3, name: "Error" },
+  )
+  const raw =
+    [
+      { timestamp: "2026-08-31T02:40:40.000Z", type: "executor-started" },
+      { timestamp: "2026-08-31T02:41:02.000Z", type: "executor-failed" },
+    ]
+      .map((event) => JSON.stringify(event))
+      .join("\n") + "\n"
+  const requestManifest = requests.map((request) => JSON.stringify(request)).join("\n") + "\n"
+  const proxyTrace = events.map((event) => JSON.stringify(event)).join("\n") + "\n"
+  const artifacts = [
+    [path.join("raw", `${run.id}.jsonl`), raw],
+    [path.join("gateway", run.id, "requests.jsonl"), requestManifest],
+    [path.join("gateway", run.id, "proxy.jsonl"), proxyTrace],
+  ] as const
+  await Promise.all([
+    ...artifacts.map(([relative, content]) => Bun.write(path.join(directory, relative), content)),
+    ...requestContents.map((content, sequence) =>
+      Bun.write(path.join(directory, requests[sequence].normalizedRequest.path), content),
+    ),
+    ...responseContents.map((content, sequence) =>
+      Bun.write(path.join(directory, `gateway/${run.id}/responses/${String(sequence).padStart(4, "0")}.txt`), content),
+    ),
+  ])
+  const receiptPath = path.join(directory, "failures", run.id, "attempt-1.json")
+  await Bun.write(
+    receiptPath,
+    JSON.stringify({
+      schemaVersion: 1,
+      protocol: protocol.version,
+      classification: "executor-failure",
+      stage: "gateway-settlement",
+      code: "executor-error",
+      runID: run.id,
+      taskID: run.taskID,
+      attempt: 1,
+      startedAt: "2026-08-31T02:40:40.000Z",
+      recordedAt: "2026-08-31T02:56:05.000Z",
+      error: { name: "Error", message: "Gateway requests did not settle before the frozen deadline" },
+      gateway: {
+        settlement: {
+          attempted: true,
+          completed: false,
+          error: "Gateway requests did not settle before the frozen deadline",
+        },
+        requests: 2,
+        responses: 2,
+        non200Responses: 0,
+        proxyErrors: 2,
+        usageCompleteResponses: 2,
+        promptTokens: 201,
+        completionTokens: 41,
+        baselineSpendUSD: 2.8205868,
+        settledSpendUSD: 4.0391964,
+        observedSpendDeltaUSD: 1.2186096,
+      },
+      acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+      artifacts: artifacts.map(([relative, content]) => ({ path: relative, sha256: digest(content) })),
+      recordingErrors: [],
+    }),
+  )
+  return receiptPath
 }
 
 function digest(content: string) {

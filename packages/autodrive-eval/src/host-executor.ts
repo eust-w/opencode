@@ -254,7 +254,11 @@ const ExecutorFailureReceipt = z
   .object({
     schemaVersion: z.literal(1),
     protocol: z.string().min(1),
-    classification: z.enum(["excluded-charged-evaluation-failure", "executor-failure"]),
+    classification: z.enum([
+      "excluded-charged-evaluation-failure",
+      "excluded-charged-budget-overrun",
+      "executor-failure",
+    ]),
     stage: z.string().min(1),
     code: z.string().min(1),
     runID: z.string().min(1),
@@ -358,6 +362,13 @@ export async function captureGatewayFailureEvidence(input: {
 
 export function classifyExecutorFailure(error: unknown, stage: string) {
   const details = errorDetails(error)
+  if (details.message.startsWith("Gateway spend exceeded the frozen per-run ceiling:"))
+    return {
+      classification: "excluded-charged-budget-overrun" as const,
+      stage: `${stage}-budget-overrun`,
+      code: "gateway-spend-exceeded-frozen-per-run-ceiling" as const,
+      ...details,
+    }
   if (details.message === "Model patch conflicts with the frozen test patch")
     return {
       classification: "excluded-charged-evaluation-failure" as const,
@@ -371,6 +382,14 @@ export function classifyExecutorFailure(error: unknown, stage: string) {
     code: "executor-error" as const,
     ...details,
   }
+}
+
+export function requireGatewaySpendWithinCeiling(input: { spentUSD: number; maxCostUSD: number }) {
+  if (![input.spentUSD, input.maxCostUSD].every(Number.isFinite) || input.spentUSD < 0 || input.maxCostUSD <= 0)
+    throw new Error("Gateway spend ceiling inputs are invalid")
+  if (input.spentUSD > input.maxCostUSD)
+    throw new Error(`Gateway spend exceeded the frozen per-run ceiling: $${input.spentUSD} > $${input.maxCostUSD}`)
+  return input.spentUSD
 }
 
 export function executionArtifactID(runID: string, attempt: 1 | 2) {

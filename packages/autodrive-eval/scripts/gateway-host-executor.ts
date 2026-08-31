@@ -23,6 +23,7 @@ import {
   parsePytestLog,
   parseTaskInput,
   prepareExperimentConfig,
+  requireGatewaySpendWithinCeiling,
 } from "../src/host-executor"
 import { protocol, Run } from "../src/protocol"
 
@@ -313,7 +314,10 @@ try {
   const usageComplete = !proxyEvents.some(
     (event) => event.type === "provider-response" && event.status === 200 && event.usageComplete !== true,
   )
-  const costUSD = Math.max(0, (await readSettledSpend()) - baselineSpend)
+  const costUSD = requireGatewaySpendWithinCeiling({
+    spentUSD: Math.max(0, (await readSettledSpend()) - baselineSpend),
+    maxCostUSD: input.budget.maxCostUSD,
+  })
   const serverLog = await command(["docker", "logs", taskName], { allowFailure: true })
   await trace({ type: "server-log", stdout: serverLog.stdout, stderr: serverLog.stderr })
   const endedAt = new Date()

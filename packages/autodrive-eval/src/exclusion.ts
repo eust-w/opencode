@@ -2,6 +2,8 @@ import { appendFile, mkdir, readdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { z } from "zod"
 import { ArtifactReference, assertSecretFree } from "./artifact"
+import { summarizeBudget } from "./budget"
+import { gatewayRequestsSettled } from "./gateway"
 import { parseExecutorFailureReceipt } from "./host-executor"
 import { protocol, type Run } from "./protocol"
 
@@ -9,7 +11,7 @@ export const BoundaryExclusion = z
   .object({
     schemaVersion: z.literal(1),
     protocol: z.string().min(1),
-    classification: z.literal("excluded-charged-evaluation-failure"),
+    classification: z.enum(["excluded-charged-evaluation-failure", "excluded-charged-budget-overrun"]),
     runID: z.string().regex(/^adr_[a-f0-9]{20}$/),
     taskID: z.string().min(1),
     attempt: z.union([z.literal(1), z.literal(2)]),
@@ -58,12 +60,20 @@ const BoundaryExclusionLedgerRow = z
     timestamp: z.iso.datetime(),
     runID: z.string().regex(/^adr_[a-f0-9]{20}$/),
     category: z.literal("boundary"),
-    disposition: z.literal("excluded-charged-evaluation-failure"),
+    disposition: z.enum(["excluded-charged-evaluation-failure", "excluded-charged-budget-overrun"]),
     amountUSD: z.number().nonnegative(),
     promptTokens: z.number().int().nonnegative(),
     completionTokens: z.number().int().nonnegative(),
   })
   .strict()
+
+const BoundaryBudgetRow = z
+  .object({
+    runID: z.string().min(1),
+    category: z.literal("boundary"),
+    amountUSD: z.number().nonnegative(),
+  })
+  .loose()
 
 export async function reconcileRetryGatewayNamespaceFailure(input: {
   artifactRoot: string
@@ -182,6 +192,220 @@ export async function reconcileRetryGatewayNamespaceFailure(input: {
   return receiptPath
 }
 
+export async function reconcileBoundaryBudgetOverrunFailure(input: {
+  artifactRoot: string
+  run: Run
+  originalReceiptPath: string
+  maxCostUSD: number
+  spendSamples: readonly number[]
+  recordedAt?: Date
+}) {
+  const receiptPath = path.join(input.artifactRoot, "failures", input.run.id, "reconciled-attempt-1.json")
+  const existing = Bun.file(receiptPath)
+  if (await existing.exists()) {
+    const receipt = parseExecutorFailureReceipt(await existing.json())
+    requireSettledExclusion(receipt, input.run, input.maxCostUSD)
+    await Promise.all(receipt.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
+    return receiptPath
+  }
+
+  const originalContent = await readArtifact(
+    input.artifactRoot,
+    relativePath(input.artifactRoot, input.originalReceiptPath),
+  )
+  const original = parseExecutorFailureReceipt(JSON.parse(originalContent))
+  requireBudgetOverrunSettlementFailure(original, input.run, input.maxCostUSD)
+  await Promise.all(original.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
+
+  const requestPath = path.posix.join("gateway", input.run.id, "requests.jsonl")
+  const tracePath = path.posix.join("gateway", input.run.id, "proxy.jsonl")
+  const [requestContent, traceContent] = await Promise.all([
+    readArtifact(input.artifactRoot, requestPath),
+    readArtifact(input.artifactRoot, tracePath),
+  ])
+  const requests = parseJSONL(requestContent, MisroutedGatewayRequest)
+  const events = parseJSONL(traceContent, MisroutedGatewayEvent)
+  const artifacts = await validateBudgetOverrunGatewayArtifacts({
+    artifactRoot: input.artifactRoot,
+    runID: input.run.id,
+    startedAt: original.startedAt,
+    recordedAt: original.recordedAt,
+    requests,
+    events,
+    receipt: original.gateway,
+  })
+  const samples = input.spendSamples.map((sample) => z.number().nonnegative().finite().parse(sample))
+  if (samples.length < 4 || Math.max(...samples) - Math.min(...samples) > 0.0000001)
+    throw new Error("Budget-overrun reconciliation requires four stable spend samples")
+  const settledSpend = Math.max(...samples)
+  if (
+    original.gateway.settledSpendUSD === undefined ||
+    Math.abs(settledSpend - original.gateway.settledSpendUSD) > 0.0000001
+  )
+    throw new Error("Budget-overrun settlement does not match the original spend observation")
+  const baselineSpend = original.gateway.baselineSpendUSD
+  if (baselineSpend === undefined || settledSpend < baselineSpend)
+    throw new Error("Budget-overrun receipt has invalid spend provenance")
+  const observedSpend = Number((settledSpend - baselineSpend).toFixed(7))
+  if (observedSpend !== original.gateway.observedSpendDeltaUSD || observedSpend <= input.maxCostUSD)
+    throw new Error("Budget-overrun spend does not exceed the frozen per-run ceiling")
+
+  const recordedAt = (input.recordedAt ?? new Date()).toISOString()
+  const settlementPath = path.posix.join("failures", input.run.id, "attempt-1-settlement.json")
+  const settlementContent =
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        runID: input.run.id,
+        attempt: 1,
+        recordedAt,
+        samplesUSD: samples,
+        stable: true,
+      },
+      null,
+      2,
+    ) + "\n"
+  assertSecretFree(settlementContent)
+  await writeImmutable(path.join(input.artifactRoot, settlementPath), settlementContent)
+
+  const receipt = parseExecutorFailureReceipt({
+    ...original,
+    classification: "excluded-charged-budget-overrun",
+    stage: "gateway-settlement-budget-overrun",
+    code: "gateway-spend-exceeded-frozen-per-run-ceiling",
+    recordedAt,
+    error: {
+      name: "BudgetExceeded",
+      message: `Gateway spend exceeded the frozen per-run ceiling: $${observedSpend} > $${input.maxCostUSD}`,
+    },
+    gateway: {
+      ...original.gateway,
+      settlement: { attempted: true, completed: true },
+      settledSpendUSD: settledSpend,
+      observedSpendDeltaUSD: observedSpend,
+    },
+    artifacts: [
+      {
+        path: relativePath(input.artifactRoot, input.originalReceiptPath),
+        sha256: digest(originalContent),
+      },
+      ...original.artifacts,
+      ...artifacts,
+      { path: settlementPath, sha256: digest(settlementContent) },
+    ],
+  })
+  const content = JSON.stringify(receipt, null, 2) + "\n"
+  assertSecretFree(content)
+  await writeImmutable(receiptPath, content)
+  return receiptPath
+}
+
+function requireBudgetOverrunSettlementFailure(
+  receipt: ReturnType<typeof parseExecutorFailureReceipt>,
+  run: Run,
+  maxCostUSD: number,
+) {
+  if (
+    receipt.protocol !== protocol.version ||
+    receipt.classification !== "executor-failure" ||
+    receipt.stage !== "gateway-settlement" ||
+    receipt.code !== "executor-error" ||
+    receipt.runID !== run.id ||
+    receipt.taskID !== run.taskID ||
+    receipt.attempt !== 1 ||
+    receipt.error.message !== "Gateway requests did not settle before the frozen deadline"
+  )
+    throw new Error("Original receipt is not the frozen settlement false negative")
+  if (
+    receipt.gateway.settlement.completed ||
+    receipt.gateway.requests === 0 ||
+    receipt.gateway.responses !== receipt.gateway.requests ||
+    receipt.gateway.non200Responses !== 0 ||
+    receipt.gateway.usageCompleteResponses !== receipt.gateway.responses ||
+    receipt.gateway.proxyErrors === 0 ||
+    receipt.gateway.observedSpendDeltaUSD === undefined ||
+    receipt.gateway.observedSpendDeltaUSD <= maxCostUSD ||
+    receipt.gateway.captureErrors?.length ||
+    receipt.recordingErrors.length
+  )
+    throw new Error("Settlement false negative does not contain a complete charged budget overrun")
+}
+
+async function validateBudgetOverrunGatewayArtifacts(input: {
+  artifactRoot: string
+  runID: string
+  startedAt: string
+  recordedAt: string
+  requests: z.infer<typeof MisroutedGatewayRequest>[]
+  events: z.infer<typeof MisroutedGatewayEvent>[]
+  receipt: ReturnType<typeof parseExecutorFailureReceipt>["gateway"]
+}) {
+  if (!input.requests.length || !gatewayRequestsSettled(input.events, input.requests.length))
+    throw new Error("Budget-overrun gateway requests are not settled")
+  const startedAt = Date.parse(input.startedAt)
+  const recordedAt = Date.parse(input.recordedAt)
+  if (input.events.some((event) => Date.parse(event.timestamp) < startedAt || Date.parse(event.timestamp) > recordedAt))
+    throw new Error("Budget-overrun gateway event falls outside the failed attempt")
+  const providerRequests = input.events.filter((event) => event.type === "provider-request")
+  const responses = input.events.filter((event) => event.type === "provider-response")
+  const extraErrors = input.events.filter(
+    (event) => event.type === "proxy-error" && event.sequence >= input.requests.length,
+  )
+  if (
+    providerRequests.length !== input.requests.length ||
+    responses.length !== input.requests.length ||
+    extraErrors.length !== input.receipt.proxyErrors ||
+    input.events.some((event) => event.type === "proxy-error" && event.sequence < input.requests.length)
+  )
+    throw new Error("Budget-overrun gateway trace does not match the sealed request manifest")
+
+  const artifacts = await Promise.all(
+    input.requests.map(async (request, index) => {
+      if (request.sequence !== index) throw new Error("Budget-overrun gateway request sequence is not contiguous")
+      const traced = providerRequests.find((event) => event.sequence === request.sequence)
+      if (
+        !traced ||
+        traced.requestSHA256 !== request.requestSHA256 ||
+        traced.normalizedRequest?.path !== request.normalizedRequest.path
+      )
+        throw new Error("Budget-overrun gateway request trace does not match its manifest")
+      const expectedRequestPath = path.posix.join(
+        "gateway",
+        input.runID,
+        "requests",
+        `${String(request.sequence).padStart(4, "0")}.json`,
+      )
+      if (
+        request.normalizedRequest.path !== expectedRequestPath ||
+        request.normalizedRequest.sha256 !== request.requestSHA256
+      )
+        throw new Error("Budget-overrun gateway request artifact uses an unexpected namespace")
+      await verifyArtifact(input.artifactRoot, request.normalizedRequest)
+      const response = responses.find((event) => event.sequence === request.sequence)
+      if (!response || response.status !== 200 || response.usageComplete !== true)
+        throw new Error("Budget-overrun gateway response is not successful with complete usage")
+      const raw = input.events.find(
+        (event) => event.type === "provider-raw-response" && event.sequence === request.sequence,
+      )
+      const expectedResponsePath = path.posix.join(
+        "gateway",
+        input.runID,
+        "responses",
+        `${String(request.sequence).padStart(4, "0")}.txt`,
+      )
+      if (!raw?.response || raw.status !== 200 || raw.response.path !== expectedResponsePath)
+        throw new Error("Budget-overrun gateway response artifact uses an unexpected namespace")
+      await verifyArtifact(input.artifactRoot, raw.response)
+      return [request.normalizedRequest, raw.response]
+    }),
+  )
+  const promptTokens = responses.reduce((sum, event) => sum + (event.promptTokens ?? 0), 0)
+  const completionTokens = responses.reduce((sum, event) => sum + (event.completionTokens ?? 0), 0)
+  if (promptTokens !== input.receipt.promptTokens || completionTokens !== input.receipt.completionTokens)
+    throw new Error("Budget-overrun gateway usage does not match the failure receipt")
+  return artifacts.flat()
+}
+
 export async function settleBoundaryExclusion(input: {
   artifactRoot: string
   ledgerPath: string
@@ -214,6 +438,7 @@ export async function settleBoundaryExclusion(input: {
   })
   const content = JSON.stringify(exclusion, null, 2) + "\n"
   assertSecretFree(content)
+  await requireLedgerBudget(input.ledgerPath, exclusion)
   const exclusionPath = path.join(input.artifactRoot, "boundary", "exclusions", `${input.run.id}.json`)
   await mkdir(path.dirname(exclusionPath), { recursive: true })
   const created = await Promise.allSettled([
@@ -261,7 +486,10 @@ export async function settlePendingBoundaryExclusions(input: {
     const file = Bun.file(receiptPath)
     if (!(await file.exists())) continue
     const receipt = parseExecutorFailureReceipt(await file.json())
-    if (receipt.classification !== "excluded-charged-evaluation-failure") continue
+    if (
+      !new Set(["excluded-charged-evaluation-failure", "excluded-charged-budget-overrun"]).has(receipt.classification)
+    )
+      continue
     settled.push(
       await settleBoundaryExclusion({
         artifactRoot: input.artifactRoot,
@@ -283,15 +511,19 @@ function requireSettledExclusion(
 ) {
   if (receipt.protocol !== protocol.version) throw new Error("Failure receipt protocol does not match the frozen run")
   if (
-    receipt.classification !== "excluded-charged-evaluation-failure" ||
+    !new Set(["excluded-charged-evaluation-failure", "excluded-charged-budget-overrun"]).has(receipt.classification) ||
     receipt.runID !== run.id ||
     receipt.taskID !== run.taskID
   )
     throw new Error("Failure receipt does not match the frozen boundary run")
+  const terminalsComplete =
+    receipt.classification === "excluded-charged-budget-overrun"
+      ? receipt.gateway.responses === receipt.gateway.requests
+      : receipt.gateway.responses + receipt.gateway.proxyErrors === receipt.gateway.requests
   if (
     !receipt.gateway.settlement.completed ||
     receipt.gateway.requests === 0 ||
-    receipt.gateway.responses + receipt.gateway.proxyErrors !== receipt.gateway.requests ||
+    !terminalsComplete ||
     receipt.gateway.usageCompleteResponses !== receipt.gateway.responses ||
     receipt.gateway.non200Responses !== 0 ||
     receipt.gateway.captureErrors?.length ||
@@ -300,10 +532,18 @@ function requireSettledExclusion(
     throw new Error("Charged boundary exclusions require complete settled usage")
   if (receipt.gateway.observedSpendDeltaUSD === undefined)
     throw new Error("Charged boundary exclusions require a settled cost observation")
-  if (receipt.gateway.observedSpendDeltaUSD > maxCostUSD)
+  if (
+    receipt.classification === "excluded-charged-evaluation-failure" &&
+    receipt.gateway.observedSpendDeltaUSD > maxCostUSD
+  )
     throw new Error(
       `${run.id} cost $${receipt.gateway.observedSpendDeltaUSD} exceeds its preregistered $${maxCostUSD} ceiling`,
     )
+  if (
+    receipt.classification === "excluded-charged-budget-overrun" &&
+    receipt.gateway.observedSpendDeltaUSD <= maxCostUSD
+  )
+    throw new Error("Charged budget-overrun exclusions must exceed the frozen per-run ceiling")
 }
 
 function requireMisroutedRetry(receipt: ReturnType<typeof parseExecutorFailureReceipt>, run: Run) {
@@ -418,8 +658,25 @@ async function reconcileLedger(ledgerPath: string, exclusion: BoundaryExclusion)
       throw new Error(`${exclusion.runID} has a conflicting boundary ledger row`)
     return
   }
+  await requireLedgerBudget(ledgerPath, exclusion)
   await mkdir(path.dirname(ledgerPath), { recursive: true })
   await appendFile(ledgerPath, JSON.stringify(row) + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
+}
+
+async function requireLedgerBudget(ledgerPath: string, exclusion: BoundaryExclusion) {
+  const file = Bun.file(ledgerPath)
+  const rows = (await file.exists())
+    ? (await file.text())
+        .split("\n")
+        .filter((line) => line.trim())
+        .map((line) => BoundaryBudgetRow.parse(JSON.parse(line)))
+    : []
+  const matches = rows.filter((row) => row.runID === exclusion.runID)
+  if (matches.length > 1) throw new Error(`${exclusion.runID} has duplicate boundary ledger rows`)
+  summarizeBudget([
+    ...rows.map((row) => ({ category: row.category, amountUSD: row.amountUSD })),
+    ...(matches.length ? [] : [{ category: "boundary" as const, amountUSD: exclusion.costUSD }]),
+  ])
 }
 
 async function verifyArtifact(artifactRoot: string, artifact: z.infer<typeof ArtifactReference>) {
@@ -455,4 +712,12 @@ function digest(content: string) {
 function errorCode(error: unknown) {
   if (!error || typeof error !== "object" || !("code" in error)) return undefined
   return error.code
+}
+
+async function writeImmutable(target: string, content: string) {
+  await mkdir(path.dirname(target), { recursive: true })
+  const written = await Promise.allSettled([writeFile(target, content, { encoding: "utf8", flag: "wx", mode: 0o600 })])
+  if (written[0].status === "fulfilled") return
+  if (errorCode(written[0].reason) !== "EEXIST") throw written[0].reason
+  if ((await Bun.file(target).text()) !== content) throw new Error(`${target} already exists with different content`)
 }
