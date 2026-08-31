@@ -36,7 +36,7 @@ The earlier attempt-one receipt SHA-256 for `adr_b4f6b34e814ed8b91d54` remains `
 
 ## Resumption gate
 
-Commit `e0d2e2b913` fixes the settlement predicate, adds prospective per-run spend rejection, reconstructs the historical overrun from immutable evidence, and enforces the category cap during exclusion settlement. The evaluation package passed 122/122 tests, 458 assertions, and type checking locally and on the experiment host. A zero-provider dry-run executor contract also passed from the exact extracted source archive. Runner v4 refuses to start unless the source archive hash matches and the historical overrun exclusion is already present. The next frozen run is `adr_a1936920fd08b60d0a73` for `iterative__dvc_0.35.3_0.35.4`; this checkpoint does not claim it has started.
+Commit `e0d2e2b913` fixes the settlement predicate, adds prospective per-run spend rejection, reconstructs the historical overrun from immutable evidence, and enforces the category cap during exclusion settlement. The evaluation package passed 122/122 tests, 458 assertions, and type checking locally and on the experiment host. A zero-provider dry-run executor contract also passed from the exact extracted source archive. Runner v4 refuses to start unless the source archive hash matches and the historical overrun exclusion is already present. It passed those gates and resumed at `2026-08-31T03:39:29Z`; the next frozen run, `adr_a1936920fd08b60d0a73` for `iterative__dvc_0.35.3_0.35.4`, started at `2026-08-31T03:39:30Z`. This checkpoint does not claim that run has completed or entered the ledger.
 
 ## Candidate pipeline preview
 
