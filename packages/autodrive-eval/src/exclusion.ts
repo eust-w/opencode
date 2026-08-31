@@ -116,6 +116,96 @@ export async function reconcilePostSessionSpendSamplingFailure(input: {
   return receiptPath
 }
 
+export async function reconcileGraderSecretScannerFalsePositive(input: {
+  artifactRoot: string
+  originalReceiptPath: string
+  run: Run
+  maxCostUSD: number
+  recordedAt?: Date
+}) {
+  const receiptPath = path.join(input.artifactRoot, "failures", input.run.id, "reconciled-attempt-1.json")
+  const existing = Bun.file(receiptPath)
+  if (await existing.exists()) {
+    const receipt = parseExecutorFailureReceipt(await existing.json())
+    requireSettledExclusion(receipt, input.run, input.maxCostUSD)
+    await Promise.all(receipt.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
+    return receiptPath
+  }
+
+  const originalContent = await readArtifact(
+    input.artifactRoot,
+    relativePath(input.artifactRoot, input.originalReceiptPath),
+  )
+  const original = parseExecutorFailureReceipt(JSON.parse(originalContent))
+  if (
+    original.protocol !== protocol.version ||
+    original.classification !== "executor-failure" ||
+    original.stage !== "first-boundary-grader" ||
+    original.code !== "executor-error" ||
+    original.runID !== input.run.id ||
+    original.taskID !== input.run.taskID ||
+    original.attempt !== 1 ||
+    original.error.name !== "Error" ||
+    original.error.message !== "Artifact contains a possible secret"
+  )
+    throw new Error("Original receipt is not the observed grader secret scanner false positive")
+  if (
+    !original.gateway.settlement.completed ||
+    original.gateway.requests === 0 ||
+    original.gateway.responses !== original.gateway.requests ||
+    original.gateway.non200Responses !== 0 ||
+    original.gateway.proxyErrors !== 0 ||
+    original.gateway.usageCompleteResponses !== original.gateway.responses ||
+    original.gateway.observedSpendDeltaUSD === undefined ||
+    original.gateway.observedSpendDeltaUSD > input.maxCostUSD ||
+    original.gateway.captureErrors?.length ||
+    original.recordingErrors.length
+  )
+    throw new Error("Grader scanner recovery requires complete settled usage within budget")
+  await Promise.all(original.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
+  const raw = original.artifacts.find((artifact) => artifact.path.startsWith("raw/") && artifact.path.endsWith(".jsonl"))
+  if (!raw) throw new Error("Grader scanner recovery is missing the executor trace")
+  const events = (await readArtifact(input.artifactRoot, raw.path))
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => z.object({ type: z.string(), runID: z.string().optional(), attempt: z.number().optional() }).loose().parse(JSON.parse(line)))
+  const started = events.find((event) => event.type === "executor-started")
+  if (
+    started?.runID !== input.run.id ||
+    started.attempt !== 1 ||
+    !events.some((event) => event.type === "test-patch-prepared") ||
+    !events.some((event) => event.type === "boundary-captured") ||
+    events.filter((event) => event.type === "patch-captured").length !== 2 ||
+    !events.some((event) => event.type === "gateway-settled") ||
+    !events.some((event) => event.type === "executor-failed") ||
+    events.some((event) => new Set(["grader-finished", "session-finished"]).has(event.type))
+  )
+    throw new Error("Grader scanner recovery trace does not match the observed failure window")
+
+  const receipt = parseExecutorFailureReceipt({
+    ...original,
+    classification: "excluded-charged-evaluation-failure",
+    stage: "first-boundary-grader-secret-scanner-false-positive",
+    code: "grader-output-excluded-after-secret-scanner-false-positive",
+    recordedAt: (input.recordedAt ?? new Date()).toISOString(),
+    error: {
+      name: "GraderSecretScannerFalsePositive",
+      message: "The charged run is excluded because OpenSSH security-key algorithm names triggered the artifact secret scanner before grader admission",
+    },
+    artifacts: [
+      ...original.artifacts,
+      {
+        path: relativePath(input.artifactRoot, input.originalReceiptPath),
+        sha256: digest(originalContent),
+      },
+    ],
+  })
+  const content = JSON.stringify(receipt, null, 2) + "\n"
+  assertSecretFree(content)
+  await writeFile(receiptPath, content, { encoding: "utf8", flag: "wx", mode: 0o600 })
+  return receiptPath
+}
+
 const MisroutedGatewayRequest = z
   .object({
     sequence: z.number().int().nonnegative(),

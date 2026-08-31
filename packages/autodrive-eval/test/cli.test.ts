@@ -116,6 +116,17 @@ describe("paid experiment CLI gates", () => {
     expect(stderr).toContain("--artifact-root PATH is required")
   })
 
+  test("keeps grader scanner reconciliation explicit and single-run", async () => {
+    const child = Bun.spawn([Bun.which("bun")!, "src/cli.ts", "boundary-reconcile-grader-scanner"], {
+      cwd: import.meta.dir + "/..",
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+    const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
+    expect(exitCode).toBe(1)
+    expect(stderr).toContain("--artifact-root PATH is required")
+  })
+
   test("prepares blinded boundary packets without provider access", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-annotations-"))
     try {

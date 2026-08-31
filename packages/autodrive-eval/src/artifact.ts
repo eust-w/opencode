@@ -174,7 +174,7 @@ async function verifyNormalizedRequest(request: z.infer<typeof ModelRequest>, ro
 
 export function assertSecretFree(content: string) {
   const patterns = [
-    /\bsk-(?:proj-|ant-)?[A-Za-z0-9_-]{20,}\b/,
+    /\bsk-(?!(?:ssh-ed25519|ecdsa-sha2-nistp256)(?:-cert-v01)?@openssh\.com\b)(?:proj-|ant-)?[A-Za-z0-9_-]{20,}\b/,
     /\bAIza[0-9A-Za-z_-]{30,}\b/,
     /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
   ]

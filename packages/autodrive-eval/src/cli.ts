@@ -21,7 +21,11 @@ import {
   type Trajectory,
 } from "./artifact"
 import { caps, summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
-import { reconcilePostSessionSpendSamplingFailure, settlePendingBoundaryExclusions } from "./exclusion"
+import {
+  reconcileGraderSecretScannerFalsePositive,
+  reconcilePostSessionSpendSamplingFailure,
+  settlePendingBoundaryExclusions,
+} from "./exclusion"
 import { analyzeFormalMatrix } from "./formal-analysis"
 import { parseTaskInput } from "./host-executor"
 import { renderTaskManifest } from "./paper"
@@ -64,6 +68,7 @@ if (command === "boundary-plan") await printBoundaryPlan()
 if (command === "boundary-augmentation-plan") await printBoundaryAugmentationPlan()
 if (command === "boundary-run") await boundaryRun()
 if (command === "boundary-reconcile-spend") await boundaryReconcileSpend()
+if (command === "boundary-reconcile-grader-scanner") await boundaryReconcileGraderScanner()
 if (command === "verify-executor") await verifyExecutor()
 if (command === "canary") await canary()
 if (command === "pilot-plan") await pilotPlan()
@@ -88,6 +93,7 @@ if (
     "boundary-augmentation-plan",
     "boundary-run",
     "boundary-reconcile-spend",
+    "boundary-reconcile-grader-scanner",
     "verify-executor",
     "canary",
     "pilot-plan",
@@ -984,6 +990,41 @@ async function boundaryReconcileSpend() {
   const accepted = new Set((await readJSONL(resultsPath, parseTrajectory)).map((record) => record.runID))
   if (accepted.has(run.id)) fail("Accepted boundary runs cannot be reconciled as exclusions")
   const receiptPath = await reconcilePostSessionSpendSamplingFailure({
+    artifactRoot: resolvedArtifactRoot,
+    originalReceiptPath: path.join(resolvedArtifactRoot, "failures", run.id, "attempt-1.json"),
+    run,
+    maxCostUSD: caps.boundary / boundaryPlan.length,
+  })
+  const exclusions = await settlePendingBoundaryExclusions({
+    artifactRoot: resolvedArtifactRoot,
+    ledgerPath,
+    runs: [run],
+    accepted,
+    maxCostUSD: caps.boundary / boundaryPlan.length,
+  })
+  console.log(
+    JSON.stringify({
+      status: "excluded",
+      runID: run.id,
+      receipt: receiptPath,
+      exclusion: exclusions.find((exclusion) => exclusion.runID === run.id),
+    }),
+  )
+}
+
+async function boundaryReconcileGraderScanner() {
+  const artifactRoot = option("artifact-root")
+  if (!artifactRoot) fail("--artifact-root PATH is required")
+  const runID = option("run-id")
+  if (!runID) fail("--run-id ID is required")
+  const run = boundaryPlan.find((candidate) => candidate.id === runID)
+  if (!run) fail(`Run ID is outside the frozen boundary plan: ${runID}`)
+  const resolvedArtifactRoot = path.resolve(artifactRoot)
+  const resultsPath = path.join(resolvedArtifactRoot, "boundary", "trajectories.jsonl")
+  const ledgerPath = path.join(resolvedArtifactRoot, "boundary", "ledger.jsonl")
+  const accepted = new Set((await readJSONL(resultsPath, parseTrajectory)).map((record) => record.runID))
+  if (accepted.has(run.id)) fail("Accepted boundary runs cannot be reconciled as exclusions")
+  const receiptPath = await reconcileGraderSecretScannerFalsePositive({
     artifactRoot: resolvedArtifactRoot,
     originalReceiptPath: path.join(resolvedArtifactRoot, "failures", run.id, "attempt-1.json"),
     run,

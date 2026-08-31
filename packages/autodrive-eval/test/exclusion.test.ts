@@ -4,6 +4,7 @@ import os from "node:os"
 import path from "node:path"
 import {
   loadBoundaryExclusions,
+  reconcileGraderSecretScannerFalsePositive,
   reconcilePostSessionSpendSamplingFailure,
   reconcileRetryGatewayNamespaceFailure,
   settleBoundaryExclusion,
@@ -20,6 +21,79 @@ afterEach(async () => {
 })
 
 describe("charged boundary exclusion settlement", () => {
+  test("reconciles the observed OpenSSH grader scanner false positive without admitting a trajectory", async () => {
+    const directory = await temporaryDirectory()
+    const run = createBoundaryRunPlan(parseManifest(manifest))[14]
+    const raw = [
+      { type: "executor-started", runID: run.id, attempt: 1 },
+      { type: "test-patch-prepared" },
+      { type: "boundary-captured" },
+      { type: "patch-captured", phase: "boundary" },
+      { type: "patch-captured", phase: "final" },
+      { type: "gateway-settled", requests: 7 },
+      { type: "executor-failed", classification: "executor-failure", stage: "first-boundary-grader" },
+    ]
+      .map((event) => JSON.stringify({ timestamp: "2026-08-31T17:07:00.000Z", ...event }))
+      .join("\n") + "\n"
+    const relative = `raw/${run.id}.jsonl`
+    await Bun.write(path.join(directory, relative), raw)
+    const receiptPath = path.join(directory, "failures", run.id, "attempt-1.json")
+    await Bun.write(
+      receiptPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        protocol: protocol.version,
+        classification: "executor-failure",
+        stage: "first-boundary-grader",
+        code: "executor-error",
+        runID: run.id,
+        taskID: run.taskID,
+        attempt: 1,
+        startedAt: "2026-08-31T17:05:00.000Z",
+        recordedAt: "2026-08-31T17:07:39.000Z",
+        error: { name: "Error", message: "Artifact contains a possible secret" },
+        gateway: {
+          settlement: { attempted: true, completed: true },
+          requests: 7,
+          responses: 7,
+          non200Responses: 0,
+          proxyErrors: 0,
+          usageCompleteResponses: 7,
+          promptTokens: 30_949,
+          completionTokens: 2_994,
+          baselineSpendUSD: 17.7740826,
+          settledSpendUSD: 17.9269788,
+          observedSpendDeltaUSD: 0.1528962,
+        },
+        acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+        artifacts: [{ path: relative, sha256: digest(raw) }],
+        recordingErrors: [],
+      }),
+    )
+
+    const reconciled = await reconcileGraderSecretScannerFalsePositive({
+      artifactRoot: directory,
+      originalReceiptPath: receiptPath,
+      run,
+      maxCostUSD: 1.0625,
+      recordedAt: new Date("2026-08-31T18:00:00.000Z"),
+    })
+    expect(parseExecutorFailureReceipt(await Bun.file(reconciled).json())).toMatchObject({
+      classification: "excluded-charged-evaluation-failure",
+      stage: "first-boundary-grader-secret-scanner-false-positive",
+      code: "grader-output-excluded-after-secret-scanner-false-positive",
+      acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+    })
+    await expect(
+      reconcileGraderSecretScannerFalsePositive({
+        artifactRoot: directory,
+        originalReceiptPath: receiptPath,
+        run,
+        maxCostUSD: 1.0625,
+      }),
+    ).resolves.toBe(reconciled)
+  })
+
   test("reconciles a fully settled post-session spend sampling timeout without rerunning", async () => {
     const directory = await temporaryDirectory()
     const run = createBoundaryRunPlan(parseManifest(manifest))[12]

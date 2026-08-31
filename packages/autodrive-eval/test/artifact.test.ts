@@ -146,6 +146,19 @@ describe("trajectory artifact contract", () => {
   test("blocks common provider secrets from artifact output", () => {
     expect(() => assertSecretFree(JSON.stringify(base))).not.toThrow()
     expect(() =>
+      assertSecretFree(
+        [
+          "sk-ssh-ed25519@openssh.com",
+          "sk-ssh-ed25519-cert-v01@openssh.com",
+          "sk-ecdsa-sha2-nistp256@openssh.com",
+          "sk-ecdsa-sha2-nistp256-cert-v01@openssh.com",
+        ].join(" "),
+      ),
+    ).not.toThrow()
+    expect(() =>
+      assertSecretFree(JSON.stringify({ token: ["sk", "test_ABCDEFGHIJKLMNOPQRSTUVWXYZ1234"].join("-") })),
+    ).toThrow("possible secret")
+    expect(() =>
       assertSecretFree(JSON.stringify({ token: ["sk", "proj", "abcdefghijklmnopqrstuvwxyz"].join("-") })),
     ).toThrow("possible secret")
     expect(() =>
