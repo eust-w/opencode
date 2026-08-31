@@ -8,6 +8,7 @@ import {
   freezeAnnotations,
   renderBoundaryPacket,
   renderLabelTemplate,
+  validateFrozenAnnotationCorpus,
 } from "./annotation"
 import {
   analyzeTrajectories,
@@ -23,7 +24,7 @@ import { renderTaskManifest } from "./paper"
 import { createPilotRun, loadPilotManifest } from "./pilot"
 import { createModelMetadataSnapshot, loadPreflight, PreflightScope } from "./preflight"
 import { createBoundaryRunPlan, createRunPlan, parseManifest, protocol, type Run } from "./protocol"
-import { admitBoundaryInfrastructureRetry } from "./retry"
+import { admitBoundaryInfrastructureRetry, admitInfrastructureRetry } from "./retry"
 import { executeRuns, InfrastructureFailure, type ExecutionContext } from "./runner"
 
 const root = path.resolve(import.meta.dir, "../../..")
@@ -365,14 +366,17 @@ async function annotationsFreeze() {
   if (!adjudicatedPath) fail("--adjudicated PATH is required")
   const output = option("output")
   if (!output) fail("--output PATH is required")
-  const candidates = await readJSONL(path.resolve(candidatesPath), (input) => BoundaryCandidate.parse(input))
-  const [first, second, adjudicated] = await Promise.all(
-    [firstPath, secondPath, adjudicatedPath].map(async (filePath) => {
+  const [candidatesContent, first, second, adjudicated] = await Promise.all(
+    [candidatesPath, firstPath, secondPath, adjudicatedPath].map(async (filePath) => {
       const content = await Bun.file(path.resolve(filePath)).text()
       assertSecretFree(content)
       return content
     }),
   )
+  const candidates = candidatesContent
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => BoundaryCandidate.parse(JSON.parse(line)))
   const frozen = freezeAnnotations({
     candidates,
     first,
@@ -383,33 +387,33 @@ async function annotationsFreeze() {
     minimumKappa: 0.75,
   })
   const resolvedOutput = path.resolve(output)
+  const developmentContent = frozen.development.map((candidate) => JSON.stringify(candidate)).join("\n") + "\n"
+  const testContent = frozen.frozen.map((candidate) => JSON.stringify(candidate)).join("\n") + "\n"
+  const sha256 = (content: string) => new Bun.CryptoHasher("sha256").update(content).digest("hex")
+  const seal = {
+    schemaVersion: 2 as const,
+    protocol: protocol.version,
+    frozenAt: new Date().toISOString(),
+    kappa: frozen.kappa,
+    agreements: frozen.agreements,
+    counts: frozen.counts,
+    development: 54 as const,
+    test: 126 as const,
+    corpusSHA256: new Bun.CryptoHasher("sha256").update(developmentContent).update("\0").update(testContent).digest("hex"),
+    inputs: {
+      candidatesSHA256: sha256(candidatesContent),
+      firstSHA256: sha256(first),
+      secondSHA256: sha256(second),
+      adjudicatedSHA256: sha256(adjudicated),
+    },
+    annotators: frozen.annotators,
+  }
+  validateFrozenAnnotationCorpus({ seal, developmentContent, testContent })
   await mkdir(resolvedOutput, { recursive: true })
   await Promise.all([
-    Bun.write(
-      path.join(resolvedOutput, "development.jsonl"),
-      frozen.development.map((candidate) => JSON.stringify(candidate)).join("\n") + "\n",
-    ),
-    Bun.write(
-      path.join(resolvedOutput, "test.jsonl"),
-      frozen.frozen.map((candidate) => JSON.stringify(candidate)).join("\n") + "\n",
-    ),
-    Bun.write(
-      path.join(resolvedOutput, "seal.json"),
-      JSON.stringify(
-        {
-          schemaVersion: 1,
-          frozenAt: new Date().toISOString(),
-          kappa: frozen.kappa,
-          agreements: frozen.agreements,
-          counts: frozen.counts,
-          development: frozen.development.length,
-          test: frozen.frozen.length,
-          sha256: frozen.seal.sha256,
-        },
-        null,
-        2,
-      ) + "\n",
-    ),
+    Bun.write(path.join(resolvedOutput, "development.jsonl"), developmentContent),
+    Bun.write(path.join(resolvedOutput, "test.jsonl"), testContent),
+    Bun.write(path.join(resolvedOutput, "seal.json"), JSON.stringify(seal, null, 2) + "\n"),
   ])
   console.log(
     JSON.stringify({
@@ -417,7 +421,7 @@ async function annotationsFreeze() {
       kappa: frozen.kappa,
       development: frozen.development.length,
       test: frozen.frozen.length,
-      sha256: frozen.seal.sha256,
+      sha256: seal.corpusSHA256,
     }),
   )
 }
@@ -792,8 +796,14 @@ async function run() {
   if (!artifactRoot) fail("--artifact-root PATH is required")
   const executorPath = option("executor")
   if (!executorPath) fail("--executor PATH is required")
+  const annotationsRoot = option("annotations")
+  if (!annotationsRoot) fail("--annotations PATH is required")
   const requested = values("run-id")
   if (!requested.length && !flag("all")) fail("Select --run-id ID (repeatable) or explicitly pass --all")
+  if (flag("resume-infrastructure") && requested.length !== 1)
+    fail("--resume-infrastructure requires exactly one --run-id")
+  const unknown = requested.filter((runID) => !plan.some((run) => run.id === runID))
+  if (unknown.length) fail(`Run IDs are outside the frozen formal plan: ${unknown.join(", ")}`)
   const resultsPath = path.resolve(
     option("results") ?? path.join(root, "research/auto-drive/results/trajectories.jsonl"),
   )
@@ -801,7 +811,13 @@ async function run() {
   const existing = await readJSONL(resultsPath, parseTrajectory)
   const completed = new Set(existing.map((record) => record.runID))
   const selected = plan.filter((run) => !completed.has(run.id) && (!requested.length || requested.includes(run.id)))
+  if (!selected.length && requested.length && requested.every((runID) => completed.has(runID))) {
+    if (flag("resume-infrastructure")) fail("Completed formal runs cannot consume an infrastructure retry")
+    console.log(JSON.stringify({ completed: 0, remaining: plan.length - completed.size, results: resultsPath }))
+    return
+  }
   if (!selected.length) fail("No pending frozen runs match the selection")
+  await loadFrozenAnnotations(path.resolve(annotationsRoot))
   const ledger = await readJSONL(ledgerPath, parseLedger)
   const resolvedPreflightPath = path.resolve(preflightPath)
   const resolvedArtifactRoot = path.resolve(artifactRoot)
@@ -809,6 +825,15 @@ async function run() {
   const preflight = await loadPreflight(resolvedPreflightPath, {
     scope: "full",
   })
+  const retryRun = flag("resume-infrastructure") ? selected[0] : undefined
+  const pendingReceipts = await Promise.all(
+    selected.map((run) => Bun.file(path.join(resolvedArtifactRoot, "failures", run.id, "attempt-1.json")).exists()),
+  )
+  if (!retryRun && pendingReceipts.some(Boolean))
+    fail("A pending formal failure receipt requires explicit --resume-infrastructure adjudication")
+  const retryAttempt = retryRun
+    ? await admitInfrastructureRetry({ artifactRoot: resolvedArtifactRoot, ledgerPath, run: retryRun })
+    : 1
   await mkdir(path.dirname(resultsPath), { recursive: true })
   await mkdir(path.dirname(ledgerPath), { recursive: true })
   const records = await executeRuns(
@@ -820,6 +845,7 @@ async function run() {
     }),
     {
       ledger,
+      attempt: (run) => (run.id === retryRun?.id ? retryAttempt : 1),
       onRecord: async (record, entry) => {
         const serialized = JSON.stringify(record)
         assertSecretFree(serialized)
@@ -849,6 +875,24 @@ async function run() {
       remaining: 384 - completed.size - records.length,
     }),
   )
+}
+
+async function loadFrozenAnnotations(directory: string) {
+  const [sealContent, developmentContent, testContent] = await Promise.all(
+    ["seal.json", "development.jsonl", "test.jsonl"].map(async (file) => {
+      const target = path.join(directory, file)
+      const source = Bun.file(target)
+      if (!(await source.exists())) throw new Error(`Frozen annotation artifact is missing: ${target}`)
+      const content = await source.text()
+      assertSecretFree(content)
+      return content
+    }),
+  )
+  return validateFrozenAnnotationCorpus({
+    seal: JSON.parse(sealContent),
+    developmentContent,
+    testContent,
+  })
 }
 
 function createExecutor(

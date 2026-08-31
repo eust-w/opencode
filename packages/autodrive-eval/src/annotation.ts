@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto"
 import { z } from "zod"
+import { protocol } from "./protocol"
 import type { BoundaryLabel } from "./statistics"
 
 const labels = ["continue", "stop", "defer"] as const
@@ -19,6 +20,64 @@ export const BoundaryCandidate = z.object({
   memory: z.string(),
 })
 export type BoundaryCandidate = z.infer<typeof BoundaryCandidate>
+
+const LabeledBoundaryCandidate = BoundaryCandidate.extend({ label: Label })
+
+export const AnnotationSeal = z
+  .object({
+    schemaVersion: z.literal(2),
+    protocol: z.literal(protocol.version),
+    frozenAt: z.iso.datetime(),
+    kappa: z.number().min(0.75).max(1),
+    agreements: z.number().int().min(0).max(180),
+    counts: z.object({ continue: z.literal(60), stop: z.literal(60), defer: z.literal(60) }).strict(),
+    development: z.literal(54),
+    test: z.literal(126),
+    corpusSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+    inputs: z
+      .object({
+        candidatesSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+        firstSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+        secondSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+        adjudicatedSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+      })
+      .strict(),
+    annotators: z.array(z.string().min(1)).length(3),
+  })
+  .strict()
+export type AnnotationSeal = z.infer<typeof AnnotationSeal>
+
+export function validateFrozenAnnotationCorpus(input: {
+  seal: unknown
+  developmentContent: string
+  testContent: string
+}) {
+  const seal = AnnotationSeal.parse(input.seal)
+  if (new Set(seal.annotators).size !== seal.annotators.length)
+    throw new Error("Frozen annotation corpus requires independent annotator identities")
+  const corpusSHA256 = createHash("sha256")
+    .update(input.developmentContent)
+    .update("\0")
+    .update(input.testContent)
+    .digest("hex")
+  if (corpusSHA256 !== seal.corpusSHA256) throw new Error("Frozen annotation corpus hash mismatch")
+  const development = parseLabeledJSONL(input.developmentContent)
+  const frozen = parseLabeledJSONL(input.testContent)
+  if (development.length !== seal.development || frozen.length !== seal.test)
+    throw new Error("Frozen annotation corpus split sizes do not match its seal")
+  const boundaries = [...development, ...frozen]
+  if (new Set(boundaries.map((boundary) => boundary.id)).size !== boundaries.length)
+    throw new Error("Frozen annotation corpus contains duplicate boundary IDs")
+  const developmentGroups = new Set(development.map((boundary) => boundary.baseTrajectoryID))
+  if (frozen.some((boundary) => developmentGroups.has(boundary.baseTrajectoryID)))
+    throw new Error("Frozen annotation corpus leaks a base trajectory across splits")
+  const counts = Object.fromEntries(
+    labels.map((label) => [label, boundaries.filter((boundary) => boundary.label === label).length]),
+  ) as Record<BoundaryLabel, number>
+  if (JSON.stringify(counts) !== JSON.stringify(seal.counts))
+    throw new Error("Frozen annotation corpus label counts do not match its seal")
+  return { examples: boundaries.length, development: development.length, test: frozen.length, counts, seal }
+}
 
 export interface Boundary {
   readonly id: string
@@ -115,10 +174,18 @@ export function freezeAnnotations(input: {
     kappa,
     agreements,
     counts,
+    annotators: [first.annotator, second.annotator, adjudicated.annotator],
     development: split.development,
     frozen: split.frozen,
     seal: { sha256: createHash("sha256").update(sealInput).digest("hex") },
   }
+}
+
+function parseLabeledJSONL(content: string) {
+  return content
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => LabeledBoundaryCandidate.parse(JSON.parse(line)))
 }
 
 export function renderLabelTemplate(input: readonly unknown[], annotator: string) {

@@ -8,7 +8,7 @@ const retryableInfrastructureFailures = new Set([
   "startup-baseline\0Task image has tracked startup changes",
 ])
 
-export async function admitBoundaryInfrastructureRetry(input: { artifactRoot: string; ledgerPath: string; run: Run }) {
+export async function admitInfrastructureRetry(input: { artifactRoot: string; ledgerPath: string; run: Run }) {
   const receiptPath = path.join(input.artifactRoot, "failures", input.run.id, "attempt-1.json")
   const attemptTwo = Bun.file(path.join(input.artifactRoot, "failures", input.run.id, "attempt-2.json"))
   if (await attemptTwo.exists()) throw new Error(`${input.run.id} already consumed its infrastructure retry`)
@@ -52,7 +52,7 @@ export async function admitBoundaryInfrastructureRetry(input: { artifactRoot: st
         return !!entry && typeof entry === "object" && "runID" in entry && entry.runID === input.run.id
       })
   )
-    throw new Error(`${input.run.id} already has a boundary ledger row`)
+    throw new Error(`${input.run.id} already has an experiment ledger row`)
 
   await Promise.all(
     receipt.artifacts.map(async (artifact) => {
@@ -62,6 +62,8 @@ export async function admitBoundaryInfrastructureRetry(input: { artifactRoot: st
   )
   return 2 as const
 }
+
+export const admitBoundaryInfrastructureRetry = admitInfrastructureRetry
 
 async function readArtifact(target: string) {
   const file = Bun.file(target)

@@ -4,9 +4,36 @@ import os from "node:os"
 import path from "node:path"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
 import { createBoundaryRunPlan, createRunPlan, parseManifest } from "../src/protocol"
-import { admitBoundaryInfrastructureRetry } from "../src/retry"
+import { admitBoundaryInfrastructureRetry, admitInfrastructureRetry } from "../src/retry"
 
 describe("paid experiment CLI gates", () => {
+  test("ships a resumable pairwise formal runner with the annotation gate", async () => {
+    const script = await Bun.file(
+      path.resolve(import.meta.dir, "../../../research/auto-drive/execution/run-formal-r1.sh"),
+    ).text()
+    expect(script).toContain("--annotations")
+    expect(script).toContain("--run-id")
+    expect(script).toContain("batch_size=2")
+    expect(script).toContain("accepted=384")
+  })
+
+  test("admits the same sealed zero-cost retry contract for formal runs", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-formal-retry-"))
+    try {
+      const run = createRunPlan(parseManifest(manifestInput))[0]
+      await writeZeroCostInfrastructureReceipt(directory, run)
+      expect(
+        await admitInfrastructureRetry({
+          artifactRoot: directory,
+          ledgerPath: path.join(directory, "formal", "ledger.jsonl"),
+          run,
+        }),
+      ).toBe(2)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   test("requires indexed trajectories before extracting boundary candidates", async () => {
     const child = Bun.spawn([Bun.which("bun")!, "src/cli.ts", "annotations-extract"], {
       cwd: import.meta.dir + "/..",
@@ -125,9 +152,11 @@ describe("paid experiment CLI gates", () => {
       expect((await Bun.file(path.join(output, "development.jsonl")).text()).trim().split("\n")).toHaveLength(54)
       expect((await Bun.file(path.join(output, "test.jsonl")).text()).trim().split("\n")).toHaveLength(126)
       expect(await Bun.file(path.join(output, "seal.json")).json()).toMatchObject({
+        schemaVersion: 2,
         kappa: 1,
         counts: { continue: 60, stop: 60, defer: 60 },
-        sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        corpusSHA256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        annotators: ["annotator-a", "annotator-b", "adjudicator"],
       })
     } finally {
       await rm(directory, { recursive: true, force: true })
@@ -692,6 +721,30 @@ process.exit(1)
     const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
     expect(exitCode).toBe(1)
     expect(stderr).toContain("--preflight PATH is required")
+  })
+
+  test("requires the sealed human annotation corpus before formal execution", async () => {
+    const run = createRunPlan(parseManifest(manifestInput))[0]
+    const child = Bun.spawn(
+      [
+        Bun.which("bun")!,
+        "src/cli.ts",
+        "run",
+        "--execute",
+        "--preflight",
+        "/tmp/preflight.json",
+        "--artifact-root",
+        "/tmp/autodrive-artifacts",
+        "--executor",
+        "/usr/bin/true",
+        "--run-id",
+        run.id,
+      ],
+      { cwd: import.meta.dir + "/..", stdout: "pipe", stderr: "pipe" },
+    )
+    const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()])
+    expect(exitCode).toBe(1)
+    expect(stderr).toContain("--annotations PATH is required")
   })
 
   test("writes a minimal deterministic model metadata snapshot", async () => {

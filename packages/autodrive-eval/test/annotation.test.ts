@@ -5,6 +5,7 @@ import {
   renderBoundaryPacket,
   renderLabelTemplate,
   splitBoundaries,
+  validateFrozenAnnotationCorpus,
 } from "../src/annotation"
 
 describe("boundary dataset split", () => {
@@ -39,6 +40,50 @@ describe("boundary dataset split", () => {
 })
 
 describe("independent boundary annotation freeze", () => {
+  test("validates a content-addressed 54/126 frozen corpus before formal execution", () => {
+    const candidates = boundaryCandidates()
+    const development = candidates.slice(0, 18).concat(candidates.slice(60, 78), candidates.slice(120, 138))
+    const developmentIDs = new Set(development.map((candidate) => candidate.id))
+    const frozen = candidates.filter((candidate) => !developmentIDs.has(candidate.id))
+    const developmentContent =
+      development.map((candidate) => JSON.stringify({ ...candidate, label: candidate.gold })).join("\n") + "\n"
+    const testContent =
+      frozen.map((candidate) => JSON.stringify({ ...candidate, label: candidate.gold })).join("\n") + "\n"
+    const corpusSHA256 = new Bun.CryptoHasher("sha256")
+      .update(developmentContent)
+      .update("\0")
+      .update(testContent)
+      .digest("hex")
+    const seal = {
+      schemaVersion: 2,
+      protocol: "auto-drive-swe-evo-v1.14",
+      frozenAt: "2026-08-31T00:00:00.000Z",
+      kappa: 0.9,
+      agreements: 168,
+      counts: { continue: 60, stop: 60, defer: 60 },
+      development: 54,
+      test: 126,
+      corpusSHA256,
+      inputs: {
+        candidatesSHA256: "1".repeat(64),
+        firstSHA256: "2".repeat(64),
+        secondSHA256: "3".repeat(64),
+        adjudicatedSHA256: "4".repeat(64),
+      },
+      annotators: ["annotator-a", "annotator-b", "adjudicator"],
+    }
+
+    expect(validateFrozenAnnotationCorpus({ seal, developmentContent, testContent })).toMatchObject({
+      examples: 180,
+      development: 54,
+      test: 126,
+      counts: { continue: 60, stop: 60, defer: 60 },
+    })
+    expect(() =>
+      validateFrozenAnnotationCorpus({ seal: { ...seal, corpusSHA256: "0".repeat(64) }, developmentContent, testContent }),
+    ).toThrow("hash")
+  })
+
   test("seals two independent label files after kappa and balanced adjudication pass", () => {
     const candidates = boundaryCandidates()
     const first = labelsCSV(
