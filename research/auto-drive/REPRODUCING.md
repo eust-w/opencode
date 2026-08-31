@@ -102,9 +102,22 @@ Extract only from accepted, artifact-verifiable trajectories. The command checks
 ```bash
 cd packages/autodrive-eval
 bun run annotations:extract -- --results /artifact-root/boundary/trajectories.jsonl --artifact-root /artifact-root --output /artifact-root/annotations/candidates.jsonl
+bun run annotations:select -- --candidates /artifact-root/annotations/candidates.jsonl --labels /artifact-root/annotations/adjudicated-frame.csv --output /artifact-root/annotations/selected
 bun run annotations:prepare -- --candidates /artifact-root/annotations/candidates.jsonl --output /artifact-root/annotations/annotator-a --annotator annotator-a
 bun run annotations:prepare -- --candidates /artifact-root/annotations/candidates.jsonl --output /artifact-root/annotations/annotator-b --annotator annotator-b
 ```
+
+`annotations:select` is used only after a larger frame is completely labeled. It deterministically selects 60 examples per adjudicated class and writes selection provenance; it must never be used to choose examples from predictions or outcomes. A disclosed, bounded model-annotation executor is available for sensitivity studies and annotation-pipeline qualification:
+
+```bash
+bun run preflight -- --scope annotation --receipt /artifact-root/preflight/annotation.json
+AUTODRIVE_GATEWAY_KEY_FILE=/absolute/path/to/key \
+AUTODRIVE_ANNOTATION_MAX_COST_USD=20 \
+AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD=0.10 \
+bun run annotations:model -- --candidates /artifact-root/annotations/candidates.jsonl --output /artifact-root/annotations/model-a --annotator model-a --model d-robotics/deepseek-v4-pro --preflight /artifact-root/preflight/annotation.json
+```
+
+Model annotations are explicitly recorded as `independent-model-annotation`; they are not represented as human judgments and, under the current frozen protocol, do not satisfy the two-human-annotator publication gate.
 
 Annotators edit only `labels.csv`. Required columns are `boundary_id,annotator_id,label,confidence,reason,next_action,timestamp`; `CONTINUE` and `DEFER` require a non-empty next action or missing decision. After both files are sealed and disagreements are adjudicated by a distinct identity:
 
@@ -118,10 +131,22 @@ After the non-primary pilot is independently accepted, the annotation set is fro
 
 ```bash
 cd packages/autodrive-eval
-bun run run-eval -- --execute --executor /absolute/path/to/host-executor --preflight /artifact-root/preflight/receipt.json --artifact-root /artifact-root --run-id adr_...
+bun run run-eval -- --execute --executor /absolute/path/to/host-executor --preflight /artifact-root/preflight/receipt.json --annotations /artifact-root/annotations/frozen --artifact-root /artifact-root --run-id adr_...
 ```
 
 The harness permits at most two concurrent tasks and one identical retry for a predefined, zero-cost infrastructure failure.
+
+Run the five frozen boundary classifier variants only on the sealed 126-example test split. The regex row imports the production heuristic directly and incurs no provider call; the other four rows use the fixed controller, exactly 504 calls in total, and a dedicated scope receipt:
+
+```bash
+bun run preflight -- --scope ablation --receipt /artifact-root/preflight/ablation.json
+AUTODRIVE_GATEWAY_KEY_FILE=/absolute/path/to/key \
+AUTODRIVE_ABLATION_MAX_COST_USD=40 \
+AUTODRIVE_ABLATION_PER_CALL_CEILING_USD=0.08 \
+bun run ablation:run -- --test /artifact-root/annotations/frozen/test.jsonl --output /artifact-root/ablation --preflight /artifact-root/preflight/ablation.json
+```
+
+The executor runs at concurrency two, validates complete usage, checkpoints settled account spend, stores hash-bound request/response records, and refuses to overwrite a partially issued call. The `summary` row is an offline information ablation built from the blinded trajectory summary; the `memory` row omits that summary and matches the deployed goal, memory, and last-output information sources.
 
 ## 6. Analyze and build
 

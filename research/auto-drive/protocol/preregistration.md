@@ -172,6 +172,12 @@ This amendment permits only that exact post-session failure shape to become a no
 
 Models, tasks, prompts, policies, request parameters, run IDs, continuation rules, timeouts, statistical estimands, concurrency, and budgets remain unchanged. This amendment avoids a charged rerun and records harness attrition explicitly; it does not reinterpret any accepted task outcome.
 
+## 2026-08-31 boundary ablation execution seal
+
+Before any boundary label or ablation prediction was frozen, the offline five-row classifier experiment was given a dedicated executable seal. The regex row imports the production `decideHeuristic` implementation and makes no provider request. The four supervisor prompt conditions use the fixed `d-robotics/qwen3.8-max` controller at temperature zero and 1,024 output tokens, require exactly 126 frozen test boundaries and 504 metered calls, execute at concurrency at most two, and store complete usage plus content-addressed request and response records. A dedicated `ablation` preflight must verify all 504 calls; the runner reserves each two-call batch against an explicit per-call ceiling and the remaining boundary-evaluation category budget.
+
+The trajectory-summary condition is explicitly an offline information ablation. The deployed v1.14 supervisor receives the initial goal, within-session memory, and worker output, but does not receive this derived summary. The summary and memory rows are therefore parallel additions to the goal baseline; the memory row exactly matches deployed information sources. Consequently the paper must not call trajectory summary a deployed component or interpret that row as a direct removal from the production prompt. This clarification changes no collected trajectory, label, model, decision rule, outcome, statistic, or USD 800 limit.
+
 ## Claim boundary
 
 AutoDrive targets **premature conversational handoff** by a coding agent: the worker ends a provider turn while safe, in-scope, actionable work toward the admitted user goal remains. The claimed mechanism combines safe turn-boundary evaluation, a `continue | stop | defer` decision, and durable exactly-once continuation admission. It does not claim the first supervisor, memory mechanism, agent termination rule, abstention method, or loop bound.
@@ -221,7 +227,7 @@ Candidate acquisition uses a separately frozen source plan of 96 supervisor-only
 
 Candidate extraction accepts only artifact-verified source trajectories. It binds each boundary to the canonical controller request, final Session transcript, request sequence, and captured patch hash; removes hidden reasoning and the supervisor's actual decision; and assigns a deterministic `adb_...` identifier. The identity-bound CSV records label, confidence, reason, actionable next step or missing decision, and timestamp. Freeze rejects incomplete 180-ID coverage, reused annotator identities, unbalanced adjudication, or cross-split base trajectories. A replay over the historical v1.13 supervisor canary extracted two boundaries and detected no reasoning metadata leakage; those items are pipeline qualification only and cannot enter the v1.14 corpus.
 
-Boundary ablations are evaluated cumulatively: regex; supervisor only; plus initial goal; plus trajectory summary; plus within-session memory. They report three-class macro-F1 and classwise F1, with STOP and DEFER unsafe-continuation rates shown separately.
+Boundary ablations compare five exact prompt conditions: production regex; supervisor with last output only; last output plus initial goal; last output plus initial goal and an offline trajectory summary; and the deployed-input condition of last output plus initial goal and within-session memory. The summary and memory rows are parallel additions to the goal baseline rather than a fictitious prompt containing both. They report three-class macro-F1 and classwise F1, with STOP and DEFER unsafe-continuation rates shown separately.
 
 ## Failures and reruns
 

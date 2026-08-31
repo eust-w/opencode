@@ -123,7 +123,7 @@ The study asks:
 \begin{description}[leftmargin=2.8em,style=nextline]
   \item[RQ1] How often do long-horizon coding trajectories contain premature handoff boundaries?
   \item[RQ2] How does continuation control affect resolution, partial progress, and manual continuation demand?
-  \item[RQ3] Which controller inputs---supervision, initial goal, trajectory summary, and within-session memory---contribute to boundary decisions?
+  \item[RQ3] How do model supervision, the deployed initial-goal and within-session-memory inputs, and an offline derived trajectory summary affect boundary decisions?
   \item[RQ4] What safety, redundancy, token, cost, latency, and recovery trade-offs follow?
 \end{description}
 
@@ -138,7 +138,7 @@ Figure~\ref{fig:architecture} shows the control path. The worker owns model/tool
   \fbox{\begin{minipage}{0.94\textwidth}
   \centering\small
   \textbf{Admitted user goal} $\rightarrow$ \textbf{serialized worker turn} $\rightarrow$ \textbf{safe terminal boundary}\\[3pt]
-  $\downarrow$ reload durable history \hfill $\downarrow$ goal, last output, optional summary/memory\\[3pt]
+  $\downarrow$ reload durable history \hfill $\downarrow$ goal, last output, optional memory\\[3pt]
   \textbf{User steer/queue priority} $\leftarrow$ \textbf{Session scheduler} $\leftarrow$
   \boxed{\textbf{AutoDrive controller: Continue $\mid$ Stop $\mid$ Defer}}\\[3pt]
   \hfill $\downarrow$ persist decision before admission\\[3pt]
@@ -263,7 +263,7 @@ The source sampling frame is independent of the 384 formal rows: 96 supervisor-o
 
 From this frame we sample 180 real worker boundaries, balanced as 60 per class. Base trajectories are grouped into 54 development and 126 frozen test items. Extraction first verifies the trajectory, request, trace, model-metadata, preflight, and captured-patch hashes; it then removes hidden reasoning and the supervisor's observed decision. Two independent annotators receive a blinded packet and identity-bound CSV. They provide a class, evidence sentence, and next action or missing input; a distinct adjudicator resolves disagreements only after both files are sealed. The corpus freezes only after Cohen's $\kappa \geq 0.75$~\cite{cohen1960kappa}. Prompt or regex tuning on frozen test labels is prohibited.
 
-The cumulative ablation sequence is: regex; supervisor with last output only; plus initial goal; plus trajectory summary; plus within-session memory. This order separates model supervision from progressively richer state. The primary boundary metric is macro-F1, with classwise F1 and STOP/DEFER unsafe-continuation rates.
+The five offline conditions are: production regex; supervisor with last output only; last output plus initial goal; last output plus initial goal and a derived trajectory summary; and last output plus initial goal and within-session memory. Summary and memory are parallel additions to the goal baseline. The deployed v1.14 supervisor receives the initial goal, last output, and within-session memory, but not the derived summary, so the final condition exactly matches its information sources. The primary boundary metric is macro-F1, with classwise F1 and STOP/DEFER unsafe-continuation rates.
 
 Boundary sampling occurs after source trajectories are collected and before controller evaluation or formal dispatch. A boundary may enter the pool only when it has a complete admitted goal, the terminal worker response, a repository-state summary, permission state, and a stable base-trajectory identifier. Sampling is stratified iteratively until each target class contains 60 independently agreed examples; class balancing is reported and is not used to estimate population frequency. RQ1 therefore uses the unbalanced first-boundary sample from all accepted source trajectories, including trajectories with no usable later boundary, whereas RQ3 uses the balanced classification set. Conflating these two estimands would bias the reported handoff frequency toward one third.
 
@@ -324,7 +324,7 @@ The supervisor's resolved-rate difference is \SupervisorDelta{}. We will not int
 
 \section{RQ3: Component Contributions}
 
-The frozen boundary macro-F1 for the complete system is \BoundaryMacroFOne{}. The cumulative ablation table will show whether the initial goal resolves ambiguous ``done'' statements, whether a trajectory summary improves recognition of remaining work, and whether memory prevents repeated failed strategies. We also report per-class confusion matrices because macro-F1 can hide unsafe directionality.
+The frozen boundary macro-F1 for the deployed-input supervisor row is \BoundaryMacroFOne{}. The offline table will show whether the initial goal resolves ambiguous ``done'' statements and compare a derived trajectory summary with within-session memory as parallel additions. We report the exact prompt composition for each row and per-class confusion matrices because macro-F1 can hide unsafe directionality.
 
 Memory is evaluated within Session only. No default worktree file is written, and no information transfers across benchmark tasks. Thus an observed memory effect represents continuity inside an admitted task, not cross-task training or retrieval.
 

@@ -112,6 +112,16 @@ describe("experiment preflight gate", () => {
     expect(
       parsePreflight(annotation, { scope: "annotation", now: new Date("2026-08-30T03:00:00.000Z") }),
     ).toMatchObject({ scope: "annotation", models: [{ trajectoryCapacity: 480 }, {}, {}] })
+
+    const ablation = {
+      ...base,
+      scope: "ablation",
+      models: [{ ...base.models[1], trajectoryCapacity: 504 }],
+    }
+    expect(parsePreflight(ablation, { scope: "ablation", now: new Date("2026-08-30T03:00:00.000Z") })).toMatchObject({
+      scope: "ablation",
+      models: [{ trajectoryCapacity: 504 }],
+    })
   })
 
   test("creates a minimal cache with explicit logical-to-catalog resolutions", () => {

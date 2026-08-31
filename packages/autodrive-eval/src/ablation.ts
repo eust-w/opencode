@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { AutoDrive } from "@opencode-ai/core/session/auto-drive"
 import { BoundaryCandidate } from "./annotation"
 import { classificationReport, type BoundaryLabel } from "./statistics"
 
@@ -12,42 +13,74 @@ const Prediction = z.object({
   label: z.enum(["continue", "stop", "defer"]),
 })
 
+const Response = z
+  .object({
+    model: z.string().min(1),
+    choices: z.array(z.object({ message: z.object({ content: z.string().min(1) }).loose() }).loose()).length(1),
+    usage: z.object({
+      prompt_tokens: z.number().int().nonnegative(),
+      completion_tokens: z.number().int().nonnegative(),
+    }),
+  })
+  .loose()
+
+export function buildAblationRequest(model: string, prompt: string) {
+  return {
+    model,
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0 as const,
+    max_tokens: 1024 as const,
+    stream: false as const,
+  }
+}
+
+export function createAblationPrediction(input: unknown, variant: "regex") {
+  const candidate = BoundaryCandidate.parse(input)
+  return Prediction.parse({
+    boundaryID: candidate.id,
+    variant,
+    label: AutoDrive.decideHeuristic({ lastText: candidate.workerOutput }).action,
+  })
+}
+
+export function parseAblationResponse(
+  input: unknown,
+  variant: Exclude<AblationVariant, "regex">,
+  response: unknown,
+) {
+  const candidate = BoundaryCandidate.parse(input)
+  const parsed = Response.parse(response)
+  const decision = AutoDrive.parseSupervisorDecision(parsed.choices[0]!.message.content, {
+    initialGoal: variant === "supervisor-only" ? undefined : candidate.initialGoal,
+    lastText: candidate.workerOutput,
+    playbookMarkdown: variant === "memory" ? candidate.memory : undefined,
+  })
+  if (decision.action === "defer" && decision.reason?.startsWith("Supervisor response was invalid"))
+    throw new Error("Ablation response does not contain a valid tri-state decision")
+  return {
+    prediction: Prediction.parse({ boundaryID: candidate.id, variant, label: decision.action }),
+    modelVersion: parsed.model,
+    promptTokens: parsed.usage.prompt_tokens,
+    completionTokens: parsed.usage.completion_tokens,
+  }
+}
+
 export function buildAblationPrompt(input: unknown, variant: Exclude<AblationVariant, "regex">) {
   const candidate = BoundaryCandidate.parse(input)
-  const goal = variant === "supervisor-only" ? "(Ablated)" : candidate.initialGoal
-  const summary = variant === "summary" || variant === "memory" ? candidate.trajectorySummary : "(Ablated)"
-  const memory = variant === "memory" ? candidate.memory || "(No accumulated strategy memory yet)" : "(Ablated)"
-  return `You are the Auto-Drive Supervisor for an autonomous software engineering session.
-A primary worker agent just completed its current turn.
-Analyze whether the worker has remaining tasks, next steps, or unverified work, or if it should stop.
-
-<InitialUserGoal>
-${goal}
-</InitialUserGoal>
-<TrajectorySummary>
-${summary}
+  const prompt = AutoDrive.buildSupervisorPrompt({
+    initialGoal: variant === "supervisor-only" ? undefined : candidate.initialGoal,
+    lastText: candidate.workerOutput,
+    playbookMarkdown: variant === "memory" ? candidate.memory : undefined,
+  })
+  if (variant !== "summary") return prompt
+  return prompt.replace(
+    "<AutoDriveMemory>",
+    `<TrajectorySummary>
+${candidate.trajectorySummary}
 </TrajectorySummary>
-<AutoDriveMemory>
-${memory}
-</AutoDriveMemory>
-<WorkerLastOutput>
-${candidate.workerOutput.trim().slice(-2000)}
-</WorkerLastOutput>
 
-Decision Rules:
-1. "action": "continue" only when the worker has an actionable, safe, in-scope next step towards the initial goal.
-2. "action": "stop" when the user goal is completely achieved and verified, or no useful continuation is warranted.
-3. "action": "defer" when continuing requires a subjective choice, missing information, expanded permissions, or a dangerous/external action.
-4. "next_prompt": If continuing, provide a concise instruction for the exact next step. Otherwise return null.
-5. "update_memory": Optional. Return a concise within-session progress or rule update; otherwise omit or return null.
-
-Respond ONLY with a valid JSON object matching this schema:
-{
-  "action": "continue" | "stop" | "defer",
-  "reason": string,
-  "next_prompt": string | null,
-  "update_memory": string | null
-}`
+<AutoDriveMemory>`,
+  )
 }
 
 export function analyzeBoundaryAblations(goldInput: readonly unknown[], predictionInput: readonly unknown[]) {

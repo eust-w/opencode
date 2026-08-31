@@ -4,7 +4,7 @@ import { z } from "zod"
 import { ArtifactReference, assertSecretFree } from "./artifact"
 import { protocol } from "./protocol"
 
-export const PreflightScope = z.enum(["canary", "boundary", "annotation", "full"])
+export const PreflightScope = z.enum(["canary", "boundary", "annotation", "ablation", "full"])
 export type PreflightScope = z.infer<typeof PreflightScope>
 
 export const Preflight = z.object({
@@ -84,6 +84,8 @@ export function parsePreflight(input: unknown, options: { scope: PreflightScope;
               [protocol.models.replication[0], 480],
               [protocol.models.replication[1], 480],
             ]
+          : options.scope === "ablation"
+            ? [[protocol.models.controller, 504]]
           : [
             [protocol.models.primary, 384],
             [protocol.models.replication[0], 48],
