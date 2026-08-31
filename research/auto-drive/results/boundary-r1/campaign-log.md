@@ -14,16 +14,16 @@ External artifact root: `/root/autodrive-artifacts/2026-08-31-v1.14-boundary-r1`
 - Boundary preflight receipt SHA-256: `3e4c8a84eda216c10ea88c699d236fa8bd9804e10a7415f95cc77e9923dcdb12`
 - Execution is sequential, below the frozen maximum of two concurrent tasks.
 
-## Checkpoint after 24 dispositions
+## Checkpoint after 25 dispositions
 
 | Disposition                         | Rows | Boundary ledger USD |
 | ----------------------------------- | ---: | ------------------: |
-| Accepted empirical trajectory       |   20 |           5.4119995 |
+| Accepted empirical trajectory       |   21 |           6.2680243 |
 | Excluded charged evaluation failure |    3 |           0.7847301 |
 | Excluded charged budget overrun     |    1 |           1.2186096 |
-| Total                               |   24 |           7.4153392 |
+| Total                               |   25 |           8.2713640 |
 
-The boundary preflight cost is USD 0.0900565, so total campaign spend at this checkpoint is USD 7.5053957. No excluded run has an accepted trajectory row. The 20 accepted trajectories cover 12 tasks, contain 1,707,253 prompt and 102,132 completion tokens, and have zero first-boundary or final task resolutions. These are acquisition facts, not a policy comparison.
+The boundary preflight cost is USD 0.0900565, so total campaign spend at this checkpoint is USD 8.3614205. No excluded run has an accepted trajectory row. The 21 accepted trajectories cover 13 tasks, contain 1,964,965 prompt and 111,980 completion tokens, and have zero first-boundary or final task resolutions. They contain 17 automatic continuations, five redundant turns, zero manual continuations, and zero unsafe continuations. These are acquisition facts, not a policy comparison.
 
 ## Exclusion evidence
 
@@ -36,8 +36,8 @@ The earlier attempt-one receipt SHA-256 for `adr_b4f6b34e814ed8b91d54` remains `
 
 ## Resumption gate
 
-Commit `e0d2e2b913` fixes the settlement predicate, adds prospective per-run spend rejection, reconstructs the historical overrun from immutable evidence, and enforces the category cap during exclusion settlement. The evaluation package passed 122/122 tests, 458 assertions, and type checking locally and on the experiment host. A zero-provider dry-run executor contract also passed from the exact extracted source archive. Runner v4 refuses to start unless the source archive hash matches and the historical overrun exclusion is already present. It passed those gates and resumed at `2026-08-31T03:39:29Z`; the next frozen run, `adr_a1936920fd08b60d0a73` for `iterative__dvc_0.35.3_0.35.4`, started at `2026-08-31T03:39:30Z`. This checkpoint does not claim that run has completed or entered the ledger.
+Commit `e0d2e2b913` fixes the settlement predicate, adds prospective per-run spend rejection, reconstructs the historical overrun from immutable evidence, and enforces the category cap during exclusion settlement. The evaluation package passed 122/122 tests, 458 assertions, and type checking locally and on the experiment host. A zero-provider dry-run executor contract also passed from the exact extracted source archive. Runner v4 refuses to start unless the source archive hash matches and the historical overrun exclusion is already present. It passed those gates and resumed at `2026-08-31T03:39:29Z`. Run `adr_a1936920fd08b60d0a73` for `iterative__dvc_0.35.3_0.35.4` completed and was accepted at `2026-08-31T03:54:42Z`: first-boundary and final Fix Rate are both zero, three continuations were admitted, one turn is redundant, usage is complete at 257,712 prompt and 9,848 completion tokens, and settled cost is USD 0.8560248. The runner then started `adr_338bd04e6e4e225c9e73`; this checkpoint does not claim that new run has completed or entered the ledger.
 
 ## Candidate pipeline preview
 
-The 20 accepted trajectories produce 34 blinded boundary candidates after complete trajectory artifact, patch, request, and Session transcript verification. They cover 20 base trajectories and 12 tasks. Continuation counts zero through three contribute 20, 7, 4, and 3 candidates respectively. The preview SHA-256 is `e2d66adb17f46427ded62c352ef3f13466efdaa863041a47f938516f36d23b0e`. These examples are unlabelled previews, not the frozen 180-example boundary dataset, and no macro-F1 or ablation result can yet be computed.
+The 21 accepted trajectories produce 38 blinded boundary candidates after complete trajectory artifact, patch, request, and Session transcript verification. They cover 21 base trajectories and 13 tasks. Continuation counts zero through three contribute 21, 8, 5, and 4 candidates respectively. The preview SHA-256 is `1b9b20e0a80c51be8b382418f1697cee662a75d3529f54fee5e198ec0f8ad87f`. These examples are unlabelled previews, not the frozen 180-example boundary dataset, and no macro-F1 or ablation result can yet be computed.
