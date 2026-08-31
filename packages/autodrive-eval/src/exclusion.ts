@@ -482,14 +482,8 @@ export async function settlePendingBoundaryExclusions(input: {
   const settled = await loadBoundaryExclusions(input.artifactRoot)
   const completed = new Set([...input.accepted, ...settled.map((exclusion) => exclusion.runID)])
   for (const run of input.runs.filter((candidate) => !completed.has(candidate.id))) {
-    const receiptPath = path.join(input.artifactRoot, "failures", run.id, "attempt-1.json")
-    const file = Bun.file(receiptPath)
-    if (!(await file.exists())) continue
-    const receipt = parseExecutorFailureReceipt(await file.json())
-    if (
-      !new Set(["excluded-charged-evaluation-failure", "excluded-charged-budget-overrun"]).has(receipt.classification)
-    )
-      continue
+    const receiptPath = await findPendingBoundaryExclusionReceipt(input.artifactRoot, run.id)
+    if (!receiptPath) continue
     settled.push(
       await settleBoundaryExclusion({
         artifactRoot: input.artifactRoot,
@@ -502,6 +496,29 @@ export async function settlePendingBoundaryExclusions(input: {
     completed.add(run.id)
   }
   return settled.sort((left, right) => left.runID.localeCompare(right.runID))
+}
+
+async function findPendingBoundaryExclusionReceipt(artifactRoot: string, runID: string) {
+  const candidates = [
+    "reconciled-attempt-2.json",
+    "attempt-2.json",
+    "reconciled-attempt-1.json",
+    "attempt-1.json",
+  ].map((file) => path.join(artifactRoot, "failures", runID, file))
+  const receipts = await Promise.all(
+    candidates.map(async (receiptPath) => {
+      const file = Bun.file(receiptPath)
+      if (!(await file.exists())) return
+      return { receiptPath, receipt: parseExecutorFailureReceipt(await file.json()) }
+    }),
+  )
+  return receipts.find(
+    (candidate) =>
+      candidate &&
+      new Set(["excluded-charged-evaluation-failure", "excluded-charged-budget-overrun"]).has(
+        candidate.receipt.classification,
+      ),
+  )?.receiptPath
 }
 
 function requireSettledExclusion(

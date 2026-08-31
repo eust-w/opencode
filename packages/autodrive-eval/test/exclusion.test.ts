@@ -106,6 +106,57 @@ describe("charged boundary exclusion settlement", () => {
     })
   })
 
+  test("discovers a charged attempt two before an earlier zero-cost attempt one", async () => {
+    const directory = await temporaryDirectory()
+    const run = createBoundaryRunPlan(parseManifest(manifest))[6]
+    const attemptTwoPath = await writeFailureReceipt(directory, run, {
+      attempt: 2,
+      requests: 28,
+      responses: 28,
+      usageCompleteResponses: 28,
+      observedSpendDeltaUSD: 0.7139073,
+    })
+    const attemptOne = await Bun.file(attemptTwoPath).json()
+    await Bun.write(
+      path.join(directory, "failures", run.id, "attempt-1.json"),
+      JSON.stringify({
+        ...attemptOne,
+        classification: "executor-failure",
+        stage: "startup-baseline",
+        runID: run.id,
+        attempt: 1,
+        error: { name: "Error", message: "Task image has tracked startup changes" },
+        gateway: {
+          settlement: { attempted: false, completed: true },
+          requests: 0,
+          responses: 0,
+          non200Responses: 0,
+          proxyErrors: 0,
+          usageCompleteResponses: 0,
+          promptTokens: 0,
+          completionTokens: 0,
+          baselineSpendUSD: 7.1315505,
+        },
+      }),
+    )
+
+    const exclusions = await settlePendingBoundaryExclusions({
+      artifactRoot: directory,
+      ledgerPath: path.join(directory, "boundary/ledger.jsonl"),
+      runs: [run],
+      accepted: new Set(),
+      maxCostUSD: 1.0625,
+    })
+
+    expect(exclusions).toHaveLength(1)
+    expect(exclusions[0]).toMatchObject({
+      runID: run.id,
+      attempt: 2,
+      costUSD: 0.7139073,
+      failureReceipt: { path: `failures/${run.id}/attempt-2.json` },
+    })
+  })
+
   test("accounts for a charged budget overrun without accepting an empirical trajectory", async () => {
     const directory = await temporaryDirectory()
     const run = createBoundaryRunPlan(parseManifest(manifest))[7]
