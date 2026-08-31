@@ -178,6 +178,16 @@ export function classifyTestPatch(input: { patch?: string; forwardApplies: boole
   throw new Error("Model patch conflicts with the frozen test patch")
 }
 
+export async function prepareRepositoryBaseline(
+  command: (args: string[]) => Promise<{ exitCode: number; stdout: string; stderr: string }>,
+  expectedHead: string,
+) {
+  const head = parseGitObject((await command(["rev-parse", "HEAD"])).stdout, "HEAD")
+  if (head !== expectedHead) throw new Error("Task image baseline HEAD does not match the frozen task")
+  await command(["reset", "--hard", expectedHead])
+  return captureRepositoryBaseline(command, expectedHead)
+}
+
 export async function captureRepositoryBaseline(
   command: (args: string[]) => Promise<{ exitCode: number; stdout: string; stderr: string }>,
   expectedHead?: string,

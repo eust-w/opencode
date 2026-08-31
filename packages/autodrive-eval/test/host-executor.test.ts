@@ -22,6 +22,7 @@ import {
   parseExecutorFailureReceipt,
   parseTaskInput,
   prepareExperimentConfig,
+  prepareRepositoryBaseline,
 } from "../src/host-executor"
 
 const task = {
@@ -58,13 +59,14 @@ describe("SWE-EVO host executor", () => {
 
   test("exposes startup-baseline patch capture", async () => {
     const module = await import("../src/host-executor")
+    expect("prepareRepositoryBaseline" in module).toBe(true)
     expect("captureRepositoryBaseline" in module).toBe(true)
     expect("capturePatchFromBaseline" in module).toBe(true)
   })
 
-  test("wires baseline capture before the worker prompt", async () => {
+  test("wires baseline preparation before the worker prompt", async () => {
     const script = await Bun.file(path.join(import.meta.dir, "../scripts/gateway-host-executor.ts")).text()
-    const baseline = script.indexOf("await captureRepositoryBaseline(")
+    const baseline = script.indexOf("await prepareRepositoryBaseline(")
     const sessionConfigured = script.indexOf("`/api/session/${session.id}/auto-drive`")
     const prompt = script.indexOf("`/api/session/${session.id}/prompt`")
     expect(baseline).toBeGreaterThan(0)
@@ -72,6 +74,26 @@ describe("SWE-EVO host executor", () => {
     expect(prompt).toBeGreaterThan(baseline)
     expect(script).toContain("capturePatchFromBaseline(")
     expect(script).toContain("schemaVersion: 4")
+  })
+
+  test("normalizes tracked image mutations while preserving untracked startup files", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-baseline-"))
+    try {
+      const command = gitCommand(directory)
+      await initializeRepository(command, directory)
+      const head = (await command(["rev-parse", "HEAD"])).stdout.trim()
+      await Bun.write(path.join(directory, "tracked.ts"), "export const imageMutation = true\n")
+      await mkdir(path.join(directory, "build"))
+      await Bun.write(path.join(directory, "build/cache.bin"), "image cache\n")
+
+      const baseline = await prepareRepositoryBaseline(command, head)
+      expect(await Bun.file(path.join(directory, "tracked.ts")).text()).toBe("export const value = 1\n")
+      expect(baseline.untrackedPaths).toEqual(["build/cache.bin"])
+      expect(baseline.content).toContain("build/cache.bin")
+      expect((await command(["diff", "--name-only", "HEAD", "--"])).stdout).toBe("")
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
   })
 
   test("excludes unchanged startup files from model patches", async () => {

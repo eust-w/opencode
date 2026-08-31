@@ -9,7 +9,6 @@ import {
   buildAutoDriveUpdate,
   buildTaskPrompt,
   capturePatchFromBaseline,
-  captureRepositoryBaseline,
   captureGatewayFailureEvidence,
   classifyExecutorFailure,
   classifyIdleSession,
@@ -23,6 +22,7 @@ import {
   parsePytestLog,
   parseTaskInput,
   prepareExperimentConfig,
+  prepareRepositoryBaseline,
   requireGatewaySpendWithinCeiling,
 } from "../src/host-executor"
 import { protocol, Run } from "../src/protocol"
@@ -247,7 +247,7 @@ try {
   })
   execution.stage = "startup-baseline"
   const taskGit = (args: string[]) => command(["docker", "exec", taskName, "git", "-C", "/testbed", ...args])
-  const startupBaseline = await captureRepositoryBaseline(taskGit, task.baseCommit)
+  const startupBaseline = await prepareRepositoryBaseline(taskGit, task.baseCommit)
   const baselineManifest =
     JSON.stringify(
       {
