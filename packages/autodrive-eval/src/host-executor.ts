@@ -23,6 +23,13 @@ export function dockerPortPublish(containerPort: number) {
   return `127.0.0.1:0:${containerPort}`
 }
 
+export function dockerEgressNetwork(value: string | undefined) {
+  const network = value ?? "bridge"
+  if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$/.test(network) || new Set(["host", "none"]).has(network))
+    throw new Error("Expected a validated Docker egress network")
+  return network
+}
+
 export function hasExperimentModels(input: unknown, workerModel: string, controllerModel: string) {
   const result = z
     .object({

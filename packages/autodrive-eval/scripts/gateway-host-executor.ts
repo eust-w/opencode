@@ -14,6 +14,7 @@ import {
   classifyIdleSession,
   classifyTestPatch,
   decideExternalContinuation,
+  dockerEgressNetwork,
   dockerPortPublish,
   executionArtifactID,
   gradePytest,
@@ -49,6 +50,7 @@ const sourceRoot = requireAbsolute("AUTODRIVE_SOURCE_ROOT")
 const opencodeBinary = requireAbsolute("AUTODRIVE_OPENCODE_BINARY")
 const opencodeCommit = requireCommit("AUTODRIVE_OPENCODE_COMMIT")
 const gatewayUpstream = Bun.env.AUTODRIVE_GATEWAY_UPSTREAM ?? "https://ai-api.d-robotics.cc"
+const egressNetwork = dockerEgressNetwork(Bun.env.AUTODRIVE_DOCKER_EGRESS_NETWORK)
 
 if (Bun.env.AUTODRIVE_EVAL_PROTOCOL !== protocol.version) fail("Frozen protocol mismatch")
 if (input.budget.maxCostUSD <= 0) fail("Real execution requires a positive run cost ceiling")
@@ -115,7 +117,7 @@ try {
     "--name",
     proxyName,
     "--network",
-    "bridge",
+    egressNetwork,
     "--publish",
     dockerPortPublish(8_080),
     "--read-only",

@@ -14,6 +14,7 @@ import {
   classifyTestPatch,
   classifyIdleSession,
   decideExternalContinuation,
+  dockerEgressNetwork,
   dockerPortPublish,
   executionArtifactID,
   frozenWorkerModelID,
@@ -43,6 +44,16 @@ const task = {
 }
 
 describe("SWE-EVO host executor", () => {
+  test("selects a validated Docker egress network without changing the default", async () => {
+    expect(dockerEgressNetwork(undefined)).toBe("bridge")
+    expect(dockerEgressNetwork("autodrive-egress")).toBe("autodrive-egress")
+    expect(() => dockerEgressNetwork("host")).toThrow("egress network")
+    expect(() => dockerEgressNetwork("network; docker system prune")).toThrow("egress network")
+    const script = await Bun.file(path.join(import.meta.dir, "../scripts/gateway-host-executor.ts")).text()
+    expect(script).toContain("dockerEgressNetwork(Bun.env.AUTODRIVE_DOCKER_EGRESS_NETWORK)")
+    expect(script).toContain('"--network",\n    egressNetwork,')
+  })
+
   test("admits every frozen worker model and rejects controller or unknown models", () => {
     expect(frozenWorkerModelID("d-robotics/deepseek-v4-pro")).toBe("deepseek-v4-pro")
     expect(frozenWorkerModelID("d-robotics/qwen3.7-max")).toBe("qwen3.7-max")
