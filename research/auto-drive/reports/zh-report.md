@@ -69,7 +69,7 @@ controller 实际返回了合法 `continue` JSON，但从 release 到完整响�
 
 启动基线门现已零费用完成。executor 会在 worker prompt admission 之前核对冻结 base commit 和 tracked clean 状态；镜像自带的 untracked 文件不会被删除，而是被写入独立 Git tree、严格 manifest 和二进制 baseline patch。后续边界与最终 patch 都相对该 tree 生成。trajectory schema v4 强制保存并复核这些内容寻址证据，缺失或不一致的正式结果不能接纳。
 
-若 worker 或测试流程修改了启动专属文件，executor 不会把已计费轨迹排除或伪装成可重跑基础设施失败，而是从模型 patch 中隔离这些路径，在 trace 的 `excludedPaths` 中保留记录，并继续完成评分与失败计数。冻结 r9 镜像的无网络验收捕获65个启动路径、871,679字节 baseline patch，模型相对 patch 为0字节、0变更路径、0隔离路径；完整评测包为98/98、380个断言，类型检查通过。未调用 provider，也没有产生新实验或消融结果。
+若 worker 或测试流程修改了启动专属文件，executor 不会把已计费轨迹排除或伪装成可重跑基础设施失败，而是从模型 patch 中隔离这些路径，在 trace 的 `excludedPaths` 中保留记录，并继续完成评分与失败计数。冻结 r9 镜像的无网络验收捕获65个启动路径、871,679字节 baseline patch，模型相对 patch 为0字节、0变更路径、0隔离路径。当前评测包在本机和实验机均通过122/122测试、458个断言与类型检查；本轮修复未新增依赖。
 
 ## 当前结论
 
@@ -79,8 +79,10 @@ controller 实际返回了合法 `continue` JSON，但从 release 到完整响�
 
 ## v1.14 边界语料执行快照
 
-边界来源实验使用独立外部目录和 96 条冻结 Supervisor-only 轨迹。当前前 5 条被有效接纳，共 56 个完整模型请求、接纳费用 1.4671039 美元；它们均未解决任务，这只是语料采集状态，不是策略优劣结论。第 6 条在 32 个完整 HTTP 200 响应后触发“模型补丁与冻结测试补丁冲突”，按预注册规则以 0.413868 美元计费排除。
+边界来源实验使用独立外部目录和96条冻结 Supervisor-only 轨迹。当前20条轨迹被有效接纳，覆盖12个任务，共1,707,253 prompt token、102,132 completion token、14次续推和4个冗余回合；首边界与最终状态均无任务解决，接纳费用为5.4119995美元。这些只是语料采集事实，不是策略效果估计。
 
-第 7 条首次尝试在 provider admission 前失败，严格保持零请求、零费用，并消耗唯一一次基础设施重试。第二次尝试真实产生 6 个 worker 请求和 1 个 controller 请求，但 retry artifact 命名空间未投影到 gateway：代理把证据写入基础 run ID，执行器却从 attempt-2 目录读取，因此拒绝了空请求清单。6 个 worker 响应均为完整 HTTP 200；controller 请求在 hold 超时后以 1 个 proxy error 终止。连续 4 次账户读数稳定，隔离费用为 0.0906303 美元，usage 为 33,559 prompt 和 3,116 completion token。
+四条已付费排除均不进入候选池或任务效果分析：两条冻结测试补丁冲突分别为0.413868和0.2802318美元；一条 retry artifact 命名空间错误为0.0906303美元；最新一条为结算误判后的单条预算超限。该 run 有40个 sealed provider 请求，全部返回 HTTP 200 且 usage 完整；三个后续 client retry 在未形成 provider 请求前被本地拒绝，却被旧逻辑错误计入 terminal sequence 数量。严格证据记录496,162 prompt、14,355 completion token 和1.2186096美元费用，超过冻结的102/96=1.0625美元单条上限。
 
-该错误没有被伪装成实验结果，也没有第三次重试。严格 reconciliation 工具逐一校验 retry 时间窗、7 个请求的唯一终止事件、6 份响应 usage、原始请求/响应哈希、稳定账单和单条费用上限，然后写入内容寻址的排除回执与幂等账本。修复提交 `260e9c835c` 显式向 gateway 传入 attempt artifact ID；117/117 测试、类型检查和零 provider attempt-2 namespace canary 均通过，函数/行覆盖率为 97.69%/97.87%。第 8 条 `adr_270c032aeb168dee0342` 已完成并被接纳：结果 unresolved、补丁为空，7 个请求（含 1 个 controller）均有完整 usage，共 32,339 prompt、4,928 completion tokens，费用 0.1613832 美元。第 9 条 `adr_1eaf02988d68d35a96a3` 同样完成并接纳：结果 unresolved、补丁为空，7 个请求均有完整 usage，共 27,889 prompt、4,462 completion tokens，费用 0.1778061 美元；首次边界评分在 731.07 秒内得到 44 failed、11,175 passed 和 25 errors。当前有效轨迹 7 条、计费排除 2 条，边界账本 2.3107915 美元；计入 0.0900565 美元 preflight 后为 2.4008480 美元。7 条有效轨迹已通过 artifact、patch 和 transcript 校验，抽取出 10 个来自 5 个任务的盲化边界预览；它们尚未人工标注，不进入冻结的 180 条数据。顺序 runner 已进入第 10 条。
+该预算超限 run 没有被修复成实验结果，也没有重跑。无模型 reconciliation 逐一验证原始回执、40组请求/响应哈希、完整 usage、三个未 sealed 的本地错误、四次稳定账单和累计预算后，写入内容寻址的 `excluded-charged-budget-overrun` 回执；轨迹文件保持0行、账本恰有1行实际费用。修复提交 `e0d2e2b913` 使结算只考虑 sealed manifest 内的 sequence，在稳定费用超过单条上限时于轨迹接纳前失败，并在排除落账前再次检查102美元分类上限。
+
+当前边界账本为7.4153392美元，计入0.0900565美元 preflight 后为7.5053957美元。20条有效轨迹已经通过 artifact、patch、请求和 Session transcript 校验，抽取出34个盲化边界，覆盖20条基础轨迹和12个任务；continuation count为0/1/2/3的候选数分别为20/7/4/3。它们尚未完成双人独立标注，因此不是180条冻结数据，也不存在可发布的 macro-F1、消融表或显著性结论。剩余72条边界来源计划仍需按冻结顺序执行。

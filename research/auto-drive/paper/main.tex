@@ -287,7 +287,7 @@ For RQ2, the primary estimand is the task-averaged supervisor-minus-off differen
 
 The hard cap is USD 800: 50 pilot, 360 primary, 288 cross-model, and 102 boundary/recovery. Before dispatch, the runner reserves no more than USD 1.25 per primary trace, USD 3.00 per cross-model trace, or USD $102/96$ per boundary-source trace. It stops before a reservation could exceed a category or total cap. Each accepted trajectory includes the resolved model, request hash, image digest, code commit, trace hash, tokens, and cost. Secret-shaped material fails validation.
 
-Charged harness failures that block a valid trajectory are sealed as exclusions: terminal usage, stable spend, the original receipt, and artifact hashes remain in the category ledger, but the record cannot enter sampling or RQ analysis and receives no retry. Only a strict zero-provider infrastructure failure can consume the one allowed identical retry.
+Charged harness failures that block a valid trajectory are sealed as exclusions: terminal usage, stable spend, the original receipt, and artifact hashes remain in the category ledger, but the record cannot enter sampling or RQ analysis and receives no retry. Actual spend is never truncated to the reserved amount. If lagged settlement reveals that a run exceeded its frozen per-run ceiling, the complete charge is recorded as a budget-overrun exclusion before the category cap is rechecked. Only a strict zero-provider infrastructure failure can consume the one allowed identical retry.
 
 \section{RQ1: Premature Handoff Frequency}
 
@@ -344,6 +344,8 @@ The accepted v1.14 non-primary pilot exposes the corresponding abstention path. 
 
 During boundary acquisition, this rule excluded one harness failure in retry artifact routing. It had six complete responses, one proxy error, and USD 0.0906303 settled cost, but produced no trajectory or third attempt.
 
+A later source run exposed a separate settlement and cost failure. All 40 sealed requests had successful, usage-complete responses, but three client retries rejected before provider admission were assigned later local sequence numbers. The old settlement predicate counted those unsealed errors and reported a false timeout. Immutable reconstruction verified 496,162 prompt and 14,355 completion tokens and USD 1.2186096 settled cost, which exceeded the frozen USD $102/96$ run ceiling. We record the full charge as a non-retryable budget-overrun exclusion and admit neither a trajectory nor a boundary candidate. This is harness and budget evidence, not a policy outcome.
+
 We will sample both false continuations and missed continuations, preserving task and worker strata. Error categories are descriptive and cannot remove a failure from quantitative analysis. Suspected benchmark defects are reported with evidence and sensitivity analyses, but the primary frozen result remains intact.
 
 \section{Threats to Validity}\label{sec:threats}
@@ -355,6 +357,8 @@ We will sample both false continuations and missed continuations, preserving tas
 The single-task canary is especially vulnerable to this threat: its policy rows are independent trajectories, not counterfactual replays. We therefore report its costs, continuations, and outcomes descriptively and do not include it in McNemar tests, bootstrap intervals, or Holm correction.
 
 The non-primary task image also contained untracked \path{build/} before worker execution. Consequently, the pilot's identical first and final build-only patch hashes preserve repository provenance but their byte and file counts cannot be attributed to the model. The official tests and unresolved classification remain usable. The schema-v4 baseline gate prevents recurrence by computing model patches from the recorded startup tree. Quarantining startup-root changes could hide intentional edits to generated artifacts, so every excluded path remains in the trace and must be reported in artifact diagnostics.
+
+The gateway exposes cumulative spend only after settlement, so a long context can cross a per-run reservation before the host observes final cost. The harness now rejects such a row before empirical admission, records actual rather than capped spend, and stops before the category ledger can exceed its hard limit. This preserves budget accounting but cannot recover the excluded source item; exclusion counts and reasons must therefore accompany the released sampling frame.
 
 \textbf{Benchmark validity.} SWE-EVO is public, Python-only, and uneven across repositories; DVC contributes many tasks. Public histories may be contaminated in model training. The benchmark's tests can still be incomplete or implementation-specific. We publish task-level results and do not generalize to all software development.
 
