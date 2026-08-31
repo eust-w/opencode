@@ -45,6 +45,17 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("run-formal-r1.sh")
   })
 
+  test("ships a bounded source-to-pipeline watcher", async () => {
+    const script = await Bun.file(
+      new URL("../../../research/auto-drive/execution/watch-boundary-then-run-r1.sh", import.meta.url),
+    ).text()
+    expect(script).toContain('while kill -0 "$runner_pid"')
+    expect(script).toContain("accepted + excluded")
+    expect(script).toContain("-ne 96")
+    expect(script).toContain("seq 1 120")
+    expect(script).toContain("run-post-boundary-r1.sh")
+  })
+
   test("ships an autonomous boundary finalizer that refuses incomplete campaigns", async () => {
     const script = await Bun.file(
       path.resolve(import.meta.dir, "../../../research/auto-drive/execution/finalize-boundary-r1.sh"),
