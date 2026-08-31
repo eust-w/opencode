@@ -17,6 +17,7 @@ import {
   dockerEgressNetwork,
   dockerPortPublish,
   executionArtifactID,
+  executorProcessTimeoutMS,
   frozenWorkerModelID,
   gradePytest,
   hasExperimentModels,
@@ -44,6 +45,11 @@ const task = {
 }
 
 describe("SWE-EVO host executor", () => {
+  test("reserves cleanup time beyond the frozen scientific deadline", () => {
+    expect(executorProcessTimeoutMS(45)).toBe(47 * 60_000)
+    expect(() => executorProcessTimeoutMS(0)).toThrow("timeout minutes")
+  })
+
   test("selects a validated Docker egress network without changing the default", async () => {
     expect(dockerEgressNetwork(undefined)).toBe("bridge")
     expect(dockerEgressNetwork("autodrive-egress")).toBe("autodrive-egress")

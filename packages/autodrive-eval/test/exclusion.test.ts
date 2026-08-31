@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test"
-import { mkdtemp, rm } from "node:fs/promises"
+import { mkdir, mkdtemp, rm } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import {
   loadBoundaryExclusions,
   reconcileGraderSecretScannerFalsePositive,
+  reconcileExecutorDeadlineFailure,
   reconcilePostSessionSpendSamplingFailure,
   reconcileRetryGatewayNamespaceFailure,
   settleBoundaryExclusion,
@@ -21,6 +22,74 @@ afterEach(async () => {
 })
 
 describe("charged boundary exclusion settlement", () => {
+  test("reconstructs a killed executor only from exact per-request spend evidence", async () => {
+    const directory = await temporaryDirectory()
+    const run = createBoundaryRunPlan(parseManifest(manifest))[60]
+    const startedAt = "2026-08-31T21:59:32.000Z"
+    const endedAt = "2026-08-31T22:44:32.000Z"
+    const raw = [
+      { timestamp: startedAt, type: "executor-started", runID: run.id, attempt: 1, taskID: run.taskID },
+      { timestamp: "2026-08-31T22:24:31.000Z", type: "grader-finished", label: "first-boundary" },
+    ].map((event) => JSON.stringify(event)).join("\n") + "\n"
+    const requests = [
+      { sequence: 0, kind: "worker", modelID: "deepseek-v4-pro" },
+      { sequence: 1, kind: "controller", modelID: "qwen3.8-max" },
+    ]
+    const proxy = [
+      { timestamp: "2026-08-31T22:03:17.000Z", type: "provider-request", ...requests[0] },
+      { timestamp: "2026-08-31T22:03:20.000Z", type: "provider-response", sequence: 0, status: 200, usageComplete: true, promptTokens: 2_828, completionTokens: 248 },
+      { timestamp: "2026-08-31T22:04:16.000Z", type: "provider-request", ...requests[1] },
+      { timestamp: "2026-08-31T22:04:36.000Z", type: "provider-response", sequence: 1, status: 200, usageComplete: true, promptTokens: 872, completionTokens: 743 },
+    ].map((event) => JSON.stringify(event)).join("\n") + "\n"
+    await Promise.all([
+      mkdir(path.join(directory, "raw"), { recursive: true }),
+      mkdir(path.join(directory, "gateway", run.id), { recursive: true }),
+    ])
+    await Promise.all([
+      Bun.write(path.join(directory, "raw", `${run.id}.jsonl`), raw),
+      Bun.write(path.join(directory, "gateway", run.id, "requests.jsonl"), requests.map((item) => JSON.stringify(item)).join("\n") + "\n"),
+      Bun.write(path.join(directory, "gateway", run.id, "proxy.jsonl"), proxy),
+    ])
+
+    const spendLogs = [
+      { request_id: "resp-worker", model: "openai/deepseek-v4-pro", prompt_tokens: 2_828, completion_tokens: 248, spend: 0.0043812, startTime: "2026-08-31T22:03:17.503Z", endTime: "2026-08-31T22:03:20.831Z", status: "success" as const },
+      { request_id: "chatcmpl-controller", model: "openai/qwen3.8-max", prompt_tokens: 872, completion_tokens: 743, spend: 0.058308, startTime: "2026-08-31T22:04:16.828Z", endTime: "2026-08-31T22:04:36.052Z", status: "success" as const },
+    ]
+    await expect(reconcileExecutorDeadlineFailure({
+      artifactRoot: directory,
+      run,
+      endedAt,
+      maxCostUSD: 1.0625,
+      spendLogs: spendLogs.map((row) => ({ ...row, model: "openai/deepseek-v4-pro" })),
+    })).rejects.toThrow("model counts")
+
+    const receiptPath = await reconcileExecutorDeadlineFailure({
+      artifactRoot: directory,
+      run,
+      endedAt,
+      maxCostUSD: 1.0625,
+      recordedAt: new Date("2026-08-31T23:00:00.000Z"),
+      spendLogs,
+    })
+    const receipt = parseExecutorFailureReceipt(await Bun.file(receiptPath).json())
+    expect(receipt).toMatchObject({
+      classification: "excluded-charged-evaluation-failure",
+      stage: "final-grader-executor-deadline",
+      code: "executor-killed-at-frozen-deadline",
+      gateway: {
+        requests: 2,
+        responses: 2,
+        promptTokens: 3_700,
+        completionTokens: 991,
+        observedSpendDeltaUSD: 0.0626892,
+      },
+    })
+    const settlement = await Bun.file(path.join(directory, "gateway", run.id, "deadline-spend-settlement.json")).text()
+    expect(settlement).not.toContain("resp-worker")
+    expect(settlement).not.toContain("chatcmpl-controller")
+    expect(settlement).toContain(digest("resp-worker"))
+  })
+
   test("reconciles the observed OpenSSH grader scanner false positive without admitting a trajectory", async () => {
     const directory = await temporaryDirectory()
     const run = createBoundaryRunPlan(parseManifest(manifest))[14]

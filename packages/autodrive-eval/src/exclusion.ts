@@ -28,6 +28,204 @@ export const BoundaryExclusion = z
   .strict()
 export type BoundaryExclusion = z.infer<typeof BoundaryExclusion>
 
+const DeadlineSpendLog = z
+  .object({
+    request_id: z.string().min(1),
+    model: z.string().min(1),
+    prompt_tokens: z.number().int().nonnegative(),
+    completion_tokens: z.number().int().nonnegative(),
+    spend: z.number().nonnegative(),
+    startTime: z.iso.datetime(),
+    endTime: z.iso.datetime(),
+    status: z.literal("success"),
+  })
+  .loose()
+
+const DeadlineTraceEvent = z
+  .object({
+    timestamp: z.iso.datetime(),
+    type: z.string().min(1),
+    runID: z.string().optional(),
+    taskID: z.string().optional(),
+    attempt: z.number().int().optional(),
+    label: z.string().optional(),
+  })
+  .loose()
+
+const DeadlineGatewayRequest = z
+  .object({
+    sequence: z.number().int().nonnegative(),
+    kind: z.enum(["worker", "controller"]),
+    modelID: z.string().min(1),
+  })
+  .loose()
+
+const DeadlineGatewayEvent = z
+  .object({
+    type: z.string().min(1),
+    sequence: z.number().int().nonnegative().optional(),
+    status: z.number().int().optional(),
+    usageComplete: z.boolean().optional(),
+    promptTokens: z.number().int().nonnegative().optional(),
+    completionTokens: z.number().int().nonnegative().optional(),
+  })
+  .loose()
+
+export async function reconcileExecutorDeadlineFailure(input: {
+  artifactRoot: string
+  run: Run
+  endedAt: string
+  spendLogs: unknown
+  maxCostUSD: number
+  recordedAt?: Date
+}) {
+  const receiptPath = path.join(input.artifactRoot, "failures", input.run.id, "reconciled-attempt-1.json")
+  const existing = Bun.file(receiptPath)
+  if (await existing.exists()) {
+    const receipt = parseExecutorFailureReceipt(await existing.json())
+    requireSettledExclusion(receipt, input.run, input.maxCostUSD)
+    await Promise.all(receipt.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
+    return receiptPath
+  }
+
+  const rawPath = path.posix.join("raw", `${input.run.id}.jsonl`)
+  const requestPath = path.posix.join("gateway", input.run.id, "requests.jsonl")
+  const proxyPath = path.posix.join("gateway", input.run.id, "proxy.jsonl")
+  const [raw, requestManifest, proxyTrace] = await Promise.all(
+    [rawPath, requestPath, proxyPath].map((artifact) => readArtifact(input.artifactRoot, artifact)),
+  )
+  const trace = parseJSONL(raw, DeadlineTraceEvent)
+  const requests = parseJSONL(requestManifest, DeadlineGatewayRequest)
+  const proxy = parseJSONL(proxyTrace, DeadlineGatewayEvent)
+  const started = trace.find((event) => event.type === "executor-started")
+  if (
+    !started ||
+    started.runID !== input.run.id ||
+    started.taskID !== input.run.taskID ||
+    started.attempt !== 1 ||
+    !trace.some((event) => event.type === "grader-finished" && event.label === "first-boundary") ||
+    trace.some(
+      (event) =>
+        (event.type === "grader-finished" && event.label === "final") ||
+        new Set(["session-finished", "gateway-settled", "executor-failed"]).has(event.type),
+    )
+  )
+    throw new Error("Executor deadline trace does not match the frozen final-grader kill window")
+  const startedMS = Date.parse(started.timestamp)
+  const endedMS = Date.parse(z.iso.datetime().parse(input.endedAt))
+  const durationMS = endedMS - startedMS
+  if (Math.abs(durationMS - input.run.timeoutMinutes * 60_000) > 5_000)
+    throw new Error("Executor deadline evidence is outside the frozen run timeout")
+  if (!requests.length || requests.some((request, index) => request.sequence !== index))
+    throw new Error("Executor deadline request manifest is empty or non-contiguous")
+  const responses = proxy.filter((event) => event.type === "provider-response")
+  if (
+    responses.length !== requests.length ||
+    new Set(responses.map((event) => event.sequence)).size !== requests.length ||
+    responses.some((event) => event.status !== 200 || event.usageComplete !== true) ||
+    proxy.some((event) => event.type === "proxy-error")
+  )
+    throw new Error("Executor deadline gateway requests are not completely usage-sealed")
+
+  const expectedModels = new Set(requests.map((request) => `openai/${request.modelID}`))
+  const spendRows = z.array(DeadlineSpendLog).parse(input.spendLogs).filter((row) => {
+    const timestamp = Date.parse(row.startTime)
+    return timestamp >= startedMS && timestamp <= endedMS && expectedModels.has(row.model)
+  })
+  if (spendRows.length !== requests.length) throw new Error("Executor deadline spend rows do not match request count")
+  const modelCounts = (models: readonly string[]) =>
+    JSON.stringify(
+      [...new Set(models)].sort().map((model) => [model, models.filter((candidate) => candidate === model).length]),
+    )
+  if (
+    modelCounts(spendRows.map((row) => row.model)) !==
+    modelCounts(requests.map((request) => `openai/${request.modelID}`))
+  )
+    throw new Error("Executor deadline spend model counts do not match the request manifest")
+  const requestHashes = spendRows.map((row) => digest(row.request_id))
+  if (new Set(requestHashes).size !== requestHashes.length)
+    throw new Error("Executor deadline spend rows contain duplicate request IDs")
+  const promptTokens = responses.reduce((sum, event) => sum + (event.promptTokens ?? 0), 0)
+  const completionTokens = responses.reduce((sum, event) => sum + (event.completionTokens ?? 0), 0)
+  if (
+    spendRows.reduce((sum, row) => sum + row.prompt_tokens, 0) !== promptTokens ||
+    spendRows.reduce((sum, row) => sum + row.completion_tokens, 0) !== completionTokens
+  )
+    throw new Error("Executor deadline spend usage does not match sealed gateway usage")
+  const costUSD = Number(spendRows.reduce((sum, row) => sum + row.spend, 0).toFixed(7))
+  const classification =
+    costUSD > input.maxCostUSD
+      ? ("excluded-charged-budget-overrun" as const)
+      : ("excluded-charged-evaluation-failure" as const)
+  const settlementPath = path.posix.join("gateway", input.run.id, "deadline-spend-settlement.json")
+  const settlement =
+    JSON.stringify(
+      {
+        schemaVersion: 1,
+        source: "litellm-spend-logs",
+        runID: input.run.id,
+        window: { startedAt: started.timestamp, endedAt: input.endedAt },
+        rows: spendRows
+          .map((row) => ({
+            requestIDHash: digest(row.request_id),
+            model: row.model,
+            promptTokens: row.prompt_tokens,
+            completionTokens: row.completion_tokens,
+            spendUSD: row.spend,
+            startTime: row.startTime,
+            endTime: row.endTime,
+            status: row.status,
+          }))
+          .sort((left, right) => left.startTime.localeCompare(right.startTime)),
+        totals: { requests: spendRows.length, promptTokens, completionTokens, costUSD },
+      },
+      null,
+      2,
+    ) + "\n"
+  assertSecretFree(settlement)
+  await writeImmutable(path.join(input.artifactRoot, settlementPath), settlement)
+  const artifacts = [
+    { path: rawPath, sha256: digest(raw) },
+    { path: requestPath, sha256: digest(requestManifest) },
+    { path: proxyPath, sha256: digest(proxyTrace) },
+    { path: settlementPath, sha256: digest(settlement) },
+  ]
+  const receipt = parseExecutorFailureReceipt({
+    schemaVersion: 1,
+    protocol: protocol.version,
+    classification,
+    stage: "final-grader-executor-deadline",
+    code: "executor-killed-at-frozen-deadline",
+    runID: input.run.id,
+    taskID: input.run.taskID,
+    attempt: 1,
+    startedAt: started.timestamp,
+    recordedAt: (input.recordedAt ?? new Date()).toISOString(),
+    error: {
+      name: "ExecutorDeadlineError",
+      message: "The parent process terminated the executor at the frozen deadline while the final grader was running",
+    },
+    gateway: {
+      settlement: { attempted: true, completed: true },
+      requests: requests.length,
+      responses: responses.length,
+      non200Responses: 0,
+      proxyErrors: 0,
+      usageCompleteResponses: responses.length,
+      promptTokens,
+      completionTokens,
+      observedSpendDeltaUSD: costUSD,
+    },
+    acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+    artifacts,
+    recordingErrors: [],
+  })
+  const content = JSON.stringify(receipt, null, 2) + "\n"
+  assertSecretFree(content)
+  await writeImmutable(receiptPath, content)
+  return receiptPath
+}
+
 export async function reconcilePostSessionSpendSamplingFailure(input: {
   artifactRoot: string
   originalReceiptPath: string

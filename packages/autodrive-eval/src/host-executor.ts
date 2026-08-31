@@ -421,6 +421,11 @@ export function executionArtifactID(runID: string, attempt: 1 | 2) {
   return attempt === 1 ? runID : `${runID}-attempt-${attempt}`
 }
 
+export function executorProcessTimeoutMS(timeoutMinutes: number) {
+  if (!Number.isInteger(timeoutMinutes) || timeoutMinutes < 1) throw new Error("Expected positive integer timeout minutes")
+  return timeoutMinutes * 60_000 + 2 * 60_000
+}
+
 export function parseExecutorFailureReceipt(input: unknown) {
   return ExecutorFailureReceipt.parse(input)
 }

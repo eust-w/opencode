@@ -27,7 +27,7 @@ import {
   settlePendingBoundaryExclusions,
 } from "./exclusion"
 import { analyzeFormalMatrix } from "./formal-analysis"
-import { parseTaskInput } from "./host-executor"
+import { executorProcessTimeoutMS, parseTaskInput } from "./host-executor"
 import { renderTaskManifest } from "./paper"
 import { renderPaperResults } from "./paper-results"
 import { createPilotRun, loadPilotManifest } from "./pilot"
@@ -1168,7 +1168,7 @@ function createExecutor(
   return async (run: Run, attempt: number, context: ExecutionContext) => {
     const record = await invokeExecutor(executable, run, attempt, {
       context,
-      timeoutMS: run.timeoutMinutes * 60_000,
+      timeoutMS: executorProcessTimeoutMS(run.timeoutMinutes),
       env: {
         ...Bun.env,
         AUTODRIVE_EVAL_ARTIFACT_ROOT: options.artifactRoot,

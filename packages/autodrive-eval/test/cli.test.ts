@@ -139,6 +139,15 @@ describe("paid experiment CLI gates", () => {
     expect(stderr).toContain("--artifact-root PATH is required")
   })
 
+  test("ships an exact per-request deadline reconciliation command", async () => {
+    const packageJSON = await Bun.file(path.join(import.meta.dir, "../package.json")).json()
+    expect(packageJSON.scripts["boundary:reconcile-deadline"]).toBe("bun scripts/reconcile-executor-deadline.ts")
+    const script = await Bun.file(path.join(import.meta.dir, "../scripts/reconcile-executor-deadline.ts")).text()
+    expect(script).toContain('url.searchParams.set("summarize", "false")')
+    expect(script).toContain("reconcileExecutorDeadlineFailure")
+    expect(script).toContain("settleBoundaryExclusion")
+  })
+
   test("prepares blinded boundary packets without provider access", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "autodrive-annotations-"))
     try {
