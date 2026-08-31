@@ -17,6 +17,7 @@
     "annotations:prepare": "bun src/cli.ts annotations-prepare",
     "annotations:select": "bun src/cli.ts annotations-select",
     "annotations:freeze": "bun src/cli.ts annotations-freeze",
+    "annotations:model": "bun scripts/model-annotator.ts",
     "boundary:plan": "bun src/cli.ts boundary-plan",
     "boundary:run": "bun src/cli.ts boundary-run",
     "boundary:reconcile-budget": "bun scripts/reconcile-boundary-budget.ts",

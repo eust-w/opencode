@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test"
+import path from "node:path"
 import {
   buildModelAnnotationPrompt,
+  buildModelAnnotationRequest,
+  parseModelAnnotationResponse,
   parseModelAnnotation,
   renderModelAnnotationCSV,
 } from "../src/model-annotation"
@@ -19,6 +22,15 @@ const candidate = {
 }
 
 describe("disclosed model annotation", () => {
+  test("ships a bounded resumable host annotator without embedding credentials", async () => {
+    const script = await Bun.file(path.join(import.meta.dir, "../scripts/model-annotator.ts")).text()
+    expect(script).toContain('scope: "annotation"')
+    expect(script).toContain("AUTODRIVE_ANNOTATION_MAX_COST_USD")
+    expect(script).toContain("AUTODRIVE_GATEWAY_KEY_FILE")
+    expect(script).toContain("concurrency = 2")
+    expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
+  })
+
   test("renders a blinded tri-state prompt without a supervisor prediction", () => {
     const prompt = buildModelAnnotationPrompt(candidate)
     expect(prompt).toContain("CONTINUE")
@@ -60,5 +72,28 @@ describe("disclosed model annotation", () => {
     ])
     expect(csv).toContain("boundary_id,annotator_id,label")
     expect(csv).toContain("adb_1234567890abcdef1234,model-annotator-a,continue")
+  })
+
+  test("pins the gateway request and captures complete response usage", () => {
+    expect(buildModelAnnotationRequest("qwen3.7-max", "label this boundary")).toEqual({
+      model: "qwen3.7-max",
+      messages: [{ role: "user", content: "label this boundary" }],
+      temperature: 0,
+      max_tokens: 1024,
+      stream: false,
+    })
+    expect(
+      parseModelAnnotationResponse({
+        model: "qwen3.7-max-20260831",
+        choices: [{ message: { content: '{"label":"stop"}' } }],
+        usage: { prompt_tokens: 100, completion_tokens: 20 },
+      }),
+    ).toEqual({
+      content: '{"label":"stop"}',
+      modelVersion: "qwen3.7-max-20260831",
+      promptTokens: 100,
+      completionTokens: 20,
+    })
+    expect(() => parseModelAnnotationResponse({ choices: [] })).toThrow("complete usage")
   })
 })

@@ -87,6 +87,31 @@ describe("experiment preflight gate", () => {
         { scope: "boundary", now: new Date("2026-08-30T03:00:00.000Z") },
       ),
     ).toThrow("capacity")
+
+    const annotation = {
+      ...base,
+      scope: "annotation",
+      models: [
+        { ...base.models[0], trajectoryCapacity: 480 },
+        {
+          ...base.models[0],
+          model: "d-robotics/qwen3.7-max",
+          catalogModelID: "qwen3.7-max",
+          modelVersion: "qwen3.7-max",
+          trajectoryCapacity: 480,
+        },
+        {
+          ...base.models[0],
+          model: "d-robotics/deepseek-v4-flash",
+          catalogModelID: "deepseek-v4-flash",
+          modelVersion: "deepseek-v4-flash",
+          trajectoryCapacity: 480,
+        },
+      ],
+    }
+    expect(
+      parsePreflight(annotation, { scope: "annotation", now: new Date("2026-08-30T03:00:00.000Z") }),
+    ).toMatchObject({ scope: "annotation", models: [{ trajectoryCapacity: 480 }, {}, {}] })
   })
 
   test("creates a minimal cache with explicit logical-to-catalog resolutions", () => {

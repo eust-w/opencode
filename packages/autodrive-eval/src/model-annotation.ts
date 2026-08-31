@@ -10,6 +10,37 @@ const Output = z
   })
   .strict()
 
+export function buildModelAnnotationRequest(model: string, prompt: string) {
+  return {
+    model,
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0 as const,
+    max_tokens: 1024 as const,
+    stream: false as const,
+  }
+}
+
+export function parseModelAnnotationResponse(input: unknown) {
+  const parsed = z
+    .object({
+      model: z.string().min(1),
+      choices: z.array(z.object({ message: z.object({ content: z.string().min(1) }).loose() }).loose()).min(1),
+      usage: z.object({
+        prompt_tokens: z.number().int().nonnegative(),
+        completion_tokens: z.number().int().nonnegative(),
+      }),
+    })
+    .loose()
+    .safeParse(input)
+  if (!parsed.success) throw new Error("Model annotation response requires content, model version, and complete usage")
+  return {
+    content: parsed.data.choices[0]!.message.content,
+    modelVersion: parsed.data.model,
+    promptTokens: parsed.data.usage.prompt_tokens,
+    completionTokens: parsed.data.usage.completion_tokens,
+  }
+}
+
 export function buildModelAnnotationPrompt(input: unknown) {
   const candidate = BoundaryCandidate.parse(input)
   return `You are an independent annotator for a coding-agent turn boundary.

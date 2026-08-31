@@ -141,7 +141,7 @@ async function checkPreflight() {
   const receipt = option("receipt")
   if (!receipt) fail("--receipt PATH is required")
   const scope = PreflightScope.safeParse(option("scope") ?? "canary")
-  if (!scope.success) fail("--scope must be canary, boundary, or full")
+  if (!scope.success) fail("--scope must be canary, boundary, annotation, or full")
   const loaded = await loadPreflight(path.resolve(receipt), {
     scope: scope.data,
   })

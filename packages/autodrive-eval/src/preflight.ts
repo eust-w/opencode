@@ -4,7 +4,7 @@ import { z } from "zod"
 import { ArtifactReference, assertSecretFree } from "./artifact"
 import { protocol } from "./protocol"
 
-export const PreflightScope = z.enum(["canary", "boundary", "full"])
+export const PreflightScope = z.enum(["canary", "boundary", "annotation", "full"])
 export type PreflightScope = z.infer<typeof PreflightScope>
 
 export const Preflight = z.object({
@@ -78,12 +78,18 @@ export function parsePreflight(input: unknown, options: { scope: PreflightScope;
             [protocol.models.primary, 96],
             [protocol.models.controller, 96],
           ]
-        : [
+        : options.scope === "annotation"
+          ? [
+              [protocol.models.primary, 480],
+              [protocol.models.replication[0], 480],
+              [protocol.models.replication[1], 480],
+            ]
+          : [
             [protocol.models.primary, 384],
             [protocol.models.replication[0], 48],
             [protocol.models.replication[1], 48],
             [protocol.models.controller, 384],
-          ]
+            ]
   const requirements = requiredModels.reduce(
     (result, [model, capacity]) => result.set(model, Math.max(result.get(model) ?? 0, capacity)),
     new Map<string, number>(),
