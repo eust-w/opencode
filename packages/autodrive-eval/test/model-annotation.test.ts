@@ -5,6 +5,7 @@ import {
   buildModelAnnotationRequest,
   canRetryModelAnnotation,
   modelAnnotationArtifactName,
+  normalizeModelAnnotationText,
   parseModelAnnotationResponse,
   parseModelAnnotation,
   renderModelAnnotationCSV,
@@ -43,6 +44,18 @@ describe("disclosed model annotation", () => {
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
   })
 
+  test("ships a read-only exact surrogate reconciliation without exposing provider IDs", async () => {
+    const script = await Bun.file(
+      path.join(import.meta.dir, "../scripts/reconcile-annotation-surrogate.ts"),
+    ).text()
+    expect(script).toContain('new URL("/spend/logs"')
+    expect(script).toContain('z.literal("Annotation provider returned HTTP 400")')
+    expect(script).toContain('z.literal("InternalServerError")')
+    expect(script).toContain('error_message.includes("surrogates not allowed")')
+    expect(script).toContain("requestIDHash: digest(match.requestID)")
+    expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
+  })
+
   test("renders a blinded tri-state prompt without a supervisor prediction", () => {
     const prompt = buildModelAnnotationPrompt(candidate)
     expect(prompt).toContain("CONTINUE")
@@ -51,6 +64,14 @@ describe("disclosed model annotation", () => {
     expect(prompt).toContain("Fix the parser")
     expect(prompt).not.toContain("supervisorDecision")
     expect(prompt).not.toContain("gold label")
+  })
+
+  test("normalizes lone UTF-16 surrogates without changing valid Unicode", () => {
+    expect(normalizeModelAnnotationText(`before${String.fromCharCode(0xdc1b)}after`)).toBe("before�after")
+    expect(normalizeModelAnnotationText("valid 😀 text")).toBe("valid 😀 text")
+    expect(buildModelAnnotationPrompt({ ...candidate, workerOutput: `bad${String.fromCharCode(0xdc1b)}text` })).toContain(
+      "bad�text",
+    )
   })
 
   test("parses strict JSON labels and rejects unsafe incomplete outputs", () => {

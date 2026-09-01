@@ -59,6 +59,32 @@ const AnnotationFailure = z.object({
   error: z.object({ name: z.string().min(1), message: z.string().min(1) }),
 })
 
+const PreproviderRecovery = z.object({
+  schemaVersion: z.literal(1),
+  protocol: z.literal(protocol.version),
+  method: z.literal("annotation-surrogate-preprovider-reconciliation"),
+  candidateID: z.string().min(1),
+  attempt: z.literal(1),
+  classification: z.literal("zero-cost-pre-provider-transport"),
+  request: ArtifactReference,
+  failure: ArtifactReference,
+  provider: z.object({
+    startTime: z.iso.datetime(),
+    endTime: z.iso.datetime(),
+    status: z.literal("failure"),
+    spendUSD: z.literal(0),
+    promptTokens: z.literal(0),
+    completionTokens: z.literal(0),
+    errorCode: z.literal("500"),
+    errorClass: z.literal("InternalServerError"),
+    attemptedRetries: z.literal(2),
+    maxRetries: z.literal(2),
+    requestIDHash: z.string().regex(/^[a-f0-9]{64}$/),
+    errorMessageHash: z.string().regex(/^[a-f0-9]{64}$/),
+  }),
+  normalization: z.literal("replace-unpaired-utf16-surrogates-with-u+fffd"),
+})
+
 const CampaignReceipt = z.object({
   schemaVersion: z.literal(1),
   protocol: z.literal(protocol.version),
@@ -151,6 +177,8 @@ const pending = await Promise.all(
         throw new Error(`Annotation response exists without a record: ${candidate.id}`)
       if (!(await Bun.file(first.request).exists())) return { candidate, attempt: 1 as const }
       if (await Bun.file(second.request).exists()) throw new Error(`Annotation retry is already consumed: ${candidate.id}`)
+      const failure = await readFailure(candidate.id, 1)
+      if (failure && !canRetryStoredFailure(failure.error)) await verifyPreproviderRecovery(candidate.id)
       return { candidate, attempt: 2 as const }
     }),
 )
@@ -329,6 +357,42 @@ async function writeFailure(
 function artifactPaths(candidateID: string, attempt: 1 | 2) {
   const name = modelAnnotationArtifactName(candidateID, attempt)
   return { request: path.join(requestsRoot, name), response: path.join(responsesRoot, name) }
+}
+
+async function readFailure(candidateID: string, attempt: 1 | 2) {
+  const file = Bun.file(path.join(failuresRoot, modelAnnotationArtifactName(candidateID, attempt)))
+  if (!(await file.exists())) return
+  const content = await file.text()
+  assertSecretFree(content)
+  const failure = AnnotationFailure.parse(JSON.parse(content))
+  if (
+    failure.candidateID !== candidateID ||
+    failure.annotator !== annotator ||
+    failure.model !== model ||
+    failure.attempt !== attempt
+  )
+    throw new Error(`Conflicting annotation failure receipt: ${candidateID}`)
+  await verify(failure.request)
+  return failure
+}
+
+function canRetryStoredFailure(error: z.infer<typeof AnnotationFailure>["error"]) {
+  return (
+    error.name === "TimeoutError" ||
+    error.name === "AbortError" ||
+    error.name === "TypeError" ||
+    error.message === "Recovered an orphaned request after process termination"
+  )
+}
+
+async function verifyPreproviderRecovery(candidateID: string) {
+  const file = Bun.file(path.join(failuresRoot, `${candidateID}-preprovider.json`))
+  if (!(await file.exists())) throw new Error(`Annotation failure is not retryable: ${candidateID}`)
+  const content = await file.text()
+  assertSecretFree(content)
+  const receipt = PreproviderRecovery.parse(JSON.parse(content))
+  if (receipt.candidateID !== candidateID) throw new Error(`Conflicting pre-provider recovery receipt: ${candidateID}`)
+  await Promise.all([verify(receipt.request), verify(receipt.failure)])
 }
 
 async function loadOrCreateReceipt() {

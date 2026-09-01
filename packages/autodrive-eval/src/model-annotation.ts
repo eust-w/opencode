@@ -62,23 +62,30 @@ Labels:
 - DEFER: progress requires a subjective choice, missing information, expanded permission, or dangerous/external action.
 
 <InitialGoal>
-${candidate.initialGoal}
+${normalizeModelAnnotationText(candidate.initialGoal)}
 </InitialGoal>
 <WorkerLastOutput>
-${candidate.workerOutput}
+${normalizeModelAnnotationText(candidate.workerOutput)}
 </WorkerLastOutput>
 <TrajectorySummary>
-${candidate.trajectorySummary}
+${normalizeModelAnnotationText(candidate.trajectorySummary)}
 </TrajectorySummary>
 <RepositoryPatch>
-${candidate.patch || "(No repository patch at this boundary)"}
+${normalizeModelAnnotationText(candidate.patch) || "(No repository patch at this boundary)"}
 </RepositoryPatch>
 <WithinSessionMemory>
-${candidate.memory || "(No accumulated within-session memory)"}
+${normalizeModelAnnotationText(candidate.memory) || "(No accumulated within-session memory)"}
 </WithinSessionMemory>
 
 Return ONLY one JSON object:
 {"label":"continue|stop|defer","confidence":"high|medium|low","reason":"one evidence-based sentence","next_action":"required concrete next step or missing decision for continue/defer; null for stop"}`
+}
+
+export function normalizeModelAnnotationText(value: string) {
+  return Array.from(value, (character) => {
+    const code = character.charCodeAt(0)
+    return character.length === 1 && code >= 0xd800 && code <= 0xdfff ? "\uFFFD" : character
+  }).join("")
 }
 
 export function parseModelAnnotation(raw: string) {
