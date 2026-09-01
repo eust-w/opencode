@@ -20,6 +20,28 @@ describe("bounded experiment runner", () => {
     expect(peak).toBe(2)
   })
 
+  test("waits for an active sibling and stops new admission after one worker fails", async () => {
+    const runs = createRunPlan(parseManifest(manifest)).slice(0, 3)
+    const started: string[] = []
+    const finished: string[] = []
+
+    await expect(
+      executeRuns(runs, async (run, attempt) => {
+        started.push(run.id)
+        if (run.id === runs[0].id) {
+          await Bun.sleep(5)
+          throw new Error("first worker failed")
+        }
+        await Bun.sleep(20)
+        finished.push(run.id)
+        return { runID: run.id, attempt, costUSD: 0.01 } as Trajectory
+      }),
+    ).rejects.toThrow("first worker failed")
+
+    expect(started).toEqual([runs[0].id, runs[1].id])
+    expect(finished).toEqual([runs[1].id])
+  })
+
   test("reruns an infrastructure failure once with identical run specification", async () => {
     const run = createRunPlan(parseManifest(manifest))[0]!
     const calls: string[] = []

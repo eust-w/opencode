@@ -269,11 +269,10 @@ export async function reconcilePostSessionSpendSamplingFailure(input: {
     original.gateway.proxyErrors !== 0 ||
     original.gateway.usageCompleteResponses !== original.gateway.responses ||
     original.gateway.observedSpendDeltaUSD === undefined ||
-    original.gateway.observedSpendDeltaUSD > input.maxCostUSD ||
     original.gateway.captureErrors?.length ||
     original.recordingErrors.length
   )
-    throw new Error("Post-session spend sampling recovery requires complete settled usage within budget")
+    throw new Error("Post-session spend sampling recovery requires complete settled usage")
   await Promise.all(original.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
   const raw = original.artifacts.find((artifact) => artifact.path.startsWith("raw/") && artifact.path.endsWith(".jsonl"))
   if (!raw) throw new Error("Post-session spend sampling recovery is missing the executor trace")
@@ -292,16 +291,26 @@ export async function reconcilePostSessionSpendSamplingFailure(input: {
   )
     throw new Error("Post-session spend sampling recovery trace is incomplete")
 
+  const budgetOverrun = original.gateway.observedSpendDeltaUSD > input.maxCostUSD
   const receipt = parseExecutorFailureReceipt({
     ...original,
-    classification: "excluded-charged-evaluation-failure",
-    stage: "post-session-spend-sampling-timeout",
-    code: "settled-run-excluded-after-spend-sample-timeout",
+    classification: budgetOverrun
+      ? "excluded-charged-budget-overrun"
+      : "excluded-charged-evaluation-failure",
+    stage: budgetOverrun ? "post-session-spend-sampling-budget-overrun" : "post-session-spend-sampling-timeout",
+    code: budgetOverrun
+      ? "gateway-spend-exceeded-frozen-per-run-ceiling"
+      : "settled-run-excluded-after-spend-sample-timeout",
     recordedAt: (input.recordedAt ?? new Date()).toISOString(),
-    error: {
-      name: "PostSessionSpendSamplingTimeout",
-      message: "The settled run is excluded because final cumulative-spend sampling timed out before trajectory admission",
-    },
+    error: budgetOverrun
+      ? {
+          name: "BudgetExceeded",
+          message: `Settled post-session spend exceeded the frozen per-run ceiling: $${original.gateway.observedSpendDeltaUSD} > $${input.maxCostUSD}`,
+        }
+      : {
+          name: "PostSessionSpendSamplingTimeout",
+          message: "The settled run is excluded because final cumulative-spend sampling timed out before trajectory admission",
+        },
     artifacts: [
       ...original.artifacts,
       {
@@ -310,6 +319,7 @@ export async function reconcilePostSessionSpendSamplingFailure(input: {
       },
     ],
   })
+  requireSettledExclusion(receipt, input.run, input.maxCostUSD)
   const content = JSON.stringify(receipt, null, 2) + "\n"
   assertSecretFree(content)
   await writeFile(receiptPath, content, { encoding: "utf8", flag: "wx", mode: 0o600 })

@@ -38,44 +38,51 @@ export async function executeRuns(
   const records: Trajectory[] = []
   const ledger = [...(options.ledger ?? [])]
   const reservations: LedgerEntry[] = []
+  const failures: unknown[] = []
   const concurrency = Math.min(options.concurrency ?? protocol.concurrency, protocol.concurrency, runs.length)
 
   await Promise.all(
     Array.from({ length: concurrency }, async () => {
-      while (queue.length) {
-        const run = queue.shift()
-        if (!run) return
-        const selected = options.budget?.(run)
-        const category: BudgetCategory =
-          selected?.category ?? (run.model === protocol.models.primary ? "primary" : "cross-model")
-        const maxCostUSD = selected?.maxCostUSD ?? (category === "primary" ? caps.primary / 288 : caps[category] / 96)
-        if (!Number.isFinite(maxCostUSD) || maxCostUSD <= 0)
-          throw new Error(`${run.id} has an invalid $${maxCostUSD} cost ceiling`)
-        const reservation: LedgerEntry = { category, amountUSD: maxCostUSD }
-        const budget = summarizeBudget([...ledger, ...reservations, reservation])
-        reservations.push(reservation)
-        const record = await execute(
-          run,
-          executor,
-          {
+      while (queue.length && !failures.length) {
+        try {
+          const run = queue.shift()
+          if (!run) return
+          const selected = options.budget?.(run)
+          const category: BudgetCategory =
+            selected?.category ?? (run.model === protocol.models.primary ? "primary" : "cross-model")
+          const maxCostUSD =
+            selected?.maxCostUSD ?? (category === "primary" ? caps.primary / 288 : caps[category] / 96)
+          if (!Number.isFinite(maxCostUSD) || maxCostUSD <= 0)
+            throw new Error(`${run.id} has an invalid $${maxCostUSD} cost ceiling`)
+          const reservation: LedgerEntry = { category, amountUSD: maxCostUSD }
+          const budget = summarizeBudget([...ledger, ...reservations, reservation])
+          reservations.push(reservation)
+          const record = await execute(
+            run,
+            executor,
+            {
+              category,
+              maxCostUSD,
+              remainingUSD: budget.remainingUSD,
+            },
+            options.attempt?.(run) ?? 1,
+          ).finally(() => reservations.splice(reservations.indexOf(reservation), 1))
+          if (record.costUSD > maxCostUSD)
+            throw new Error(`${run.id} cost $${record.costUSD} exceeds its preregistered $${maxCostUSD} ceiling`)
+          ledger.push({ category, amountUSD: record.costUSD })
+          summarizeBudget(ledger)
+          await options.onRecord?.(record, {
             category,
-            maxCostUSD,
-            remainingUSD: budget.remainingUSD,
-          },
-          options.attempt?.(run) ?? 1,
-        ).finally(() => reservations.splice(reservations.indexOf(reservation), 1))
-        if (record.costUSD > maxCostUSD)
-          throw new Error(`${run.id} cost $${record.costUSD} exceeds its preregistered $${maxCostUSD} ceiling`)
-        ledger.push({ category, amountUSD: record.costUSD })
-        summarizeBudget(ledger)
-        await options.onRecord?.(record, {
-          category,
-          amountUSD: record.costUSD,
-        })
-        records.push(record)
+            amountUSD: record.costUSD,
+          })
+          records.push(record)
+        } catch (error) {
+          failures.push(error)
+        }
       }
     }),
   )
+  if (failures.length) throw failures[0]
   return records
 }
 

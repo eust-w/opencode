@@ -236,6 +236,68 @@ describe("charged boundary exclusion settlement", () => {
     })).toBe(reconciled)
   })
 
+  test("classifies an over-ceiling post-session sampling timeout as a budget overrun", async () => {
+    const directory = await temporaryDirectory()
+    const run = createBoundaryRunPlan(parseManifest(manifest))[13]
+    const raw = [
+      { type: "executor-started", runID: run.id, attempt: 1 },
+      { type: "grader-finished", label: "final" },
+      { type: "session-finished" },
+      { type: "gateway-settled", requests: 13 },
+      { type: "executor-failed", classification: "executor-failure", stage: "gateway-settlement" },
+    ]
+      .map((event) => JSON.stringify({ timestamp: "2026-09-01T06:24:25.764Z", ...event }))
+      .join("\n") + "\n"
+    const relative = `raw/${run.id}.jsonl`
+    await Bun.write(path.join(directory, relative), raw)
+    const receiptPath = path.join(directory, "failures", run.id, "attempt-1.json")
+    await Bun.write(
+      receiptPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        protocol: protocol.version,
+        classification: "executor-failure",
+        stage: "gateway-settlement",
+        code: "executor-error",
+        runID: run.id,
+        taskID: run.taskID,
+        attempt: 1,
+        startedAt: "2026-09-01T06:09:40.000Z",
+        recordedAt: "2026-09-01T06:24:25.764Z",
+        error: { name: "TimeoutError", message: "The operation timed out." },
+        gateway: {
+          settlement: { attempted: true, completed: true },
+          requests: 13,
+          responses: 13,
+          non200Responses: 0,
+          proxyErrors: 0,
+          usageCompleteResponses: 13,
+          promptTokens: 81_594,
+          completionTokens: 6_250,
+          baselineSpendUSD: 14.8922667,
+          settledSpendUSD: 16.0723587,
+          observedSpendDeltaUSD: 1.180092,
+        },
+        acceptance: { trajectoryAccepted: false, ledgerRowWritten: false },
+        artifacts: [{ path: relative, sha256: digest(raw) }],
+        recordingErrors: [],
+      }),
+    )
+
+    const reconciled = await reconcilePostSessionSpendSamplingFailure({
+      artifactRoot: directory,
+      originalReceiptPath: receiptPath,
+      run,
+      maxCostUSD: 1.0625,
+      recordedAt: new Date("2026-09-01T06:25:00.000Z"),
+    })
+    expect(parseExecutorFailureReceipt(await Bun.file(reconciled).json())).toMatchObject({
+      classification: "excluded-charged-budget-overrun",
+      stage: "post-session-spend-sampling-budget-overrun",
+      gateway: { observedSpendDeltaUSD: 1.180092 },
+    })
+  })
+
   test("recovers one strict charged exclusion without duplicating its budget row", async () => {
     const directory = await temporaryDirectory()
     const run = createBoundaryRunPlan(parseManifest(manifest))[5]
