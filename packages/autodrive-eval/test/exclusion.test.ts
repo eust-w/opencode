@@ -740,6 +740,7 @@ describe("charged boundary exclusion settlement", () => {
     const originalReceiptPath = await writeFailureReceipt(directory, run, {
       requests: 1,
       responses: 1,
+      proxyErrors: 3,
       usageCompleteResponses: 1,
       observedSpendDeltaUSD: 1.1264694,
     })

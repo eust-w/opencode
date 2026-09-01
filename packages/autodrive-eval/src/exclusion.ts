@@ -1034,7 +1034,6 @@ function requireEvaluationFailureBudgetOverrun(
     !receipt.gateway.settlement.completed ||
     receipt.gateway.requests === 0 ||
     receipt.gateway.responses !== receipt.gateway.requests ||
-    receipt.gateway.proxyErrors !== 0 ||
     receipt.gateway.usageCompleteResponses !== receipt.gateway.responses ||
     receipt.gateway.non200Responses !== 0 ||
     receipt.gateway.observedSpendDeltaUSD === undefined ||
