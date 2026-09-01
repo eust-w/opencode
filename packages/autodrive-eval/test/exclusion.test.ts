@@ -672,6 +672,46 @@ describe("charged boundary exclusion settlement", () => {
     ).rejects.toThrow("exceeds its preregistered")
   })
 
+  test("reclassifies a settled evaluation failure that exceeded the frozen ceiling", async () => {
+    const directory = await temporaryDirectory()
+    const run = createBoundaryRunPlan(parseManifest(manifest))[5]
+    const originalReceiptPath = await writeFailureReceipt(directory, run, {
+      requests: 1,
+      responses: 1,
+      usageCompleteResponses: 1,
+      observedSpendDeltaUSD: 1.1264694,
+    })
+
+    const exclusions = await settlePendingBoundaryExclusions({
+      artifactRoot: directory,
+      ledgerPath: path.join(directory, "boundary/ledger.jsonl"),
+      runs: [run],
+      accepted: new Set(),
+      maxCostUSD: 1.0625,
+    })
+
+    expect(exclusions).toMatchObject([
+      {
+        classification: "excluded-charged-budget-overrun",
+        runID: run.id,
+        costUSD: 1.1264694,
+        failureReceipt: { path: `failures/${run.id}/reconciled-attempt-1.json` },
+      },
+    ])
+    const reconciled = parseExecutorFailureReceipt(
+      await Bun.file(path.join(directory, "failures", run.id, "reconciled-attempt-1.json")).json(),
+    )
+    expect(reconciled).toMatchObject({
+      classification: "excluded-charged-budget-overrun",
+      stage: "evaluation-failure-budget-overrun",
+      code: "gateway-spend-exceeded-frozen-per-run-ceiling",
+    })
+    expect(reconciled.artifacts[0]).toEqual({
+      path: `failures/${run.id}/attempt-1.json`,
+      sha256: digest(await Bun.file(originalReceiptPath).text()),
+    })
+  })
+
   test("verifies every referenced failure artifact before recording an exclusion", async () => {
     const directory = await temporaryDirectory()
     const run = createBoundaryRunPlan(parseManifest(manifest))[5]

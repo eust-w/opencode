@@ -862,11 +862,23 @@ export async function settlePendingBoundaryExclusions(input: {
   for (const run of input.runs.filter((candidate) => !completed.has(candidate.id))) {
     const receiptPath = await findPendingBoundaryExclusionReceipt(input.artifactRoot, run.id)
     if (!receiptPath) continue
+    const receipt = parseExecutorFailureReceipt(await Bun.file(receiptPath).json())
+    const settledReceiptPath =
+      receipt.classification === "excluded-charged-evaluation-failure" &&
+      receipt.gateway.observedSpendDeltaUSD !== undefined &&
+      receipt.gateway.observedSpendDeltaUSD > input.maxCostUSD
+        ? await reconcileEvaluationFailureBudgetOverrun({
+            artifactRoot: input.artifactRoot,
+            run,
+            originalReceiptPath: receiptPath,
+            maxCostUSD: input.maxCostUSD,
+          })
+        : receiptPath
     settled.push(
       await settleBoundaryExclusion({
         artifactRoot: input.artifactRoot,
         ledgerPath: input.ledgerPath,
-        receiptPath,
+        receiptPath: settledReceiptPath,
         run,
         maxCostUSD: input.maxCostUSD,
       }),
@@ -874,6 +886,61 @@ export async function settlePendingBoundaryExclusions(input: {
     completed.add(run.id)
   }
   return settled.sort((left, right) => left.runID.localeCompare(right.runID))
+}
+
+export async function reconcileEvaluationFailureBudgetOverrun(input: {
+  artifactRoot: string
+  run: Run
+  originalReceiptPath: string
+  maxCostUSD: number
+  recordedAt?: Date
+}) {
+  const originalContent = await readArtifact(
+    input.artifactRoot,
+    relativePath(input.artifactRoot, input.originalReceiptPath),
+  )
+  const original = parseExecutorFailureReceipt(JSON.parse(originalContent))
+  requireEvaluationFailureBudgetOverrun(original, input.run, input.maxCostUSD)
+  await Promise.all(original.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
+
+  const receiptPath = path.join(
+    input.artifactRoot,
+    "failures",
+    input.run.id,
+    `reconciled-attempt-${original.attempt}.json`,
+  )
+  const existing = Bun.file(receiptPath)
+  if (await existing.exists()) {
+    const receipt = parseExecutorFailureReceipt(await existing.json())
+    requireSettledExclusion(receipt, input.run, input.maxCostUSD)
+    await Promise.all(receipt.artifacts.map((artifact) => verifyArtifact(input.artifactRoot, artifact)))
+    return receiptPath
+  }
+
+  const costUSD = original.gateway.observedSpendDeltaUSD
+  const receipt = parseExecutorFailureReceipt({
+    ...original,
+    classification: "excluded-charged-budget-overrun",
+    stage: "evaluation-failure-budget-overrun",
+    code: "gateway-spend-exceeded-frozen-per-run-ceiling",
+    recordedAt: (input.recordedAt ?? new Date()).toISOString(),
+    error: {
+      name: "BudgetExceeded",
+      message: `Settled evaluation failure spend exceeded the frozen per-run ceiling: $${costUSD} > $${input.maxCostUSD}`,
+    },
+    artifacts: [
+      {
+        path: relativePath(input.artifactRoot, input.originalReceiptPath),
+        sha256: digest(originalContent),
+      },
+      ...original.artifacts,
+    ],
+  })
+  requireSettledExclusion(receipt, input.run, input.maxCostUSD)
+  const content = JSON.stringify(receipt, null, 2) + "\n"
+  assertSecretFree(content)
+  await writeImmutable(receiptPath, content)
+  return receiptPath
 }
 
 async function findPendingBoundaryExclusionReceipt(artifactRoot: string, runID: string) {
@@ -939,6 +1006,33 @@ function requireSettledExclusion(
     receipt.gateway.observedSpendDeltaUSD <= maxCostUSD
   )
     throw new Error("Charged budget-overrun exclusions must exceed the frozen per-run ceiling")
+}
+
+function requireEvaluationFailureBudgetOverrun(
+  receipt: ReturnType<typeof parseExecutorFailureReceipt>,
+  run: Run,
+  maxCostUSD: number,
+) {
+  if (
+    receipt.protocol !== protocol.version ||
+    receipt.classification !== "excluded-charged-evaluation-failure" ||
+    receipt.runID !== run.id ||
+    receipt.taskID !== run.taskID
+  )
+    throw new Error("Original receipt is not the frozen charged evaluation failure")
+  if (
+    !receipt.gateway.settlement.completed ||
+    receipt.gateway.requests === 0 ||
+    receipt.gateway.responses !== receipt.gateway.requests ||
+    receipt.gateway.proxyErrors !== 0 ||
+    receipt.gateway.usageCompleteResponses !== receipt.gateway.responses ||
+    receipt.gateway.non200Responses !== 0 ||
+    receipt.gateway.observedSpendDeltaUSD === undefined ||
+    receipt.gateway.observedSpendDeltaUSD <= maxCostUSD ||
+    receipt.gateway.captureErrors?.length ||
+    receipt.recordingErrors.length
+  )
+    throw new Error("Evaluation failure does not contain a complete charged budget overrun")
 }
 
 function requireMisroutedRetry(receipt: ReturnType<typeof parseExecutorFailureReceipt>, run: Run) {
