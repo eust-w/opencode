@@ -3,6 +3,8 @@ import path from "node:path"
 import {
   buildModelAnnotationPrompt,
   buildModelAnnotationRequest,
+  canRetryModelAnnotation,
+  modelAnnotationArtifactName,
   parseModelAnnotationResponse,
   parseModelAnnotation,
   renderModelAnnotationCSV,
@@ -29,6 +31,9 @@ describe("disclosed model annotation", () => {
     expect(script).toContain("AUTODRIVE_EVAL_BUDGET_LEDGER")
     expect(script).toContain("AUTODRIVE_GATEWAY_KEY_FILE")
     expect(script).toContain("concurrency = 2")
+    expect(script).toContain("requestTimeoutMS = 180_000")
+    expect(script).toContain("Promise.allSettled(batch.map")
+    expect(script).toContain("bounded-model-annotation-recovery")
     expect(script.indexOf("const CampaignReceipt")).toBeLessThan(
       script.indexOf("const campaign = await loadOrCreateReceipt"),
     )
@@ -102,5 +107,17 @@ describe("disclosed model annotation", () => {
       completionTokens: 20,
     })
     expect(() => parseModelAnnotationResponse({ choices: [] })).toThrow("complete usage")
+  })
+
+  test("names one bounded retry without overwriting the first request", () => {
+    expect(modelAnnotationArtifactName(candidate.id, 1)).toBe(`${candidate.id}.json`)
+    expect(modelAnnotationArtifactName(candidate.id, 2)).toBe(`${candidate.id}-attempt-2.json`)
+    expect(() => modelAnnotationArtifactName("not-a-boundary", 1)).toThrow("candidate ID")
+  })
+
+  test("retries only transport failures", () => {
+    expect(canRetryModelAnnotation(new DOMException("timed out", "TimeoutError"))).toBeTrue()
+    expect(canRetryModelAnnotation(new TypeError("network closed"))).toBeTrue()
+    expect(canRetryModelAnnotation(new Error("invalid model JSON"))).toBeFalse()
   })
 })

@@ -20,6 +20,16 @@ export function buildModelAnnotationRequest(model: string, prompt: string) {
   }
 }
 
+export function modelAnnotationArtifactName(candidateID: string, attempt: 1 | 2) {
+  if (!/^adb_[a-f0-9]{20}$/.test(candidateID)) throw new Error("Invalid boundary candidate ID")
+  return attempt === 1 ? `${candidateID}.json` : `${candidateID}-attempt-2.json`
+}
+
+export function canRetryModelAnnotation(error: unknown) {
+  if (error instanceof DOMException) return error.name === "TimeoutError" || error.name === "AbortError"
+  return error instanceof TypeError
+}
+
 export function parseModelAnnotationResponse(input: unknown) {
   const parsed = z
     .object({

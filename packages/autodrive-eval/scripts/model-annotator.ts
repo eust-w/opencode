@@ -9,6 +9,8 @@ import { frozenWorkerModelID } from "../src/host-executor"
 import {
   buildModelAnnotationPrompt,
   buildModelAnnotationRequest,
+  canRetryModelAnnotation,
+  modelAnnotationArtifactName,
   parseModelAnnotation,
   parseModelAnnotationResponse,
   renderModelAnnotationCSV,
@@ -43,6 +45,20 @@ const AnnotationRecord = z.object({
   }),
 })
 
+const AnnotationFailure = z.object({
+  schemaVersion: z.literal(1),
+  protocol: z.literal(protocol.version),
+  method: z.literal("bounded-model-annotation-recovery"),
+  candidateID: z.string().min(1),
+  annotator: z.string().min(1),
+  model: z.string().min(1),
+  attempt: z.union([z.literal(1), z.literal(2)]),
+  failedAt: z.iso.datetime(),
+  settledSpendUSD: z.number().nonnegative(),
+  request: ArtifactReference,
+  error: z.object({ name: z.string().min(1), message: z.string().min(1) }),
+})
+
 const CampaignReceipt = z.object({
   schemaVersion: z.literal(1),
   protocol: z.literal(protocol.version),
@@ -58,6 +74,7 @@ const CampaignReceipt = z.object({
 })
 
 const concurrency = 2
+const requestTimeoutMS = 180_000
 const candidatesPath = requireOption("candidates")
 const output = path.resolve(requireOption("output"))
 const annotator = requireOption("annotator")
@@ -88,14 +105,22 @@ const candidatesSHA256 = digest(candidatesContent)
 const requestsRoot = path.join(output, "requests")
 const responsesRoot = path.join(output, "responses")
 const recordsRoot = path.join(output, "records")
+const failuresRoot = path.join(output, "failures")
 const checkpointsPath = path.join(output, "spend-checkpoints.jsonl")
 const receiptPath = path.join(output, "receipt.json")
 await Promise.all([
   mkdir(requestsRoot, { recursive: true }),
   mkdir(responsesRoot, { recursive: true }),
   mkdir(recordsRoot, { recursive: true }),
+  mkdir(failuresRoot, { recursive: true }),
 ])
-await Promise.all([chmod(output, 0o700), chmod(requestsRoot, 0o700), chmod(responsesRoot, 0o700), chmod(recordsRoot, 0o700)])
+await Promise.all([
+  chmod(output, 0o700),
+  chmod(requestsRoot, 0o700),
+  chmod(responsesRoot, 0o700),
+  chmod(recordsRoot, 0o700),
+  chmod(failuresRoot, 0o700),
+])
 const key = (await Bun.file(keyFile).text()).trim()
 if (!key) fail("Gateway key file is empty")
 
@@ -116,17 +141,52 @@ const records = new Map(
   ).filter((item): item is NonNullable<typeof item> => !!item),
 )
 
-const pending = candidates.filter((candidate) => !records.has(candidate.id))
-for (let index = 0; index < pending.length; index += concurrency) {
-  const batch = pending.slice(index, index + concurrency)
+const pending = await Promise.all(
+  candidates
+    .filter((candidate) => !records.has(candidate.id))
+    .map(async (candidate) => {
+      const first = artifactPaths(candidate.id, 1)
+      const second = artifactPaths(candidate.id, 2)
+      if (await Bun.file(first.response).exists())
+        throw new Error(`Annotation response exists without a record: ${candidate.id}`)
+      if (!(await Bun.file(first.request).exists())) return { candidate, attempt: 1 as const }
+      if (await Bun.file(second.request).exists()) throw new Error(`Annotation retry is already consumed: ${candidate.id}`)
+      return { candidate, attempt: 2 as const }
+    }),
+)
+const recovered = pending.filter((item) => item.attempt === 2)
+if (recovered.length) {
+  const settledSpendUSD = await readSettledSpend()
+  await Promise.all(
+    recovered.map((item) =>
+      writeFailure(
+        item.candidate.id,
+        1,
+        new Error("Recovered an orphaned request after process termination"),
+        settledSpendUSD,
+      ),
+    ),
+  )
+}
+
+const queue = [...pending]
+while (queue.length) {
+  const batch = queue.splice(0, concurrency)
   const before = await readSpendWithRetries()
   const spent = before - campaign.baselineSpendUSD
   if (spent < 0) throw new Error("Gateway cumulative spend moved backwards")
   if (maxCostUSD - spent < batch.length * perCallCeilingUSD)
     throw new Error("Annotation budget cannot reserve the next bounded batch")
-  const completed = await Promise.all(batch.map(annotate))
-  completed.forEach((record) => records.set(record.candidateID, record))
+  const completed = await Promise.allSettled(batch.map((item) => annotate(item.candidate, item.attempt)))
   const settled = await readSettledSpend()
+  const failed = completed.flatMap((result, index) => {
+    if (result.status === "fulfilled") {
+      records.set(result.value.candidateID, result.value)
+      return []
+    }
+    return [{ item: batch[index]!, error: result.reason }]
+  })
+  await Promise.all(failed.map((item) => writeFailure(item.item.candidate.id, item.item.attempt, item.error, settled)))
   const delta = settled - campaign.baselineSpendUSD
   const checkpoint = {
     timestamp: new Date().toISOString(),
@@ -138,6 +198,9 @@ for (let index = 0; index < pending.length; index += concurrency) {
   assertSecretFree(serialized)
   await appendFile(checkpointsPath, serialized + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
   if (delta > maxCostUSD) throw new Error("Annotation campaign exceeded its authorized cost ceiling")
+  const terminal = failed.find((item) => item.item.attempt === 2 || !canRetryModelAnnotation(item.error))
+  if (terminal) throw terminal.error
+  queue.push(...failed.map((item) => ({ candidate: item.item.candidate, attempt: 2 as const })))
 }
 
 const ordered = candidates.map((candidate) => {
@@ -173,19 +236,20 @@ await admitBoundaryResearchCost(budgetLedger, `annotation:${annotator}`, {
 }, undefined, fixedBoundaryCostUSD)
 console.log(JSON.stringify({ output, annotator, model, examples: candidates.length, costUSD: final.costUSD }))
 
-async function annotate(candidate: z.infer<typeof BoundaryCandidate>) {
+async function annotate(candidate: z.infer<typeof BoundaryCandidate>, attempt: 1 | 2) {
   const prompt = buildModelAnnotationPrompt(candidate)
   const request = buildModelAnnotationRequest(modelID, prompt)
   const requestContent = JSON.stringify(request)
   assertSecretFree(requestContent)
-  const requestPath = path.join(requestsRoot, `${candidate.id}.json`)
+  const paths = artifactPaths(candidate.id, attempt)
+  const requestPath = paths.request
   await writeFile(requestPath, requestContent, { encoding: "utf8", flag: "wx", mode: 0o600 })
   const startedAt = Date.now()
   const response = await fetch(`${gateway}/chat/completions`, {
     method: "POST",
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
     body: requestContent,
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(requestTimeoutMS),
   })
   const raw = await response.text()
   if (!response.ok) throw new Error(`Annotation provider returned HTTP ${response.status}`)
@@ -193,7 +257,7 @@ async function annotate(candidate: z.infer<typeof BoundaryCandidate>) {
   const parsed = parseModelAnnotationResponse(JSON.parse(raw))
   const annotation = parseModelAnnotation(parsed.content)
   const responseContent = JSON.stringify(parsed)
-  const responsePath = path.join(responsesRoot, `${candidate.id}.json`)
+  const responsePath = paths.response
   await writeFile(responsePath, responseContent, { encoding: "utf8", flag: "wx", mode: 0o600 })
   const record = AnnotationRecord.parse({
     schemaVersion: 1,
@@ -214,6 +278,57 @@ async function annotate(candidate: z.infer<typeof BoundaryCandidate>) {
   assertSecretFree(content)
   await writeFile(path.join(recordsRoot, `${candidate.id}.json`), content, { encoding: "utf8", flag: "wx", mode: 0o600 })
   return record
+}
+
+async function writeFailure(
+  candidateID: string,
+  attempt: 1 | 2,
+  error: unknown,
+  settledSpendUSD: number,
+) {
+  const target = path.join(failuresRoot, modelAnnotationArtifactName(candidateID, attempt))
+  const existing = Bun.file(target)
+  if (await existing.exists()) {
+    const content = await existing.text()
+    assertSecretFree(content)
+    const failure = AnnotationFailure.parse(JSON.parse(content))
+    if (
+      failure.candidateID !== candidateID ||
+      failure.annotator !== annotator ||
+      failure.model !== model ||
+      failure.attempt !== attempt
+    )
+      throw new Error(`Conflicting annotation failure receipt: ${candidateID}`)
+    await verify(failure.request)
+    return
+  }
+  const requestPath = artifactPaths(candidateID, attempt).request
+  const requestContent = await Bun.file(requestPath).text()
+  const details =
+    error instanceof Error
+      ? { name: error.name, message: error.message }
+      : { name: "UnknownError", message: String(error) }
+  const failure = AnnotationFailure.parse({
+    schemaVersion: 1,
+    protocol: protocol.version,
+    method: "bounded-model-annotation-recovery",
+    candidateID,
+    annotator,
+    model,
+    attempt,
+    failedAt: new Date().toISOString(),
+    settledSpendUSD,
+    request: relativeReference(requestPath, requestContent),
+    error: details,
+  })
+  const content = JSON.stringify(failure, null, 2) + "\n"
+  assertSecretFree(content)
+  await writeFile(target, content, { encoding: "utf8", flag: "wx", mode: 0o600 })
+}
+
+function artifactPaths(candidateID: string, attempt: 1 | 2) {
+  const name = modelAnnotationArtifactName(candidateID, attempt)
+  return { request: path.join(requestsRoot, name), response: path.join(responsesRoot, name) }
 }
 
 async function loadOrCreateReceipt() {
