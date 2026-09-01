@@ -64,6 +64,7 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("-ne 96")
     expect(script).toContain("annotations-extract")
     expect(script).toContain("candidates.jsonl")
+    expect(script).toContain("set -euo pipefail")
   })
 
   test("ships a boundary runner pinned to the isolated Docker storage gate", async () => {

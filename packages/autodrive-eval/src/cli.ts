@@ -1,5 +1,6 @@
 import { appendFile, mkdir } from "node:fs/promises"
 import path from "node:path"
+import { z } from "zod"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
 import { analyzeBoundaryAblations } from "./ablation"
 import { assertTrajectoryProvenance } from "./acceptance"
@@ -8,6 +9,7 @@ import {
   analyzePrematureHandoffs,
   extractSupervisorBoundaries,
   freezeAnnotations,
+  matchControllerBoundaries,
   renderBoundaryPacket,
   renderLabelTemplate,
   selectBalancedAnnotations,
@@ -329,9 +331,23 @@ async function annotationsExtract() {
         const finished = trace.find((event) => event.type === "session-finished")
         if (!finished || !Array.isArray(finished.messages))
           throw new Error(`Trajectory ${record.runID} is missing its final Session transcript`)
-        const boundaries = trace.filter((event) => event.type === "boundary-captured")
-        if (boundaries.length !== controllers.length)
-          throw new Error(`Trajectory ${record.runID} has mismatched controller and boundary counts`)
+        const boundaries = matchControllerBoundaries({
+          runID: record.runID,
+          status: record.status,
+          failure: record.failure,
+          controllerSequences: controllers.map((controller) => controller.sequence),
+          boundaries: trace
+            .filter((event) => event.type === "boundary-captured")
+            .map((event) =>
+              z
+                .object({
+                  sequence: z.number().int().nonnegative(),
+                  sha256: z.string().regex(/^[a-f0-9]{64}$/),
+                })
+                .loose()
+                .parse(event),
+            ),
+        })
         const patches = await Promise.all(
           controllers.map(async (controller, index) => {
             const patch = await Bun.file(

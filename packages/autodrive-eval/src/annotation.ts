@@ -295,6 +295,34 @@ export function renderBoundaryPacket(input: readonly unknown[]) {
   )
 }
 
+export function matchControllerBoundaries<T extends { readonly sequence: number }>(input: {
+  runID: string
+  status: string
+  failure?: string
+  controllerSequences: readonly number[]
+  boundaries: readonly T[]
+}) {
+  if (new Set(input.controllerSequences).size !== input.controllerSequences.length)
+    throw new Error(`Trajectory ${input.runID} has duplicate controller sequences`)
+  if (new Set(input.boundaries.map((boundary) => boundary.sequence)).size !== input.boundaries.length)
+    throw new Error(`Trajectory ${input.runID} has duplicate captured boundary sequences`)
+  const matched = input.controllerSequences.map((sequence) => {
+    const boundary = input.boundaries.find((candidate) => candidate.sequence === sequence)
+    if (!boundary) throw new Error(`Trajectory ${input.runID} is missing a controller boundary`)
+    return boundary
+  })
+  const controllers = new Set(input.controllerSequences)
+  const extras = input.boundaries.filter((boundary) => !controllers.has(boundary.sequence))
+  if (!extras.length) return matched
+  const trailingFailure =
+    input.status === "failed" &&
+    input.failure === "non-retryable-provider" &&
+    extras.length === 1 &&
+    extras[0]!.sequence > Math.max(...input.controllerSequences)
+  if (!trailingFailure) throw new Error(`Trajectory ${input.runID} has an unexpected unpaired boundary`)
+  return matched
+}
+
 export function extractSupervisorBoundaries(input: unknown) {
   const parsed = z
     .object({

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import {
   analyzePrematureHandoffs,
   extractSupervisorBoundaries,
+  matchControllerBoundaries,
   freezeAnnotations,
   renderBoundaryPacket,
   renderLabelTemplate,
@@ -42,6 +43,36 @@ describe("boundary dataset split", () => {
 })
 
 describe("independent boundary annotation freeze", () => {
+  test("excludes only one unsupervised trailing boundary from a terminal provider failure", () => {
+    const boundaries = [{ sequence: 6 }, { sequence: 9 }]
+    expect(
+      matchControllerBoundaries({
+        runID: "adr_07da6710ca761d21f58a",
+        status: "failed",
+        failure: "non-retryable-provider",
+        controllerSequences: [6],
+        boundaries,
+      }),
+    ).toEqual([boundaries[0]])
+    expect(() =>
+      matchControllerBoundaries({
+        runID: "adr_succeeded",
+        status: "succeeded",
+        controllerSequences: [6],
+        boundaries,
+      }),
+    ).toThrow("unexpected unpaired boundary")
+    expect(() =>
+      matchControllerBoundaries({
+        runID: "adr_missing",
+        status: "failed",
+        failure: "non-retryable-provider",
+        controllerSequences: [6, 13],
+        boundaries: [{ sequence: 6 }],
+      }),
+    ).toThrow("missing a controller boundary")
+  })
+
   test("estimates first-boundary handoff frequency only on the initial source frame", () => {
     const candidates = [
       { ...boundaryCandidate("b1", "r1"), boundaryIndex: 1 },

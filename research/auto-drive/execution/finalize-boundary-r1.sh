@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -uo pipefail
+set -euo pipefail
 umask 077
 
 workspace=${AUTODRIVE_WORKSPACE:?AUTODRIVE_WORKSPACE is required}
