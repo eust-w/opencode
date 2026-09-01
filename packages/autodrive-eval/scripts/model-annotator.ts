@@ -17,6 +17,46 @@ import { loadPreflight } from "../src/preflight"
 import { protocol } from "../src/protocol"
 import { admitBoundaryResearchCost, assertBoundaryResearchReservation } from "../src/research-budget"
 
+const ArtifactReference = z.object({
+  path: z.string().min(1),
+  sha256: z.string().regex(/^[a-f0-9]{64}$/),
+})
+
+const AnnotationRecord = z.object({
+  schemaVersion: z.literal(1),
+  protocol: z.literal(protocol.version),
+  candidateID: z.string().min(1),
+  annotator: z.string().min(1),
+  model: z.string().min(1),
+  modelVersion: z.string().min(1),
+  recordedAt: z.iso.datetime(),
+  latencyMS: z.number().int().nonnegative(),
+  promptTokens: z.number().int().nonnegative(),
+  completionTokens: z.number().int().nonnegative(),
+  request: ArtifactReference,
+  response: ArtifactReference,
+  annotation: z.object({
+    label: z.enum(["continue", "stop", "defer"]),
+    confidence: z.enum(["high", "medium", "low"]),
+    reason: z.string().min(1),
+    nextAction: z.string(),
+  }),
+})
+
+const CampaignReceipt = z.object({
+  schemaVersion: z.literal(1),
+  protocol: z.literal(protocol.version),
+  method: z.literal("independent-model-annotation"),
+  annotator: z.string().min(1),
+  model: z.string().min(1),
+  candidatesSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+  preflightSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+  startedAt: z.iso.datetime(),
+  baselineSpendUSD: z.number().nonnegative(),
+  maxCostUSD: z.number().positive(),
+  perCallCeilingUSD: z.number().positive(),
+})
+
 const concurrency = 2
 const candidatesPath = requireOption("candidates")
 const output = path.resolve(requireOption("output"))
@@ -246,46 +286,6 @@ async function readSettledSpend() {
   }
   return Math.max(...values)
 }
-
-const ArtifactReference = z.object({
-  path: z.string().min(1),
-  sha256: z.string().regex(/^[a-f0-9]{64}$/),
-})
-
-const AnnotationRecord = z.object({
-  schemaVersion: z.literal(1),
-  protocol: z.literal(protocol.version),
-  candidateID: z.string().min(1),
-  annotator: z.string().min(1),
-  model: z.string().min(1),
-  modelVersion: z.string().min(1),
-  recordedAt: z.iso.datetime(),
-  latencyMS: z.number().int().nonnegative(),
-  promptTokens: z.number().int().nonnegative(),
-  completionTokens: z.number().int().nonnegative(),
-  request: ArtifactReference,
-  response: ArtifactReference,
-  annotation: z.object({
-    label: z.enum(["continue", "stop", "defer"]),
-    confidence: z.enum(["high", "medium", "low"]),
-    reason: z.string().min(1),
-    nextAction: z.string(),
-  }),
-})
-
-const CampaignReceipt = z.object({
-  schemaVersion: z.literal(1),
-  protocol: z.literal(protocol.version),
-  method: z.literal("independent-model-annotation"),
-  annotator: z.string().min(1),
-  model: z.string().min(1),
-  candidatesSHA256: z.string().regex(/^[a-f0-9]{64}$/),
-  preflightSHA256: z.string().regex(/^[a-f0-9]{64}$/),
-  startedAt: z.iso.datetime(),
-  baselineSpendUSD: z.number().nonnegative(),
-  maxCostUSD: z.number().positive(),
-  perCallCeilingUSD: z.number().positive(),
-})
 
 function relativeReference(target: string, content: string) {
   const relative = path.relative(output, target)

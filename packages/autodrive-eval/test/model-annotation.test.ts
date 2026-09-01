@@ -29,6 +29,12 @@ describe("disclosed model annotation", () => {
     expect(script).toContain("AUTODRIVE_EVAL_BUDGET_LEDGER")
     expect(script).toContain("AUTODRIVE_GATEWAY_KEY_FILE")
     expect(script).toContain("concurrency = 2")
+    expect(script.indexOf("const CampaignReceipt")).toBeLessThan(
+      script.indexOf("const campaign = await loadOrCreateReceipt"),
+    )
+    expect(script.indexOf("const AnnotationRecord")).toBeLessThan(
+      script.indexOf("const campaign = await loadOrCreateReceipt"),
+    )
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
   })
 
