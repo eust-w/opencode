@@ -51,4 +51,16 @@ describe("research preflight capture", () => {
     ).toEqual({ modelVersion: "deepseek-v4-pro-version", promptTokens: 12, completionTokens: 8 })
     expect(() => parseResearchProbeResponse("responses", { status: "incomplete" })).toThrow("terminal")
   })
+
+  test("ships an exact provider-free failed-preflight reconciliation", async () => {
+    const script = await Bun.file(
+      new URL("../scripts/reconcile-failed-research-preflight.ts", import.meta.url),
+    ).text()
+    expect(script).toContain('new URL("/spend/logs"')
+    expect(script).toContain("failed-research-preflight-spend-reconciliation")
+    expect(script).toContain("SpendRow.safeParse")
+    expect(script).toContain('flag: "wx"')
+    expect(script).not.toContain("/chat/completions")
+    expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
+  })
 })

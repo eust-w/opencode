@@ -112,6 +112,29 @@ describe("experiment preflight gate", () => {
     expect(
       parsePreflight(annotation, { scope: "annotation", now: new Date("2026-08-30T03:00:00.000Z") }),
     ).toMatchObject({ scope: "annotation", models: [{ trajectoryCapacity: 480 }, {}, {}] })
+    const expandedAnnotation = {
+      ...annotation,
+      models: [
+        ...annotation.models,
+        { ...base.models[1], trajectoryCapacity: 480 },
+        {
+          ...base.models[0],
+          model: "d-robotics/glm-5.3",
+          catalogModelID: "glm-5.3",
+          modelVersion: "glm-5.3",
+          trajectoryCapacity: 480,
+        },
+      ],
+    }
+    expect(
+      parsePreflight(expandedAnnotation, { scope: "annotation", now: new Date("2026-08-30T03:00:00.000Z") }),
+    ).toMatchObject({ scope: "annotation", models: [{}, {}, {}, {}, {}] })
+    expect(() =>
+      parsePreflight(
+        { ...expandedAnnotation, models: expandedAnnotation.models.slice(0, 4) },
+        { scope: "annotation", now: new Date("2026-08-30T03:00:00.000Z") },
+      ),
+    ).toThrow("exactly")
 
     const ablation = {
       ...base,

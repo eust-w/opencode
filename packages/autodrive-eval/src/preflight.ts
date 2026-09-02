@@ -74,6 +74,11 @@ export function parsePreflight(input: unknown, options: { scope: PreflightScope;
     throw new Error("Preflight cannot be captured in the future")
   if (new Date(receipt.expiresAt).getTime() <= now.getTime()) throw new Error("Preflight receipt has expired")
 
+  const expandedAnnotation =
+    options.scope === "annotation" &&
+    receipt.models.some(
+      (model) => model.model === protocol.models.controller || model.model === protocol.models.annotationFallback,
+    )
   const requiredModels: [string, number][] =
     options.scope === "canary"
       ? [
@@ -95,6 +100,12 @@ export function parsePreflight(input: unknown, options: { scope: PreflightScope;
               [protocol.models.primary, 480],
               [protocol.models.replication[0], 480],
               [protocol.models.replication[1], 480],
+              ...(expandedAnnotation
+                ? ([
+                    [protocol.models.controller, 480],
+                    [protocol.models.annotationFallback, 480],
+                  ] as [string, number][])
+                : []),
             ]
           : options.scope === "ablation"
             ? [[protocol.models.controller, 504]]

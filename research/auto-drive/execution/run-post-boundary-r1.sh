@@ -44,7 +44,7 @@ ensure_preflight() {
 }
 
 ensure_fallback_annotation_preflight() {
-  local directory="$artifact/preflight/annotation-fallback-r1"
+  local directory="$artifact/preflight/annotation-fallback-r2"
   if [ -f "$directory/receipt.json" ]; then
     bun src/cli.ts preflight --scope annotation --receipt "$directory/receipt.json" >/dev/null
   else
