@@ -69,6 +69,7 @@ describe("disclosed model annotation", () => {
     ).text()
     expect(script).toContain('new URL("/spend/logs"')
     expect(script).toContain("row.completion_tokens === request.max_tokens")
+    expect(script).toContain("SpendRow.safeParse")
     expect(script).toContain("provider-success-invalid-final-annotation")
     expect(script).toContain('flag: "wx"')
     expect(script).not.toContain("/chat/completions")

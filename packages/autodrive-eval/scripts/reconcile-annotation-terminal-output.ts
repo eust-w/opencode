@@ -53,22 +53,23 @@ const response = await fetch(new URL("/spend/logs", new URL(gateway).origin), {
 if (!response.ok) throw new Error(`Gateway spend logs returned HTTP ${response.status}`)
 const body = await response.json()
 const rows = Array.isArray(body) ? body : z.object({ data: z.array(z.unknown()) }).parse(body).data
-const matches = z
-  .array(
-    z
-      .object({
-        request_id: z.string().min(1),
-        model: z.string().min(1),
-        prompt_tokens: z.number().int().nonnegative(),
-        completion_tokens: z.number().int().nonnegative(),
-        spend: z.number().positive(),
-        startTime: z.iso.datetime(),
-        endTime: z.iso.datetime(),
-        status: z.literal("success"),
-      })
-      .loose(),
-  )
-  .parse(rows)
+const SpendRow = z
+  .object({
+    request_id: z.string().min(1),
+    model: z.string().min(1),
+    prompt_tokens: z.number().int().nonnegative(),
+    completion_tokens: z.number().int().nonnegative(),
+    spend: z.number().positive(),
+    startTime: z.iso.datetime(),
+    endTime: z.iso.datetime(),
+    status: z.literal("success"),
+  })
+  .loose()
+const matches = rows
+  .flatMap((row) => {
+    const parsed = SpendRow.safeParse(row)
+    return parsed.success ? [parsed.data] : []
+  })
   .filter(
     (row) =>
       row.model.includes(request.model) &&
