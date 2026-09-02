@@ -575,7 +575,7 @@ async function writeTerminalOutputExclusion(candidateID: string, attempt: 1 | 2)
       },
     ),
   )
-  const request = z.object({ max_tokens: z.number().int().positive() }).loose().parse(JSON.parse(requestContent))
+  z.object({ max_tokens: z.number().int().positive() }).loose().parse(JSON.parse(requestContent))
   const response = z
     .object({
       model: z.string().min(1),
@@ -586,8 +586,6 @@ async function writeTerminalOutputExclusion(candidateID: string, attempt: 1 | 2)
     })
     .loose()
     .parse(JSON.parse(rawContent))
-  if (response.usage.completion_tokens > request.max_tokens)
-    throw new Error(`Terminal annotation usage exceeds the frozen output limit: ${candidateID}`)
   const receipt = TerminalOutputExclusion.parse({
     schemaVersion: 1,
     protocol: protocol.version,

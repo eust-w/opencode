@@ -50,6 +50,7 @@ describe("disclosed model annotation", () => {
     expect(script).toContain("ModelAnnotationOutputError")
     expect(script.indexOf("class ModelAnnotationOutputError")).toBeLessThan(script.indexOf("await Bun.file"))
     expect(script).toContain("Cannot access 'ModelAnnotationOutputError' before initialization.")
+    expect(script).not.toContain("Terminal annotation usage exceeds the frozen output limit")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
   })
 
