@@ -19,6 +19,13 @@ import { loadPreflight } from "../src/preflight"
 import { protocol } from "../src/protocol"
 import { admitBoundaryResearchCost, assertBoundaryResearchReservation } from "../src/research-budget"
 
+class ModelAnnotationOutputError extends Error {
+  constructor(error: unknown) {
+    super(error instanceof Error ? error.message : String(error))
+    this.name = "ModelAnnotationOutputError"
+  }
+}
+
 const ArtifactReference = z.object({
   path: z.string().min(1),
   sha256: z.string().regex(/^[a-f0-9]{64}$/),
@@ -208,7 +215,14 @@ const terminalExclusions = new Map(
     await Promise.all(
       candidates.map(async (candidate) => {
         const exclusion = await readTerminalExclusion(candidate.id)
-        return exclusion ? ([candidate.id, exclusion] as const) : undefined
+        if (exclusion) return [candidate.id, exclusion] as const
+        const failure = await readFailure(candidate.id, 1)
+        if (
+          isStoredOutputFailure(failure?.error) &&
+          (await Bun.file(artifactPaths(candidate.id, 1).rawResponse).exists())
+        )
+          return [candidate.id, await writeTerminalOutputExclusion(candidate.id, 1)] as const
+        return undefined
       }),
     )
   ).filter((item): item is NonNullable<typeof item> => !!item),
@@ -493,13 +507,6 @@ async function annotate(candidate: z.infer<typeof BoundaryCandidate>, attempt: 1
   return record
 }
 
-class ModelAnnotationOutputError extends Error {
-  constructor(error: unknown) {
-    super(error instanceof Error ? error.message : String(error))
-    this.name = "ModelAnnotationOutputError"
-  }
-}
-
 async function writeFailure(
   candidateID: string,
   attempt: 1 | 2,
@@ -645,6 +652,15 @@ function canRetryStoredFailure(error: z.infer<typeof AnnotationFailure>["error"]
     error.name === "AbortError" ||
     error.name === "TypeError" ||
     error.message === "Recovered an orphaned request after process termination"
+  )
+}
+
+function isStoredOutputFailure(error: z.infer<typeof AnnotationFailure>["error"] | undefined) {
+  if (!error) return false
+  if (error.name === "ModelAnnotationOutputError") return true
+  return (
+    error.name === "ReferenceError" &&
+    error.message === "Cannot access 'ModelAnnotationOutputError' before initialization."
   )
 }
 

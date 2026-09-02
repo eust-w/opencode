@@ -48,6 +48,8 @@ describe("disclosed model annotation", () => {
     expect(script).toContain("raw-responses")
     expect(script).toContain("terminalExclusions")
     expect(script).toContain("ModelAnnotationOutputError")
+    expect(script.indexOf("class ModelAnnotationOutputError")).toBeLessThan(script.indexOf("await Bun.file"))
+    expect(script).toContain("Cannot access 'ModelAnnotationOutputError' before initialization.")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
   })
 
