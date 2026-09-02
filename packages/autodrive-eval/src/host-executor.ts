@@ -9,6 +9,7 @@ const FrozenAnnotationModel = z.enum([
   protocol.models.primary,
   ...protocol.models.replication,
   protocol.models.controller,
+  protocol.models.annotationFallback,
 ])
 
 export function frozenWorkerModelID(value: string) {

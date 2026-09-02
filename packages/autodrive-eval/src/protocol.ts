@@ -53,6 +53,7 @@ export const protocol = {
     primary: "d-robotics/deepseek-v4-pro",
     replication: ["d-robotics/qwen3.7-max", "d-robotics/deepseek-v4-flash"],
     controller: "d-robotics/qwen3.8-max",
+    annotationFallback: "d-robotics/glm-5.3",
   },
   gateway: {
     logicalProvider: "d-robotics",

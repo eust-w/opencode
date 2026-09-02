@@ -15,6 +15,7 @@ describe("frozen AutoDrive protocol", () => {
     expect(protocol.models.primary).toBe("d-robotics/deepseek-v4-pro")
     expect(protocol.models.replication).toEqual(["d-robotics/qwen3.7-max", "d-robotics/deepseek-v4-flash"])
     expect(protocol.models.controller).toBe("d-robotics/qwen3.8-max")
+    expect(protocol.models.annotationFallback).toBe("d-robotics/glm-5.3")
     expect(protocol.workerMaxOutputTokens).toBe(4_096)
     expect(protocol.workerReasoningEffort).toBe("low")
     expect(protocol.controllerMaxOutputTokens).toBe(1_024)

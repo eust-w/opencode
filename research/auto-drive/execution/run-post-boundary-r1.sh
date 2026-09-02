@@ -85,15 +85,22 @@ run_judge model-qwen3.7-max d-robotics/qwen3.7-max
 run_judge model-deepseek-v4-flash d-robotics/deepseek-v4-flash
 run_judge model-deepseek-v4-pro-adjudicator d-robotics/deepseek-v4-pro
 second_labels="$annotations/model-deepseek-v4-flash/labels.csv"
+adjudicated_labels="$annotations/model-deepseek-v4-pro-adjudicator/labels.csv"
 flash_examples=$(jq -r .examples "$annotations/model-deepseek-v4-flash/manifest.json")
+pro_examples=$(jq -r .examples "$annotations/model-deepseek-v4-pro-adjudicator/manifest.json")
 if [ "$flash_examples" -lt 180 ]; then
   fallback_annotation_preflight=$(ensure_fallback_annotation_preflight)
   run_judge model-qwen3.8-max d-robotics/qwen3.8-max "$fallback_annotation_preflight"
   second_labels="$annotations/model-qwen3.8-max/labels.csv"
 fi
+if [ "$pro_examples" -lt 180 ]; then
+  fallback_annotation_preflight=${fallback_annotation_preflight:-$(ensure_fallback_annotation_preflight)}
+  run_judge model-glm5.3-adjudicator d-robotics/glm-5.3 "$fallback_annotation_preflight"
+  adjudicated_labels="$annotations/model-glm5.3-adjudicator/labels.csv"
+fi
 bun src/cli.ts boundary-frequency \
   --candidates "$frame" \
-  --adjudicated "$annotations/model-deepseek-v4-pro-adjudicator/labels.csv" \
+  --adjudicated "$adjudicated_labels" \
   --source-plan "$workspace/research/auto-drive/protocol/boundary-run-plan.jsonl" \
   --output "$artifact/boundary/frequency.json"
 
@@ -101,7 +108,7 @@ bun src/cli.ts annotations-select \
   --candidates "$frame" \
   --first "$annotations/model-qwen3.7-max/labels.csv" \
   --second "$second_labels" \
-  --adjudicated "$annotations/model-deepseek-v4-pro-adjudicator/labels.csv" \
+  --adjudicated "$adjudicated_labels" \
   --output "$selected"
 bun src/cli.ts annotations-freeze \
   --method model-panel \

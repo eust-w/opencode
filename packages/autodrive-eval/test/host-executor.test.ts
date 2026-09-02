@@ -71,6 +71,7 @@ describe("SWE-EVO host executor", () => {
 
   test("admits the fixed fallback judge only for annotation", () => {
     expect(frozenAnnotationModelID("d-robotics/qwen3.8-max")).toBe("qwen3.8-max")
+    expect(frozenAnnotationModelID("d-robotics/glm-5.3")).toBe("glm-5.3")
     expect(frozenAnnotationModelID("d-robotics/deepseek-v4-pro")).toBe("deepseek-v4-pro")
     expect(() => frozenAnnotationModelID("other/qwen3.8-max")).toThrow("frozen annotation model")
   })

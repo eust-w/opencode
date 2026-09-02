@@ -125,7 +125,12 @@ export function parsePreflight(input: unknown, options: { scope: PreflightScope;
 export function createModelMetadataSnapshot(input: unknown) {
   const source = z.record(z.string(), z.object({ models: z.record(z.string(), z.unknown()) }).loose()).parse(input)
   const resolutions = Array.from(
-    new Set([protocol.models.primary, ...protocol.models.replication, protocol.models.controller]),
+    new Set([
+      protocol.models.primary,
+      ...protocol.models.replication,
+      protocol.models.controller,
+      protocol.models.annotationFallback,
+    ]),
   ).map((model) => {
     const separator = model.indexOf("/")
     const providerID = model.slice(0, separator)

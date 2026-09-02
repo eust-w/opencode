@@ -145,6 +145,7 @@ describe("experiment preflight gate", () => {
           "qwen3.7-max": { id: "qwen3.7-max" },
           "deepseek-v4-flash": { id: "deepseek-v4-flash" },
           "qwen3.8-max": { id: "qwen3.8-max" },
+          "glm-5.3": { id: "glm-5.3" },
           other: {},
         },
       },
@@ -154,6 +155,7 @@ describe("experiment preflight gate", () => {
       "qwen3.7-max",
       "deepseek-v4-flash",
       "qwen3.8-max",
+      "glm-5.3",
     ])
     expect(result.resolutions).toContainEqual({
       model: "d-robotics/deepseek-v4-pro",

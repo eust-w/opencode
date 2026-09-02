@@ -43,6 +43,8 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("model-deepseek-v4-pro-adjudicator")
     expect(script).toContain("model-qwen3.8-max")
     expect(script).toContain("flash_examples")
+    expect(script).toContain("model-glm5.3-adjudicator")
+    expect(script).toContain("pro_examples")
     expect(script).toContain("annotations-freeze")
     expect(script).toContain("ablation-runner.ts")
     expect(script).toContain("ablation-analyze")
@@ -885,6 +887,7 @@ process.exit(1)
               "qwen3.7-max": { id: "qwen3.7-max" },
               "deepseek-v4-flash": { id: "deepseek-v4-flash" },
               "qwen3.8-max": { id: "qwen3.8-max" },
+              "glm-5.3": { id: "glm-5.3" },
               other: {},
             },
           },
@@ -911,6 +914,7 @@ process.exit(1)
         "qwen3.7-max",
         "deepseek-v4-flash",
         "qwen3.8-max",
+        "glm-5.3",
       ])
       expect(await Bun.file(resolutions).json()).toContainEqual({
         model: "d-robotics/deepseek-v4-pro",
