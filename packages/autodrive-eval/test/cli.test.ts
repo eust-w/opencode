@@ -41,6 +41,8 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("model-qwen3.7-max")
     expect(script).toContain("model-deepseek-v4-flash")
     expect(script).toContain("model-deepseek-v4-pro-adjudicator")
+    expect(script).toContain("model-qwen3.8-max")
+    expect(script).toContain("flash_examples")
     expect(script).toContain("annotations-freeze")
     expect(script).toContain("ablation-runner.ts")
     expect(script).toContain("ablation-analyze")

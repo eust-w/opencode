@@ -43,6 +43,16 @@ ensure_preflight() {
   echo "$directory/receipt.json"
 }
 
+ensure_fallback_annotation_preflight() {
+  local directory="$artifact/preflight/annotation-fallback-r1"
+  if [ -f "$directory/receipt.json" ]; then
+    bun src/cli.ts preflight --scope annotation --receipt "$directory/receipt.json" >/dev/null
+  else
+    bun scripts/research-preflight.ts --scope annotation --output "$directory" --metadata "$metadata" >&2
+  fi
+  echo "$directory/receipt.json"
+}
+
 candidate_count=$(wc -l < "$initial_candidates" | tr -d ' ')
 if [ "$candidate_count" -lt 180 ]; then
   augmentation_preflight=$(ensure_preflight boundary-augmentation)
@@ -60,12 +70,13 @@ annotation_preflight=$(ensure_preflight annotation)
 run_judge() {
   local identity=$1
   local model=$2
+  local receipt=${3:-$annotation_preflight}
   bun scripts/model-annotator.ts \
     --candidates "$frame" \
     --output "$annotations/$identity" \
     --annotator "$identity" \
     --model "$model" \
-    --preflight "$annotation_preflight"
+    --preflight "$receipt"
 }
 
 export AUTODRIVE_ANNOTATION_MAX_COST_USD="$annotation_max"
@@ -73,6 +84,13 @@ export AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD="$annotation_call_max"
 run_judge model-qwen3.7-max d-robotics/qwen3.7-max
 run_judge model-deepseek-v4-flash d-robotics/deepseek-v4-flash
 run_judge model-deepseek-v4-pro-adjudicator d-robotics/deepseek-v4-pro
+second_labels="$annotations/model-deepseek-v4-flash/labels.csv"
+flash_examples=$(jq -r .examples "$annotations/model-deepseek-v4-flash/manifest.json")
+if [ "$flash_examples" -lt 180 ]; then
+  fallback_annotation_preflight=$(ensure_fallback_annotation_preflight)
+  run_judge model-qwen3.8-max d-robotics/qwen3.8-max "$fallback_annotation_preflight"
+  second_labels="$annotations/model-qwen3.8-max/labels.csv"
+fi
 bun src/cli.ts boundary-frequency \
   --candidates "$frame" \
   --adjudicated "$annotations/model-deepseek-v4-pro-adjudicator/labels.csv" \
@@ -82,7 +100,7 @@ bun src/cli.ts boundary-frequency \
 bun src/cli.ts annotations-select \
   --candidates "$frame" \
   --first "$annotations/model-qwen3.7-max/labels.csv" \
-  --second "$annotations/model-deepseek-v4-flash/labels.csv" \
+  --second "$second_labels" \
   --adjudicated "$annotations/model-deepseek-v4-pro-adjudicator/labels.csv" \
   --output "$selected"
 bun src/cli.ts annotations-freeze \

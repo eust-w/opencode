@@ -5,10 +5,21 @@ import { protocol, type Strategy } from "./protocol"
 export const BASELINE_CONTINUATION_PROMPT = "Please proceed with the next step."
 
 const FrozenWorkerModel = z.enum([protocol.models.primary, ...protocol.models.replication])
+const FrozenAnnotationModel = z.enum([
+  protocol.models.primary,
+  ...protocol.models.replication,
+  protocol.models.controller,
+])
 
 export function frozenWorkerModelID(value: string) {
   const parsed = FrozenWorkerModel.safeParse(value)
   if (!parsed.success) throw new Error(`Expected a frozen worker model, received ${value}`)
+  return parsed.data.slice(parsed.data.indexOf("/") + 1)
+}
+
+export function frozenAnnotationModelID(value: string) {
+  const parsed = FrozenAnnotationModel.safeParse(value)
+  if (!parsed.success) throw new Error(`Expected a frozen annotation model, received ${value}`)
   return parsed.data.slice(parsed.data.indexOf("/") + 1)
 }
 

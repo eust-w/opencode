@@ -19,6 +19,7 @@ import {
   executionArtifactID,
   executorProcessTimeoutMS,
   frozenWorkerModelID,
+  frozenAnnotationModelID,
   gradePytest,
   hasExperimentModels,
   parsePytestLog,
@@ -66,6 +67,12 @@ describe("SWE-EVO host executor", () => {
     expect(frozenWorkerModelID("d-robotics/deepseek-v4-flash")).toBe("deepseek-v4-flash")
     expect(() => frozenWorkerModelID("d-robotics/qwen3.8-max")).toThrow("frozen worker model")
     expect(() => frozenWorkerModelID("other/deepseek-v4-pro")).toThrow("frozen worker model")
+  })
+
+  test("admits the fixed fallback judge only for annotation", () => {
+    expect(frozenAnnotationModelID("d-robotics/qwen3.8-max")).toBe("qwen3.8-max")
+    expect(frozenAnnotationModelID("d-robotics/deepseek-v4-pro")).toBe("deepseek-v4-pro")
+    expect(() => frozenAnnotationModelID("other/qwen3.8-max")).toThrow("frozen annotation model")
   })
 
   test("keeps retry artifacts separate from the immutable first attempt", () => {

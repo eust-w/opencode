@@ -16,6 +16,7 @@ export function researchPreflightPlan(scope: ResearchPreflightScope) {
       { model: protocol.models.primary, capacity: 480, transport: "chat" as const },
       { model: protocol.models.replication[0], capacity: 480, transport: "chat" as const },
       { model: protocol.models.replication[1], capacity: 480, transport: "chat" as const },
+      { model: protocol.models.controller, capacity: 480, transport: "chat" as const },
     ]
   if (scope === "ablation")
     return [{ model: protocol.models.controller, capacity: 504, transport: "chat" as const }]

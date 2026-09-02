@@ -11,7 +11,7 @@ describe("research preflight capture", () => {
       { model: "d-robotics/deepseek-v4-pro", capacity: 48, transport: "responses" },
       { model: "d-robotics/qwen3.8-max", capacity: 48, transport: "chat" },
     ])
-    expect(researchPreflightPlan("annotation")).toHaveLength(3)
+    expect(researchPreflightPlan("annotation")).toHaveLength(4)
     expect(researchPreflightPlan("ablation")).toEqual([
       { model: "d-robotics/qwen3.8-max", capacity: 504, transport: "chat" },
     ])

@@ -5,7 +5,7 @@ import path from "node:path"
 import { z } from "zod"
 import { BoundaryCandidate } from "../src/annotation"
 import { assertSecretFree } from "../src/artifact"
-import { frozenWorkerModelID } from "../src/host-executor"
+import { frozenAnnotationModelID } from "../src/host-executor"
 import {
   buildModelAnnotationPrompt,
   buildModelAnnotationRequest,
@@ -147,7 +147,7 @@ const output = path.resolve(requireOption("output"))
 const annotator = requireOption("annotator")
 if (!/^[A-Za-z0-9._-]+$/.test(annotator)) fail("--annotator contains unsupported characters")
 const model = requireOption("model")
-const modelID = frozenWorkerModelID(model)
+const modelID = frozenAnnotationModelID(model)
 const preflightPath = path.resolve(requireOption("preflight"))
 const keyFile = requireAbsolute("AUTODRIVE_GATEWAY_KEY_FILE")
 const budgetLedger = requireAbsolute("AUTODRIVE_EVAL_BUDGET_LEDGER")
