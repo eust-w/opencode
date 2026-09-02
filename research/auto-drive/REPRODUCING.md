@@ -162,10 +162,10 @@ After the non-primary pilot is independently accepted, the annotation set is fro
 
 ```bash
 cd packages/autodrive-eval
-bun run run-eval -- --execute --executor /absolute/path/to/host-executor --preflight /artifact-root/preflight/receipt.json --annotations /artifact-root/annotations/frozen --artifact-root /artifact-root --run-id adr_...
+bun run run-eval -- --execute --executor /absolute/path/to/host-executor --preflight /artifact-root/preflight/receipt.json --annotations /artifact-root/annotations/frozen --artifact-root /artifact-root --ledger /artifact-root/formal/ledger.jsonl --prior-ledger /artifact-root/boundary/ledger.jsonl --prior-ledger ../../research/auto-drive/protocol/prior-cost-ledger.jsonl --run-id adr_...
 ```
 
-The harness permits at most two concurrent tasks and one identical retry for a predefined, zero-cost infrastructure failure.
+The harness permits at most two concurrent tasks and one identical retry for a predefined, zero-cost infrastructure failure. The repeated `--prior-ledger` arguments are read-only accounting inputs: formal rows are appended only to the formal ledger, while every reservation is checked against the post-source USD 180 boundary cap and the unchanged USD 800 global total.
 
 Run the five frozen boundary classifier variants only on the sealed 126-example test split. The regex row imports the production heuristic directly and incurs no provider call; the other four rows use the fixed controller, exactly 504 calls in total, and a dedicated scope receipt:
 

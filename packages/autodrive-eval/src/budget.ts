@@ -2,8 +2,11 @@ export const caps = {
   pilot: 50,
   primary: 360,
   "cross-model": 288,
-  boundary: 102,
+  boundary: 180,
 } as const
+
+export const boundarySourceCap = 102
+export const totalCap = 800
 
 export type BudgetCategory = keyof typeof caps
 
@@ -32,8 +35,19 @@ export function summarizeBudget(entries: readonly LedgerEntry[]) {
       throw new BudgetExceeded(`${entry.category} budget exceeds $${caps[entry.category]}`)
   }
   const totalUSD = currency(Object.values(categories).reduce((sum, value) => sum + value, 0))
-  if (totalUSD > 800) throw new BudgetExceeded("AutoDrive evaluation budget exceeds $800")
-  return { categories, totalUSD, remainingUSD: currency(800 - totalUSD) }
+  if (totalUSD > totalCap) throw new BudgetExceeded(`AutoDrive evaluation budget exceeds $${totalCap}`)
+  return { categories, totalUSD, remainingUSD: currency(totalCap - totalUSD) }
+}
+
+export function summarizeBoundarySourceBudget(entries: readonly LedgerEntry[]) {
+  const totalUSD = currency(
+    entries
+      .filter((entry) => entry.category === "boundary")
+      .reduce((sum, entry) => sum + entry.amountUSD, 0),
+  )
+  if (totalUSD > boundarySourceCap)
+    throw new BudgetExceeded(`boundary budget exceeds $${boundarySourceCap}`)
+  return { totalUSD, remainingUSD: currency(boundarySourceCap - totalUSD) }
 }
 
 export type Failure =

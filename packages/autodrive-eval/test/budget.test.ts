@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import { BudgetExceeded, canRetry, summarizeBudget } from "../src/budget"
+import path from "node:path"
+import { boundarySourceCap, BudgetExceeded, canRetry, caps, summarizeBudget, totalCap } from "../src/budget"
 
 describe("budget and rerun policy", () => {
   test("enforces category caps and the 800 dollar hard limit", () => {
@@ -15,6 +16,46 @@ describe("budget and rerun policy", () => {
       remainingUSD: 0,
     })
     expect(() => summarizeBudget([...ledger, { category: "pilot", amountUSD: 0.01 }])).toThrow(BudgetExceeded)
+  })
+
+  test("amends only post-source boundary research while preserving the hard total", () => {
+    expect(boundarySourceCap).toBe(102)
+    expect(caps.boundary).toBe(180)
+    expect(totalCap).toBe(800)
+    expect(
+      summarizeBudget([
+        { category: "boundary", amountUSD: 180 },
+        { category: "primary", amountUSD: 332 },
+        { category: "cross-model", amountUSD: 288 },
+      ]),
+    ).toEqual({
+      categories: { pilot: 0, primary: 332, "cross-model": 288, boundary: 180 },
+      totalUSD: 800,
+      remainingUSD: 0,
+    })
+    expect(() =>
+      summarizeBudget([
+        { category: "boundary", amountUSD: 180 },
+        { category: "primary", amountUSD: 333 },
+        { category: "cross-model", amountUSD: 288 },
+      ]),
+    ).toThrow("exceeds $800")
+  })
+
+  test("accounts for charged pilot evidence and the initial boundary preflight", async () => {
+    const content = await Bun.file(
+      path.resolve(import.meta.dir, "../../../research/auto-drive/protocol/prior-cost-ledger.jsonl"),
+    ).text()
+    const ledger = content
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line))
+    expect(ledger.reduce((sum, entry) => sum + entry.amountUSD, 0)).toBeCloseTo(0.4581329, 7)
+    expect(summarizeBudget(ledger)).toEqual({
+      categories: { pilot: 0.37, primary: 0, "cross-model": 0, boundary: 0.09 },
+      totalUSD: 0.46,
+      remainingUSD: 799.54,
+    })
   })
 
   test("allows one rerun only for a predefined infrastructure failure", () => {

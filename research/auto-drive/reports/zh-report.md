@@ -47,7 +47,7 @@ AutoDrive 面向一种具体失败：编码智能体完成了当前模型回合�
 
 任务指标包括 resolved rate、Fix Rate、人工续推次数、冗余回合、token、费用、延迟和故障恢复率。边界指标包括 macro-F1、分类 F1，以及 STOP/DEFER 的错误续推率。二元成败使用 exact McNemar；连续差值使用任务级 paired bootstrap 95% CI；多重比较使用 Holm 校正。
 
-预算上限为 800 美元，分类上限分别为 pilot 50、主实验 360、跨模型 288、边界与恢复 102。仅零费用、预定义的基础设施故障允许同配置重跑一次；模型超时、循环、预算耗尽和 provider 错误均计入失败。
+总预算上限仍为 800 美元。2026-09-02 前瞻修订保留 pilot 50、主实验 360、跨模型 288 以及来源采集 102 美元子上限，仅将来源完成后的标注与消融共享边界额度提高到 180 美元；正式矩阵在每次预留前合并只读的历史与边界账本执行全局总额检查。仅零费用、预定义的基础设施故障允许同配置重跑一次；模型超时、循环、预算耗尽和 provider 错误均计入失败。
 
 本轮 r4 首次尝试发现只读 `OPENCODE_CONFIG_DIR` 缺少 OpenCode 启动时需要创建的 `.gitignore`；r5 发现 Bun 已解码响应体后 relay 仍保留 `content-encoding: gzip`，导致二次解压；r6 发现 V2 runner 在内置插件提交前读取 Location catalog；r7 发现 executor 的 V1 `options.apiKey` 未投影到 V2 runner 的私有凭证字段。r4 至 r7 都在 provider admission 前停止，key spend 保持 1.9453748 美元，没有 provider 请求或有效轨迹。
 

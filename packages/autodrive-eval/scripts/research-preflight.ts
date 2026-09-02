@@ -3,6 +3,7 @@
 import { chmod, mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { assertSecretFree } from "../src/artifact"
+import { caps } from "../src/budget"
 import { loadPreflight, PreflightScope } from "../src/preflight"
 import {
   buildResearchProbeRequest,
@@ -75,7 +76,7 @@ const models = await Promise.all(
       billing: "sponsored" as const,
       modelVersion: result.parsed.modelVersion,
       trajectoryCapacity: result.capacity,
-      capacityBasis: `user-authorized ${scope} execution; concurrency 2; shared USD 102 boundary cap`,
+      capacityBasis: `user-authorized ${scope} execution; concurrency 2; shared USD ${caps.boundary} boundary cap`,
       transport: result.transport,
       requestSHA256: result.requestSHA256,
       raw: result.raw,

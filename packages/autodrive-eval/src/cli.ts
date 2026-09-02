@@ -22,7 +22,7 @@ import {
   verifyTrajectoryArtifacts,
   type Trajectory,
 } from "./artifact"
-import { caps, summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
+import { boundarySourceCap, caps, summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
 import {
   reconcileGraderSecretScannerFalsePositive,
   reconcilePostSessionSpendSamplingFailure,
@@ -883,7 +883,7 @@ async function boundaryRun() {
   const existing = await readJSONL(resultsPath, parseTrajectory)
   const sourceIDs = new Set(sourcePlan.map((run) => run.id))
   const accepted = new Set(existing.filter((record) => sourceIDs.has(record.runID)).map((record) => record.runID))
-  const maxCostUSD = caps.boundary / boundaryPlan.length
+  const maxCostUSD = boundarySourceCap / boundaryPlan.length
   const recovered = await settlePendingBoundaryExclusions({
     artifactRoot: resolvedArtifactRoot,
     ledgerPath,
@@ -1009,14 +1009,14 @@ async function boundaryReconcileSpend() {
     artifactRoot: resolvedArtifactRoot,
     originalReceiptPath: path.join(resolvedArtifactRoot, "failures", run.id, "attempt-1.json"),
     run,
-    maxCostUSD: caps.boundary / boundaryPlan.length,
+    maxCostUSD: boundarySourceCap / boundaryPlan.length,
   })
   const exclusions = await settlePendingBoundaryExclusions({
     artifactRoot: resolvedArtifactRoot,
     ledgerPath,
     runs: [run],
     accepted,
-    maxCostUSD: caps.boundary / boundaryPlan.length,
+    maxCostUSD: boundarySourceCap / boundaryPlan.length,
   })
   console.log(
     JSON.stringify({
@@ -1044,14 +1044,14 @@ async function boundaryReconcileGraderScanner() {
     artifactRoot: resolvedArtifactRoot,
     originalReceiptPath: path.join(resolvedArtifactRoot, "failures", run.id, "attempt-1.json"),
     run,
-    maxCostUSD: caps.boundary / boundaryPlan.length,
+    maxCostUSD: boundarySourceCap / boundaryPlan.length,
   })
   const exclusions = await settlePendingBoundaryExclusions({
     artifactRoot: resolvedArtifactRoot,
     ledgerPath,
     runs: [run],
     accepted,
-    maxCostUSD: caps.boundary / boundaryPlan.length,
+    maxCostUSD: boundarySourceCap / boundaryPlan.length,
   })
   console.log(
     JSON.stringify({
@@ -1083,6 +1083,9 @@ async function run() {
     option("results") ?? path.join(root, "research/auto-drive/results/trajectories.jsonl"),
   )
   const ledgerPath = path.resolve(option("ledger") ?? path.join(root, "research/auto-drive/cost/ledger.jsonl"))
+  const priorLedgerPaths = values("prior-ledger").map((file) => path.resolve(file))
+  if (priorLedgerPaths.includes(ledgerPath)) fail("--prior-ledger must differ from --ledger")
+  if (new Set(priorLedgerPaths).size !== priorLedgerPaths.length) fail("--prior-ledger paths must be unique")
   const existing = await readJSONL(resultsPath, parseTrajectory)
   const completed = new Set(existing.map((record) => record.runID))
   const selected = plan.filter((run) => !completed.has(run.id) && (!requested.length || requested.includes(run.id)))
@@ -1094,6 +1097,8 @@ async function run() {
   if (!selected.length) fail("No pending frozen runs match the selection")
   await loadFrozenAnnotations(path.resolve(annotationsRoot))
   const ledger = await readJSONL(ledgerPath, parseLedger)
+  const priorLedger = (await Promise.all(priorLedgerPaths.map((file) => readJSONL(file, parseLedger)))).flat()
+  summarizeBudget([...priorLedger, ...ledger])
   const resolvedPreflightPath = path.resolve(preflightPath)
   const resolvedArtifactRoot = path.resolve(artifactRoot)
   assertInside(resolvedArtifactRoot, resolvedPreflightPath, "Preflight receipt")
@@ -1119,7 +1124,7 @@ async function run() {
       preflightPath: resolvedPreflightPath,
     }),
     {
-      ledger,
+      ledger: [...priorLedger, ...ledger],
       attempt: (run) => (run.id === retryRun?.id ? retryAttempt : 1),
       onRecord: async (record, entry) => {
         const serialized = JSON.stringify(record)

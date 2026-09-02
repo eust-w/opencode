@@ -1,5 +1,5 @@
 import type { Trajectory } from "./artifact"
-import { caps, summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
+import { boundarySourceCap, caps, summarizeBudget, type BudgetCategory, type LedgerEntry } from "./budget"
 import { protocol, type Run } from "./protocol"
 
 export class InfrastructureFailure extends Error {
@@ -51,7 +51,12 @@ export async function executeRuns(
           const category: BudgetCategory =
             selected?.category ?? (run.model === protocol.models.primary ? "primary" : "cross-model")
           const maxCostUSD =
-            selected?.maxCostUSD ?? (category === "primary" ? caps.primary / 288 : caps[category] / 96)
+            selected?.maxCostUSD ??
+            (category === "primary"
+              ? caps.primary / 288
+              : category === "boundary"
+                ? boundarySourceCap / 96
+                : caps[category] / 96)
           if (!Number.isFinite(maxCostUSD) || maxCostUSD <= 0)
             throw new Error(`${run.id} has an invalid $${maxCostUSD} cost ceiling`)
           const reservation: LedgerEntry = { category, amountUSD: maxCostUSD }

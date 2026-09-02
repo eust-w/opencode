@@ -4,7 +4,7 @@ import { stat } from "node:fs/promises"
 import path from "node:path"
 import { z } from "zod"
 import manifestInput from "../../../research/auto-drive/protocol/swe-evo-48.json"
-import { caps } from "../src/budget"
+import { boundarySourceCap } from "../src/budget"
 import { reconcileExecutorDeadlineFailure, settleBoundaryExclusion } from "../src/exclusion"
 import { createBoundaryRunPlan, parseManifest } from "../src/protocol"
 
@@ -23,14 +23,14 @@ const receiptPath = await reconcileExecutorDeadlineFailure({
   run,
   endedAt,
   spendLogs: await readSpendLogs(),
-  maxCostUSD: caps.boundary / 96,
+  maxCostUSD: boundarySourceCap / 96,
 })
 const exclusion = await settleBoundaryExclusion({
   artifactRoot,
   ledgerPath: path.join(artifactRoot, "boundary", "ledger.jsonl"),
   receiptPath,
   run,
-  maxCostUSD: caps.boundary / 96,
+  maxCostUSD: boundarySourceCap / 96,
 })
 console.log(
   JSON.stringify({

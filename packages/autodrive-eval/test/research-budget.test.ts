@@ -5,11 +5,11 @@ import path from "node:path"
 import { admitBoundaryResearchCost, assertBoundaryResearchReservation } from "../src/research-budget"
 
 describe("boundary research campaign accounting", () => {
-  test("reserves against the shared USD 102 category cap", () => {
-    const ledger = `${JSON.stringify({ runID: "source", category: "boundary", amountUSD: 90 })}\n`
-    expect(assertBoundaryResearchReservation(ledger, 12)).toBe(90)
-    expect(() => assertBoundaryResearchReservation(ledger, 12.01)).toThrow("$102")
-    expect(() => assertBoundaryResearchReservation(ledger, 11.5, 0.51)).toThrow("$102")
+  test("reserves post-source research against the prospectively amended USD 180 cap", () => {
+    const ledger = `${JSON.stringify({ runID: "source", category: "boundary", amountUSD: 160 })}\n`
+    expect(assertBoundaryResearchReservation(ledger, 20)).toBe(160)
+    expect(() => assertBoundaryResearchReservation(ledger, 20.01)).toThrow("$180")
+    expect(() => assertBoundaryResearchReservation(ledger, 19.5, 0.51)).toThrow("$180")
   })
 
   test("admits one idempotent campaign row", async () => {

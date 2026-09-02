@@ -12,6 +12,8 @@ describe("paid experiment CLI gates", () => {
       path.resolve(import.meta.dir, "../../../research/auto-drive/execution/run-formal-r1.sh"),
     ).text()
     expect(script).toContain("--annotations")
+    expect(script).toContain('--prior-ledger "$artifact/boundary/ledger.jsonl"')
+    expect(script).toContain('--prior-ledger "$workspace/research/auto-drive/protocol/prior-cost-ledger.jsonl"')
     expect(script).toContain("--run-id")
     expect(script).toContain("batch_size=2")
     expect(script).toContain("accepted=384")

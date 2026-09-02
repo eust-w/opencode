@@ -61,6 +61,8 @@ run_batch() {
     --annotations "$annotations" \
     --results "$results" \
     --ledger "$ledger" \
+    --prior-ledger "$artifact/boundary/ledger.jsonl" \
+    --prior-ledger "$workspace/research/auto-drive/protocol/prior-cost-ledger.jsonl" \
     "${args[@]}"; then
     echo "$(date -u +%FT%TZ) runner-stop reason=batch-failed runs=$* accepted=$(result_count) ledgerUSD=$(ledger_total)"
     exit 6

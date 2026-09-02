@@ -2,7 +2,7 @@ import { appendFile, mkdir, readdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { z } from "zod"
 import { ArtifactReference, assertSecretFree } from "./artifact"
-import { summarizeBudget } from "./budget"
+import { summarizeBoundarySourceBudget } from "./budget"
 import { gatewayRequestsSettled } from "./gateway"
 import { parseExecutorFailureReceipt } from "./host-executor"
 import { protocol, type Run } from "./protocol"
@@ -1171,7 +1171,7 @@ async function requireLedgerBudget(ledgerPath: string, exclusion: BoundaryExclus
     : []
   const matches = rows.filter((row) => row.runID === exclusion.runID)
   if (matches.length > 1) throw new Error(`${exclusion.runID} has duplicate boundary ledger rows`)
-  summarizeBudget([
+  summarizeBoundarySourceBudget([
     ...rows.map((row) => ({ category: row.category, amountUSD: row.amountUSD })),
     ...(matches.length ? [] : [{ category: "boundary" as const, amountUSD: exclusion.costUSD }]),
   ])
