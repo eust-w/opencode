@@ -59,6 +59,7 @@ describe("research preflight capture", () => {
     expect(script).toContain('new URL("/spend/logs"')
     expect(script).toContain("failed-research-preflight-spend-reconciliation")
     expect(script).toContain("SpendRow.safeParse")
+    expect(script).toContain("row.model.toLowerCase().includes(item.model.catalogModelID.toLowerCase())")
     expect(script).toContain('flag: "wx"')
     expect(script).not.toContain("/chat/completions")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)

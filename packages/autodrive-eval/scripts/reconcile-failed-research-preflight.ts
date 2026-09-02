@@ -117,7 +117,7 @@ const endedBefore = (await stat(receiptPath)).mtimeMs + 60_000
 const matched = probes.map((item) => {
   const matches = parsedRows.filter(
     (row) =>
-      row.model.includes(item.model.catalogModelID) &&
+      row.model.toLowerCase().includes(item.model.catalogModelID.toLowerCase()) &&
       row.prompt_tokens === item.probe.promptTokens &&
       row.completion_tokens === item.probe.completionTokens &&
       Date.parse(row.startTime) >= Date.parse(receipt.capturedAt) &&
