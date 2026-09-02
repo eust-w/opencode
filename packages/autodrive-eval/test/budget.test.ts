@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test"
 import path from "node:path"
-import { boundarySourceCap, BudgetExceeded, canRetry, caps, summarizeBudget, totalCap } from "../src/budget"
+import {
+  boundarySourceCap,
+  BudgetExceeded,
+  canRetry,
+  caps,
+  summarizeBoundarySourceBudget,
+  summarizeBudget,
+  totalCap,
+} from "../src/budget"
 
 describe("budget and rerun policy", () => {
   test("enforces category caps and the 800 dollar hard limit", () => {
@@ -56,6 +64,19 @@ describe("budget and rerun policy", () => {
       totalUSD: 0.46,
       remainingUSD: 799.54,
     })
+  })
+
+  test("does not lose sub-cent spend while accumulating an append-only ledger", () => {
+    expect(
+      summarizeBudget(Array.from({ length: 100 }, () => ({ category: "pilot" as const, amountUSD: 0.004 }))),
+    ).toEqual({
+      categories: { pilot: 0.4, primary: 0, "cross-model": 0, boundary: 0 },
+      totalUSD: 0.4,
+      remainingUSD: 799.6,
+    })
+    expect(() =>
+      summarizeBoundarySourceBudget([{ category: "boundary", amountUSD: boundarySourceCap + 0.004 }]),
+    ).toThrow("exceeds $102")
   })
 
   test("allows one rerun only for a predefined infrastructure failure", () => {

@@ -7,6 +7,7 @@ export const caps = {
 
 export const boundarySourceCap = 102
 export const totalCap = 800
+const budgetEpsilon = 1e-9
 
 export type BudgetCategory = keyof typeof caps
 
@@ -23,31 +24,35 @@ export class BudgetExceeded extends Error {
 }
 
 export function summarizeBudget(entries: readonly LedgerEntry[]) {
-  const categories = Object.fromEntries(Object.keys(caps).map((category) => [category, 0])) as Record<
+  const raw = Object.fromEntries(Object.keys(caps).map((category) => [category, 0])) as Record<
     BudgetCategory,
     number
   >
   for (const entry of entries) {
     if (!Number.isFinite(entry.amountUSD) || entry.amountUSD < 0)
       throw new BudgetExceeded(`Invalid budget amount: ${entry.amountUSD}`)
-    categories[entry.category] = currency(categories[entry.category] + entry.amountUSD)
-    if (categories[entry.category] > caps[entry.category])
+    raw[entry.category] += entry.amountUSD
+    if (raw[entry.category] > caps[entry.category] + budgetEpsilon)
       throw new BudgetExceeded(`${entry.category} budget exceeds $${caps[entry.category]}`)
   }
-  const totalUSD = currency(Object.values(categories).reduce((sum, value) => sum + value, 0))
-  if (totalUSD > totalCap) throw new BudgetExceeded(`AutoDrive evaluation budget exceeds $${totalCap}`)
-  return { categories, totalUSD, remainingUSD: currency(totalCap - totalUSD) }
+  const rawTotal = Object.values(raw).reduce((sum, value) => sum + value, 0)
+  if (rawTotal > totalCap + budgetEpsilon)
+    throw new BudgetExceeded(`AutoDrive evaluation budget exceeds $${totalCap}`)
+  const categories = Object.fromEntries(
+    Object.entries(raw).map(([category, amount]) => [category, currency(amount)]),
+  ) as Record<BudgetCategory, number>
+  const totalUSD = currency(rawTotal)
+  return { categories, totalUSD, remainingUSD: currency(totalCap - rawTotal) }
 }
 
 export function summarizeBoundarySourceBudget(entries: readonly LedgerEntry[]) {
-  const totalUSD = currency(
-    entries
-      .filter((entry) => entry.category === "boundary")
-      .reduce((sum, entry) => sum + entry.amountUSD, 0),
-  )
-  if (totalUSD > boundarySourceCap)
+  const rawTotal = entries
+    .filter((entry) => entry.category === "boundary")
+    .reduce((sum, entry) => sum + entry.amountUSD, 0)
+  if (rawTotal > boundarySourceCap + budgetEpsilon)
     throw new BudgetExceeded(`boundary budget exceeds $${boundarySourceCap}`)
-  return { totalUSD, remainingUSD: currency(boundarySourceCap - totalUSD) }
+  const totalUSD = currency(rawTotal)
+  return { totalUSD, remainingUSD: currency(boundarySourceCap - rawTotal) }
 }
 
 export type Failure =
