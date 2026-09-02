@@ -23,6 +23,7 @@
     "annotations:model": "bun scripts/model-annotator.ts",
     "annotations:amend-budget": "bun scripts/amend-annotation-budget.ts",
     "annotations:reconcile-terminal": "bun scripts/reconcile-annotation-terminal-output.ts",
+    "annotations:reconcile-timeout": "bun scripts/reconcile-annotation-terminal-timeout.ts",
     "ablation:run": "bun scripts/ablation-runner.ts",
     "ablation:analyze": "bun src/cli.ts ablation-analyze",
     "boundary:plan": "bun src/cli.ts boundary-plan",

@@ -50,6 +50,7 @@ describe("disclosed model annotation", () => {
     expect(script).toContain("provider-success-invalid-final-annotation")
     expect(script).toContain("raw-responses")
     expect(script).toContain("terminalExclusions")
+    expect(script).toContain("annotation-terminal-timeout-reconciliation")
     expect(script).toContain("ModelAnnotationOutputError")
     expect(script.indexOf("class ModelAnnotationOutputError")).toBeLessThan(script.indexOf("await Bun.file"))
     expect(script).toContain("Cannot access 'ModelAnnotationOutputError' before initialization.")
@@ -88,6 +89,19 @@ describe("disclosed model annotation", () => {
     expect(script).toContain("row.completion_tokens === request.max_tokens")
     expect(script).toContain("SpendRow.safeParse")
     expect(script).toContain("provider-success-invalid-final-annotation")
+    expect(script).toContain('flag: "wx"')
+    expect(script).not.toContain("/chat/completions")
+    expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
+  })
+
+  test("reconciles one provider success that arrived after the final client timeout", async () => {
+    const script = await Bun.file(
+      new URL("../scripts/reconcile-annotation-terminal-timeout.ts", import.meta.url),
+    ).text()
+    expect(script).toContain('z.literal("TimeoutError")')
+    expect(script).toContain("knownRequestIDs")
+    expect(script).toContain("provider-success-after-client-timeout")
+    expect(script).toContain('attempt: z.literal(2)')
     expect(script).toContain('flag: "wx"')
     expect(script).not.toContain("/chat/completions")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)

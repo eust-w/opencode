@@ -96,12 +96,19 @@ const PreproviderRecovery = z.object({
 const TerminalOutputExclusion = z.object({
   schemaVersion: z.literal(1),
   protocol: z.literal(protocol.version),
-  method: z.enum(["terminal-model-annotation-output", "annotation-terminal-output-reconciliation"]),
+  method: z.enum([
+    "terminal-model-annotation-output",
+    "annotation-terminal-output-reconciliation",
+    "annotation-terminal-timeout-reconciliation",
+  ]),
   candidateID: z.string().min(1),
   annotator: z.string().min(1),
   model: z.string().min(1),
   attempt: z.union([z.literal(1), z.literal(2)]),
-  classification: z.literal("provider-success-invalid-final-annotation"),
+  classification: z.enum([
+    "provider-success-invalid-final-annotation",
+    "provider-success-after-client-timeout",
+  ]),
   request: ArtifactReference,
   failure: ArtifactReference,
   rawResponse: ArtifactReference.optional(),
