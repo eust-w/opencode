@@ -44,6 +44,10 @@ describe("disclosed model annotation", () => {
     expect(script).toContain("resumeCompletedCampaign")
     expect(script).toContain('flag: "wx"')
     expect(script).toContain("Completed annotation manifest conflicts with immutable records")
+    expect(script).toContain("provider-success-invalid-final-annotation")
+    expect(script).toContain("raw-responses")
+    expect(script).toContain("terminalExclusions")
+    expect(script).toContain("ModelAnnotationOutputError")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
   })
 
@@ -56,6 +60,18 @@ describe("disclosed model annotation", () => {
     expect(script).toContain('z.literal("InternalServerError")')
     expect(script).toContain('error_message.includes("surrogates not allowed")')
     expect(script).toContain("requestIDHash: digest(match.requestID)")
+    expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
+  })
+
+  test("reconciles one charged output-limit exclusion without retrying the model", async () => {
+    const script = await Bun.file(
+      new URL("../scripts/reconcile-annotation-terminal-output.ts", import.meta.url),
+    ).text()
+    expect(script).toContain('new URL("/spend/logs"')
+    expect(script).toContain("row.completion_tokens === request.max_tokens")
+    expect(script).toContain("provider-success-invalid-final-annotation")
+    expect(script).toContain('flag: "wx"')
+    expect(script).not.toContain("/chat/completions")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
   })
 

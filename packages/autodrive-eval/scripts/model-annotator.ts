@@ -85,6 +85,27 @@ const PreproviderRecovery = z.object({
   normalization: z.literal("replace-unpaired-utf16-surrogates-with-u+fffd"),
 })
 
+const TerminalOutputExclusion = z.object({
+  schemaVersion: z.literal(1),
+  protocol: z.literal(protocol.version),
+  method: z.enum(["terminal-model-annotation-output", "annotation-terminal-output-reconciliation"]),
+  candidateID: z.string().min(1),
+  annotator: z.string().min(1),
+  model: z.string().min(1),
+  attempt: z.union([z.literal(1), z.literal(2)]),
+  classification: z.literal("provider-success-invalid-final-annotation"),
+  request: ArtifactReference,
+  failure: ArtifactReference,
+  rawResponse: ArtifactReference.optional(),
+  provider: z.object({
+    modelVersion: z.string().min(1),
+    promptTokens: z.number().int().nonnegative(),
+    completionTokens: z.number().int().nonnegative(),
+    spendUSD: z.number().nonnegative().optional(),
+    requestIDHash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  }),
+})
+
 const CampaignReceipt = z.object({
   schemaVersion: z.literal(1),
   protocol: z.literal(protocol.version),
@@ -102,6 +123,8 @@ const CampaignReceipt = z.object({
 const CampaignManifest = CampaignReceipt.extend({
   completedAt: z.iso.datetime(),
   examples: z.number().int().positive(),
+  screened: z.number().int().positive().optional(),
+  terminalExclusions: z.array(ArtifactReference.extend({ candidateID: z.string().min(1) })).optional(),
   modelVersion: z.array(z.string().min(1)).min(1),
   promptTokens: z.number().int().nonnegative(),
   completionTokens: z.number().int().nonnegative(),
@@ -141,6 +164,7 @@ if (!resolved || resolved.trajectoryCapacity < candidates.length) fail("Annotati
 const candidatesSHA256 = digest(candidatesContent)
 const requestsRoot = path.join(output, "requests")
 const responsesRoot = path.join(output, "responses")
+const rawResponsesRoot = path.join(output, "raw-responses")
 const recordsRoot = path.join(output, "records")
 const failuresRoot = path.join(output, "failures")
 const checkpointsPath = path.join(output, "spend-checkpoints.jsonl")
@@ -148,6 +172,7 @@ const receiptPath = path.join(output, "receipt.json")
 await Promise.all([
   mkdir(requestsRoot, { recursive: true }),
   mkdir(responsesRoot, { recursive: true }),
+  mkdir(rawResponsesRoot, { recursive: true }),
   mkdir(recordsRoot, { recursive: true }),
   mkdir(failuresRoot, { recursive: true }),
 ])
@@ -155,6 +180,7 @@ await Promise.all([
   chmod(output, 0o700),
   chmod(requestsRoot, 0o700),
   chmod(responsesRoot, 0o700),
+  chmod(rawResponsesRoot, 0o700),
   chmod(recordsRoot, 0o700),
   chmod(failuresRoot, 0o700),
 ])
@@ -177,11 +203,23 @@ const records = new Map(
     )
   ).filter((item): item is NonNullable<typeof item> => !!item),
 )
+const terminalExclusions = new Map(
+  (
+    await Promise.all(
+      candidates.map(async (candidate) => {
+        const exclusion = await readTerminalExclusion(candidate.id)
+        return exclusion ? ([candidate.id, exclusion] as const) : undefined
+      }),
+    )
+  ).filter((item): item is NonNullable<typeof item> => !!item),
+)
+if (Array.from(terminalExclusions).some(([candidateID]) => records.has(candidateID)))
+  throw new Error("Terminal annotation exclusion conflicts with an immutable record")
 if (await resumeCompletedCampaign()) process.exit(0)
 
 const pending = await Promise.all(
   candidates
-    .filter((candidate) => !records.has(candidate.id))
+    .filter((candidate) => !records.has(candidate.id) && !terminalExclusions.has(candidate.id))
     .map(async (candidate) => {
       const first = artifactPaths(candidate.id, 1)
       const second = artifactPaths(candidate.id, 2)
@@ -227,6 +265,13 @@ while (queue.length) {
     return [{ item: batch[index]!, error: result.reason }]
   })
   await Promise.all(failed.map((item) => writeFailure(item.item.candidate.id, item.item.attempt, item.error, settled)))
+  const outputFailures = failed.filter((item) => item.error instanceof ModelAnnotationOutputError)
+  await Promise.all(
+    outputFailures.map(async (item) => {
+      const exclusion = await writeTerminalOutputExclusion(item.item.candidate.id, item.item.attempt)
+      terminalExclusions.set(item.item.candidate.id, exclusion)
+    }),
+  )
   const delta = settled - campaign.baselineSpendUSD
   const checkpoint = {
     timestamp: new Date().toISOString(),
@@ -238,9 +283,17 @@ while (queue.length) {
   assertSecretFree(serialized)
   await appendFile(checkpointsPath, serialized + "\n", { encoding: "utf8", flag: "a", mode: 0o600 })
   if (delta > maxCostUSD) throw new Error("Annotation campaign exceeded its authorized cost ceiling")
-  const terminal = failed.find((item) => item.item.attempt === 2 || !canRetryModelAnnotation(item.error))
+  const terminal = failed.find(
+    (item) =>
+      !(item.error instanceof ModelAnnotationOutputError) &&
+      (item.item.attempt === 2 || !canRetryModelAnnotation(item.error)),
+  )
   if (terminal) throw terminal.error
-  queue.push(...failed.map((item) => ({ candidate: item.item.candidate, attempt: 2 as const })))
+  queue.push(
+    ...failed
+      .filter((item) => !(item.error instanceof ModelAnnotationOutputError))
+      .map((item) => ({ candidate: item.item.candidate, attempt: 2 as const })),
+  )
 }
 
 const csv = renderCurrentCSV()
@@ -249,10 +302,28 @@ if (settledSpendUSD < campaign.baselineSpendUSD) throw new Error("Gateway cumula
 const final = {
   ...campaign,
   completedAt: new Date().toISOString(),
-  examples: candidates.length,
-  modelVersion: Array.from(new Set(Array.from(records.values()).map((record) => record.modelVersion))).sort(),
-  promptTokens: Array.from(records.values()).reduce((sum, record) => sum + record.promptTokens, 0),
-  completionTokens: Array.from(records.values()).reduce((sum, record) => sum + record.completionTokens, 0),
+  examples: records.size,
+  screened: candidates.length,
+  terminalExclusions: Array.from(terminalExclusions, ([candidateID, exclusion]) => ({
+    candidateID,
+    path: path.relative(output, exclusion.path),
+    sha256: exclusion.sha256,
+  })).sort((left, right) => left.candidateID.localeCompare(right.candidateID)),
+  modelVersion: Array.from(
+    new Set([
+      ...Array.from(records.values()).map((record) => record.modelVersion),
+      ...Array.from(terminalExclusions.values()).map((exclusion) => exclusion.receipt.provider.modelVersion),
+    ]),
+  ).sort(),
+  promptTokens:
+    Array.from(records.values()).reduce((sum, record) => sum + record.promptTokens, 0) +
+    Array.from(terminalExclusions.values()).reduce((sum, exclusion) => sum + exclusion.receipt.provider.promptTokens, 0),
+  completionTokens:
+    Array.from(records.values()).reduce((sum, record) => sum + record.completionTokens, 0) +
+    Array.from(terminalExclusions.values()).reduce(
+      (sum, exclusion) => sum + exclusion.receipt.provider.completionTokens,
+      0,
+    ),
   settledSpendUSD,
   costUSD: Number((settledSpendUSD - campaign.baselineSpendUSD).toFixed(7)),
   labelsSHA256: digest(csv),
@@ -269,7 +340,9 @@ await admitBoundaryResearchCost(budgetLedger, `annotation:${annotator}`, {
   promptTokens: final.promptTokens,
   completionTokens: final.completionTokens,
 }, undefined, fixedBoundaryCostUSD)
-console.log(JSON.stringify({ output, annotator, model, examples: candidates.length, costUSD: final.costUSD }))
+console.log(
+  JSON.stringify({ output, annotator, model, screened: candidates.length, examples: records.size, costUSD: final.costUSD }),
+)
 
 async function resumeCompletedCampaign() {
   const file = Bun.file(path.join(output, "manifest.json"))
@@ -278,15 +351,46 @@ async function resumeCompletedCampaign() {
   assertSecretFree(content)
   const manifest = CampaignManifest.parse(JSON.parse(content))
   const labels = Bun.file(path.join(output, "labels.csv"))
-  if (records.size !== candidates.length || !(await labels.exists()))
+  const screened = manifest.screened ?? manifest.examples
+  const exclusions = manifest.terminalExclusions ?? []
+  if (
+    screened !== candidates.length ||
+    records.size !== manifest.examples ||
+    records.size + exclusions.length !== candidates.length ||
+    exclusions.length !== terminalExclusions.size ||
+    !(await labels.exists())
+  )
     throw new Error("Completed annotation manifest conflicts with immutable records")
+  await Promise.all(
+    exclusions.map(async (exclusion) => {
+      const stored = terminalExclusions.get(exclusion.candidateID)
+      if (!stored || path.relative(output, stored.path) !== exclusion.path || stored.sha256 !== exclusion.sha256)
+        throw new Error("Completed annotation manifest conflicts with immutable records")
+      await verify(exclusion)
+    }),
+  )
   const labelsContent = await labels.text()
   assertSecretFree(labelsContent)
   const expected = {
-    examples: candidates.length,
-    modelVersion: Array.from(new Set(Array.from(records.values()).map((record) => record.modelVersion))).sort(),
-    promptTokens: Array.from(records.values()).reduce((sum, record) => sum + record.promptTokens, 0),
-    completionTokens: Array.from(records.values()).reduce((sum, record) => sum + record.completionTokens, 0),
+    examples: records.size,
+    modelVersion: Array.from(
+      new Set([
+        ...Array.from(records.values()).map((record) => record.modelVersion),
+        ...Array.from(terminalExclusions.values()).map((exclusion) => exclusion.receipt.provider.modelVersion),
+      ]),
+    ).sort(),
+    promptTokens:
+      Array.from(records.values()).reduce((sum, record) => sum + record.promptTokens, 0) +
+      Array.from(terminalExclusions.values()).reduce(
+        (sum, exclusion) => sum + exclusion.receipt.provider.promptTokens,
+        0,
+      ),
+    completionTokens:
+      Array.from(records.values()).reduce((sum, record) => sum + record.completionTokens, 0) +
+      Array.from(terminalExclusions.values()).reduce(
+        (sum, exclusion) => sum + exclusion.receipt.provider.completionTokens,
+        0,
+      ),
     labelsSHA256: digest(labelsContent),
   }
   if (
@@ -326,7 +430,7 @@ function renderCurrentCSV() {
   return (
     renderModelAnnotationCSV(
       annotator,
-      candidates.map((candidate) => {
+      candidates.filter((candidate) => records.has(candidate.id)).map((candidate) => {
         const record = records.get(candidate.id)
         if (!record) throw new Error(`Annotation record is missing after execution: ${candidate.id}`)
         return { candidate, annotation: record.annotation, recordedAt: record.recordedAt }
@@ -353,8 +457,18 @@ async function annotate(candidate: z.infer<typeof BoundaryCandidate>, attempt: 1
   const raw = await response.text()
   if (!response.ok) throw new Error(`Annotation provider returned HTTP ${response.status}`)
   assertSecretFree(raw)
-  const parsed = parseModelAnnotationResponse(JSON.parse(raw))
-  const annotation = parseModelAnnotation(parsed.content)
+  const rawPath = artifactPaths(candidate.id, attempt).rawResponse
+  await writeFile(rawPath, raw, { encoding: "utf8", flag: "wx", mode: 0o600 })
+  const parsedOutput = (() => {
+    try {
+      const parsed = parseModelAnnotationResponse(JSON.parse(raw))
+      return { parsed, annotation: parseModelAnnotation(parsed.content) }
+    } catch (error) {
+      throw new ModelAnnotationOutputError(error)
+    }
+  })()
+  const parsed = parsedOutput.parsed
+  const annotation = parsedOutput.annotation
   const responseContent = JSON.stringify(parsed)
   const responsePath = paths.response
   await writeFile(responsePath, responseContent, { encoding: "utf8", flag: "wx", mode: 0o600 })
@@ -377,6 +491,13 @@ async function annotate(candidate: z.infer<typeof BoundaryCandidate>, attempt: 1
   assertSecretFree(content)
   await writeFile(path.join(recordsRoot, `${candidate.id}.json`), content, { encoding: "utf8", flag: "wx", mode: 0o600 })
   return record
+}
+
+class ModelAnnotationOutputError extends Error {
+  constructor(error: unknown) {
+    super(error instanceof Error ? error.message : String(error))
+    this.name = "ModelAnnotationOutputError"
+  }
 }
 
 async function writeFailure(
@@ -427,7 +548,78 @@ async function writeFailure(
 
 function artifactPaths(candidateID: string, attempt: 1 | 2) {
   const name = modelAnnotationArtifactName(candidateID, attempt)
-  return { request: path.join(requestsRoot, name), response: path.join(responsesRoot, name) }
+  return {
+    request: path.join(requestsRoot, name),
+    response: path.join(responsesRoot, name),
+    rawResponse: path.join(rawResponsesRoot, name),
+  }
+}
+
+async function writeTerminalOutputExclusion(candidateID: string, attempt: 1 | 2) {
+  const target = path.join(failuresRoot, `${candidateID}-terminal-output.json`)
+  if (await Bun.file(target).exists()) return (await readTerminalExclusion(candidateID))!
+  const paths = artifactPaths(candidateID, attempt)
+  const [requestContent, failureContent, rawContent] = await Promise.all(
+    [paths.request, path.join(failuresRoot, modelAnnotationArtifactName(candidateID, attempt)), paths.rawResponse].map(
+      async (filePath) => {
+        const content = await Bun.file(filePath).text()
+        assertSecretFree(content)
+        return content
+      },
+    ),
+  )
+  const request = z.object({ max_tokens: z.number().int().positive() }).loose().parse(JSON.parse(requestContent))
+  const response = z
+    .object({
+      model: z.string().min(1),
+      usage: z.object({
+        prompt_tokens: z.number().int().nonnegative(),
+        completion_tokens: z.number().int().nonnegative(),
+      }),
+    })
+    .loose()
+    .parse(JSON.parse(rawContent))
+  if (response.usage.completion_tokens > request.max_tokens)
+    throw new Error(`Terminal annotation usage exceeds the frozen output limit: ${candidateID}`)
+  const receipt = TerminalOutputExclusion.parse({
+    schemaVersion: 1,
+    protocol: protocol.version,
+    method: "terminal-model-annotation-output",
+    candidateID,
+    annotator,
+    model,
+    attempt,
+    classification: "provider-success-invalid-final-annotation",
+    request: relativeReference(paths.request, requestContent),
+    failure: relativeReference(path.join(failuresRoot, modelAnnotationArtifactName(candidateID, attempt)), failureContent),
+    rawResponse: relativeReference(paths.rawResponse, rawContent),
+    provider: {
+      modelVersion: response.model,
+      promptTokens: response.usage.prompt_tokens,
+      completionTokens: response.usage.completion_tokens,
+    },
+  })
+  const content = JSON.stringify(receipt, null, 2) + "\n"
+  assertSecretFree(content)
+  await writeFile(target, content, { encoding: "utf8", flag: "wx", mode: 0o600 })
+  return { path: target, sha256: digest(content), receipt }
+}
+
+async function readTerminalExclusion(candidateID: string) {
+  const target = path.join(failuresRoot, `${candidateID}-terminal-output.json`)
+  const file = Bun.file(target)
+  if (!(await file.exists())) return
+  const content = await file.text()
+  assertSecretFree(content)
+  const receipt = TerminalOutputExclusion.parse(JSON.parse(content))
+  if (receipt.candidateID !== candidateID || receipt.annotator !== annotator || receipt.model !== model)
+    throw new Error(`Conflicting terminal annotation exclusion: ${candidateID}`)
+  await Promise.all(
+    [receipt.request, receipt.failure, receipt.rawResponse]
+      .filter((item): item is z.infer<typeof ArtifactReference> => !!item)
+      .map(verify),
+  )
+  return { path: target, sha256: digest(content), receipt }
 }
 
 async function readFailure(candidateID: string, attempt: 1 | 2) {

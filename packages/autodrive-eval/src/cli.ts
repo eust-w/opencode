@@ -467,6 +467,7 @@ async function annotationsSelect() {
           protocol: protocol.version,
           seed: "auto-drive-boundary-v1",
           screened: selected.screened,
+          eligible: selected.eligible,
           selected: selected.candidates.length,
           counts: selected.counts,
           candidatesSHA256: sha256(selectedCandidates),

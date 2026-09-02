@@ -94,6 +94,16 @@ describe("independent boundary annotation freeze", () => {
       counts: { continue: 1, stop: 0, defer: 1 },
       prematureHandoffRate: 0.5,
     })
+    expect(
+      analyzePrematureHandoffs(
+        candidates,
+        labels
+          .split("\n")
+          .filter((line) => !line.startsWith("b0,"))
+          .join("\n"),
+        ["r1", "r2", "r3"],
+      ),
+    ).toMatchObject({ labeledFirstBoundaries: 1, missingSourceTrajectories: 2, prematureHandoffRate: 0 })
   })
 
   test("deterministically selects 60 adjudicated examples per class from a larger labeled frame", () => {
@@ -131,6 +141,7 @@ describe("independent boundary annotation freeze", () => {
     expect(selected.candidates).toHaveLength(180)
     expect(selected.counts).toEqual({ continue: 60, stop: 60, defer: 60 })
     expect(selected.screened).toBe(210)
+    expect(selected.eligible).toBe(210)
     expect(selectBalancedAnnotations({
       candidates,
       first: csv("annotator-a"),
@@ -139,6 +150,21 @@ describe("independent boundary annotation freeze", () => {
       seed: "auto-drive-boundary-v1",
     })).toEqual(selected)
     expect(selected.first.split("\n")).toHaveLength(181)
+
+    const excludedID = candidates[0]!.id
+    const partial = csv("annotator-b")
+      .split("\n")
+      .filter((line) => !line.startsWith(`${excludedID},`))
+      .join("\n")
+    const selectedAfterTerminalFailure = selectBalancedAnnotations({
+      candidates,
+      first: csv("annotator-a"),
+      second: partial,
+      adjudicated: csv("adjudicator"),
+      seed: "auto-drive-boundary-v1",
+    })
+    expect(selectedAfterTerminalFailure.eligible).toBe(209)
+    expect(selectedAfterTerminalFailure.candidates.map((candidate) => candidate.id)).not.toContain(excludedID)
   })
 
   test("validates a content-addressed 54/126 frozen corpus before formal execution", () => {

@@ -94,17 +94,23 @@ export function analyzePrematureHandoffs(
   const candidates = z.array(BoundaryCandidate).parse(candidateInput)
   const initial = new Set(initialRunIDs)
   if (initial.size !== initialRunIDs.length) throw new Error("Initial boundary source IDs must be unique")
-  const labels = parseAnnotationFile(adjudicatedContent, new Set(candidates.map((candidate) => candidate.id))).labels
+  const adjudicated = parseAnnotationFile(
+    adjudicatedContent,
+    new Set(candidates.map((candidate) => candidate.id)),
+    true,
+  ).labels
   const first = Array.from(
     Map.groupBy(
       candidates.filter((candidate) => initial.has(candidate.baseTrajectoryID)),
       (candidate) => candidate.baseTrajectoryID,
     ).values(),
-  ).map((items) => items.toSorted((left, right) => left.boundaryIndex - right.boundaryIndex)[0]!)
+  )
+    .map((items) => items.toSorted((left, right) => left.boundaryIndex - right.boundaryIndex)[0]!)
+    .filter((candidate) => adjudicated.has(candidate.id))
   const counts = Object.fromEntries(
     (["continue", "stop", "defer"] as const).map((label) => [
       label,
-      first.filter((candidate) => labels.get(candidate.id) === label).length,
+      first.filter((candidate) => adjudicated.get(candidate.id) === label).length,
     ]),
   ) as Record<BoundaryLabel, number>
   return {
@@ -127,13 +133,17 @@ export function selectBalancedAnnotations(input: {
   if (new Set(candidates.map((candidate) => candidate.id)).size !== candidates.length)
     throw new Error("Boundary candidate IDs must be unique")
   const ids = new Set(candidates.map((candidate) => candidate.id))
-  const first = parseAnnotationFile(input.first, ids)
-  const second = parseAnnotationFile(input.second, ids)
-  const adjudicated = parseAnnotationFile(input.adjudicated, ids)
+  const first = parseAnnotationFile(input.first, ids, true)
+  const second = parseAnnotationFile(input.second, ids, true)
+  const adjudicated = parseAnnotationFile(input.adjudicated, ids, true)
   if (new Set([first.annotator, second.annotator, adjudicated.annotator]).size !== 3)
     throw new Error("Annotation files require independent annotator identities")
+  const eligible = candidates.filter(
+    (candidate) =>
+      first.labels.has(candidate.id) && second.labels.has(candidate.id) && adjudicated.labels.has(candidate.id),
+  )
   const selected = labels.flatMap((label) => {
-    const matching = candidates
+    const matching = eligible
       .filter((candidate) => adjudicated.labels.get(candidate.id) === label)
       .map((candidate) => ({
         candidate,
@@ -169,6 +179,7 @@ export function selectBalancedAnnotations(input: {
     second: subset(second),
     adjudicated: subset(adjudicated),
     screened: candidates.length,
+    eligible: eligible.length,
     counts: { continue: 60, stop: 60, defer: 60 } as const,
   }
 }
@@ -421,7 +432,7 @@ function renderVisiblePart(input: unknown) {
   ]
 }
 
-function parseAnnotationFile(content: string, candidateIDs: ReadonlySet<string>) {
+function parseAnnotationFile(content: string, candidateIDs: ReadonlySet<string>, allowPartial = false) {
   const rows = parseCSV(content)
   if (rows[0]?.join(",") !== annotationHeader) throw new Error(`Annotation CSV header must be ${annotationHeader}`)
   const parsed = rows.slice(1).map((row) => {
@@ -439,7 +450,8 @@ function parseAnnotationFile(content: string, candidateIDs: ReadonlySet<string>)
       throw new Error("CONTINUE and DEFER labels require a next action or missing decision")
     return record
   })
-  if (parsed.length !== candidateIDs.size) throw new Error("Annotation CSV does not cover every boundary")
+  if (!allowPartial && parsed.length !== candidateIDs.size) throw new Error("Annotation CSV does not cover every boundary")
+  if (allowPartial && !parsed.length) throw new Error("Annotation CSV does not cover any boundary")
   if (new Set(parsed.map((row) => row.id)).size !== parsed.length)
     throw new Error("Annotation CSV contains duplicate boundary IDs")
   if (parsed.some((row) => !candidateIDs.has(row.id))) throw new Error("Annotation CSV contains an unknown boundary ID")
