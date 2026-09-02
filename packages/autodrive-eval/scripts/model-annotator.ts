@@ -99,6 +99,17 @@ const CampaignReceipt = z.object({
   perCallCeilingUSD: z.number().positive(),
 })
 
+const CampaignManifest = CampaignReceipt.extend({
+  completedAt: z.iso.datetime(),
+  examples: z.number().int().positive(),
+  modelVersion: z.array(z.string().min(1)).min(1),
+  promptTokens: z.number().int().nonnegative(),
+  completionTokens: z.number().int().nonnegative(),
+  settledSpendUSD: z.number().nonnegative(),
+  costUSD: z.number().nonnegative(),
+  labelsSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+})
+
 const concurrency = 2
 const requestTimeoutMS = 180_000
 const candidatesPath = requireOption("candidates")
@@ -166,6 +177,7 @@ const records = new Map(
     )
   ).filter((item): item is NonNullable<typeof item> => !!item),
 )
+if (await resumeCompletedCampaign()) process.exit(0)
 
 const pending = await Promise.all(
   candidates
@@ -231,13 +243,9 @@ while (queue.length) {
   queue.push(...failed.map((item) => ({ candidate: item.item.candidate, attempt: 2 as const })))
 }
 
-const ordered = candidates.map((candidate) => {
-  const record = records.get(candidate.id)
-  if (!record) throw new Error(`Annotation record is missing after execution: ${candidate.id}`)
-  return { candidate, annotation: record.annotation, recordedAt: record.recordedAt }
-})
-const csv = renderModelAnnotationCSV(annotator, ordered) + "\n"
+const csv = renderCurrentCSV()
 const settledSpendUSD = await readSettledSpend()
+if (settledSpendUSD < campaign.baselineSpendUSD) throw new Error("Gateway cumulative spend moved backwards")
 const final = {
   ...campaign,
   completedAt: new Date().toISOString(),
@@ -250,19 +258,82 @@ const final = {
   labelsSHA256: digest(csv),
 }
 assertSecretFree(JSON.stringify(final))
-await Promise.all([
-  writeFile(path.join(output, "labels.csv"), csv, { encoding: "utf8", mode: 0o600 }),
-  writeFile(path.join(output, "manifest.json"), JSON.stringify(final, null, 2) + "\n", {
-    encoding: "utf8",
-    mode: 0o600,
-  }),
-])
+await writeFile(path.join(output, "labels.csv"), csv, { encoding: "utf8", flag: "wx", mode: 0o600 })
+await writeFile(path.join(output, "manifest.json"), JSON.stringify(final, null, 2) + "\n", {
+  encoding: "utf8",
+  flag: "wx",
+  mode: 0o600,
+})
 await admitBoundaryResearchCost(budgetLedger, `annotation:${annotator}`, {
   amountUSD: final.costUSD,
   promptTokens: final.promptTokens,
   completionTokens: final.completionTokens,
 }, undefined, fixedBoundaryCostUSD)
 console.log(JSON.stringify({ output, annotator, model, examples: candidates.length, costUSD: final.costUSD }))
+
+async function resumeCompletedCampaign() {
+  const file = Bun.file(path.join(output, "manifest.json"))
+  if (!(await file.exists())) return false
+  const content = await file.text()
+  assertSecretFree(content)
+  const manifest = CampaignManifest.parse(JSON.parse(content))
+  const labels = Bun.file(path.join(output, "labels.csv"))
+  if (records.size !== candidates.length || !(await labels.exists()))
+    throw new Error("Completed annotation manifest conflicts with immutable records")
+  const labelsContent = await labels.text()
+  assertSecretFree(labelsContent)
+  const expected = {
+    examples: candidates.length,
+    modelVersion: Array.from(new Set(Array.from(records.values()).map((record) => record.modelVersion))).sort(),
+    promptTokens: Array.from(records.values()).reduce((sum, record) => sum + record.promptTokens, 0),
+    completionTokens: Array.from(records.values()).reduce((sum, record) => sum + record.completionTokens, 0),
+    labelsSHA256: digest(labelsContent),
+  }
+  if (
+    manifest.annotator !== campaign.annotator ||
+    manifest.model !== campaign.model ||
+    manifest.candidatesSHA256 !== campaign.candidatesSHA256 ||
+    manifest.preflightSHA256 !== campaign.preflightSHA256 ||
+    manifest.startedAt !== campaign.startedAt ||
+    manifest.baselineSpendUSD !== campaign.baselineSpendUSD ||
+    manifest.maxCostUSD !== campaign.maxCostUSD ||
+    manifest.perCallCeilingUSD !== campaign.perCallCeilingUSD ||
+    manifest.examples !== expected.examples ||
+    JSON.stringify(manifest.modelVersion) !== JSON.stringify(expected.modelVersion) ||
+    manifest.promptTokens !== expected.promptTokens ||
+    manifest.completionTokens !== expected.completionTokens ||
+    manifest.labelsSHA256 !== expected.labelsSHA256 ||
+    labelsContent !== renderCurrentCSV() ||
+    manifest.costUSD !== Number((manifest.settledSpendUSD - manifest.baselineSpendUSD).toFixed(7))
+  )
+    throw new Error("Completed annotation manifest conflicts with immutable records")
+  await admitBoundaryResearchCost(
+    budgetLedger,
+    `annotation:${annotator}`,
+    {
+      amountUSD: manifest.costUSD,
+      promptTokens: manifest.promptTokens,
+      completionTokens: manifest.completionTokens,
+    },
+    undefined,
+    fixedBoundaryCostUSD,
+  )
+  console.log(JSON.stringify({ output, annotator, model, examples: manifest.examples, costUSD: manifest.costUSD }))
+  return true
+}
+
+function renderCurrentCSV() {
+  return (
+    renderModelAnnotationCSV(
+      annotator,
+      candidates.map((candidate) => {
+        const record = records.get(candidate.id)
+        if (!record) throw new Error(`Annotation record is missing after execution: ${candidate.id}`)
+        return { candidate, annotation: record.annotation, recordedAt: record.recordedAt }
+      }),
+    ) + "\n"
+  )
+}
 
 async function annotate(candidate: z.infer<typeof BoundaryCandidate>, attempt: 1 | 2) {
   const prompt = buildModelAnnotationPrompt(candidate)

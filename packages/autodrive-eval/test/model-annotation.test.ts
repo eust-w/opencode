@@ -41,6 +41,9 @@ describe("disclosed model annotation", () => {
     expect(script.indexOf("const AnnotationRecord")).toBeLessThan(
       script.indexOf("const campaign = await loadOrCreateReceipt"),
     )
+    expect(script).toContain("resumeCompletedCampaign")
+    expect(script).toContain('flag: "wx"')
+    expect(script).toContain("Completed annotation manifest conflicts with immutable records")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
   })
 
