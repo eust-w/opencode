@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import path from "node:path"
 import {
+  annotationPanelCap,
   boundarySourceCap,
   BudgetExceeded,
   canRetry,
@@ -27,6 +28,7 @@ describe("budget and rerun policy", () => {
   })
 
   test("amends only post-source boundary research while preserving the hard total", () => {
+    expect(annotationPanelCap).toBe(40)
     expect(boundarySourceCap).toBe(102)
     expect(caps.boundary).toBe(180)
     expect(totalCap).toBe(800)

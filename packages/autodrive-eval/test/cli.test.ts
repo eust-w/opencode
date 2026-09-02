@@ -38,6 +38,8 @@ describe("paid experiment CLI gates", () => {
     expect(script).toContain("ensure_preflight")
     expect(script).toContain("research-preflight.ts")
     expect(script).toContain("run-boundary-augmentation-r1.sh")
+    expect(script).toContain("AUTODRIVE_INITIAL_ANNOTATION_MAX_COST_USD")
+    expect(script).toContain("AUTODRIVE_ANNOTATION_BUDGET_AMENDMENT")
     expect(script).toContain("model-qwen3.7-max")
     expect(script).toContain("model-deepseek-v4-flash")
     expect(script).toContain("model-deepseek-v4-pro-adjudicator")

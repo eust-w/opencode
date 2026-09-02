@@ -29,6 +29,9 @@ describe("disclosed model annotation", () => {
     const script = await Bun.file(path.join(import.meta.dir, "../scripts/model-annotator.ts")).text()
     expect(script).toContain('scope: "annotation"')
     expect(script).toContain("AUTODRIVE_ANNOTATION_MAX_COST_USD")
+    expect(script).toContain("AUTODRIVE_ANNOTATION_BUDGET_AMENDMENT")
+    expect(script).toContain("annotation-budget-amendment")
+    expect(script).toContain("budgetAmendment")
     expect(script).toContain("AUTODRIVE_EVAL_BUDGET_LEDGER")
     expect(script).toContain("AUTODRIVE_GATEWAY_KEY_FILE")
     expect(script).toContain("concurrency = 2")
@@ -51,6 +54,17 @@ describe("disclosed model annotation", () => {
     expect(script.indexOf("class ModelAnnotationOutputError")).toBeLessThan(script.indexOf("await Bun.file"))
     expect(script).toContain("Cannot access 'ModelAnnotationOutputError' before initialization.")
     expect(script).not.toContain("Terminal annotation usage exceeds the frozen output limit")
+    expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
+  })
+
+  test("ships an immutable provider-free annotation budget amendment", async () => {
+    const script = await Bun.file(
+      new URL("../scripts/amend-annotation-budget.ts", import.meta.url),
+    ).text()
+    expect(script).toContain("user-approved-budget-reallocation")
+    expect(script).toContain("annotationPanelCap")
+    expect(script).toContain('flag: "wx"')
+    expect(script).not.toContain("/chat/completions")
     expect(script).not.toMatch(/sk-[A-Za-z0-9_-]{20,}/)
   })
 

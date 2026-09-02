@@ -6,6 +6,8 @@ export const caps = {
 } as const
 
 export const boundarySourceCap = 102
+export const annotationPanelOriginalCap = 20
+export const annotationPanelCap = 40
 export const totalCap = 800
 const budgetEpsilon = 1e-9
 

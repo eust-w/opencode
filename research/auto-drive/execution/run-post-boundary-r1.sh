@@ -9,7 +9,9 @@ key_file=${AUTODRIVE_GATEWAY_KEY_FILE:?AUTODRIVE_GATEWAY_KEY_FILE is required}
 metadata=${AUTODRIVE_MODEL_METADATA_SOURCE:?AUTODRIVE_MODEL_METADATA_SOURCE is required}
 preflight_max=${AUTODRIVE_PREFLIGHT_MAX_COST_USD:?AUTODRIVE_PREFLIGHT_MAX_COST_USD is required}
 annotation_max=${AUTODRIVE_ANNOTATION_MAX_COST_USD:?AUTODRIVE_ANNOTATION_MAX_COST_USD is required}
+initial_annotation_max=${AUTODRIVE_INITIAL_ANNOTATION_MAX_COST_USD:?AUTODRIVE_INITIAL_ANNOTATION_MAX_COST_USD is required}
 annotation_call_max=${AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD:?AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD is required}
+qwen38_amendment=${AUTODRIVE_QWEN38_ANNOTATION_BUDGET_AMENDMENT:-}
 ablation_max=${AUTODRIVE_ABLATION_MAX_COST_USD:?AUTODRIVE_ABLATION_MAX_COST_USD is required}
 ablation_call_max=${AUTODRIVE_ABLATION_PER_CALL_CEILING_USD:?AUTODRIVE_ABLATION_PER_CALL_CEILING_USD is required}
 fixed_cost=${AUTODRIVE_BOUNDARY_FIXED_COST_USD:?AUTODRIVE_BOUNDARY_FIXED_COST_USD is required}
@@ -71,6 +73,10 @@ run_judge() {
   local identity=$1
   local model=$2
   local receipt=${3:-$annotation_preflight}
+  local max_cost=${4:-$initial_annotation_max}
+  local amendment=${5:-}
+  AUTODRIVE_ANNOTATION_MAX_COST_USD="$max_cost" \
+  AUTODRIVE_ANNOTATION_BUDGET_AMENDMENT="$amendment" \
   bun scripts/model-annotator.ts \
     --candidates "$frame" \
     --output "$annotations/$identity" \
@@ -79,7 +85,6 @@ run_judge() {
     --preflight "$receipt"
 }
 
-export AUTODRIVE_ANNOTATION_MAX_COST_USD="$annotation_max"
 export AUTODRIVE_ANNOTATION_PER_CALL_CEILING_USD="$annotation_call_max"
 run_judge model-qwen3.7-max d-robotics/qwen3.7-max
 run_judge model-deepseek-v4-flash d-robotics/deepseek-v4-flash
@@ -90,12 +95,12 @@ flash_examples=$(jq -r .examples "$annotations/model-deepseek-v4-flash/manifest.
 pro_examples=$(jq -r .examples "$annotations/model-deepseek-v4-pro-adjudicator/manifest.json")
 if [ "$flash_examples" -lt 180 ]; then
   fallback_annotation_preflight=$(ensure_fallback_annotation_preflight)
-  run_judge model-qwen3.8-max d-robotics/qwen3.8-max "$fallback_annotation_preflight"
+  run_judge model-qwen3.8-max d-robotics/qwen3.8-max "$fallback_annotation_preflight" "$annotation_max" "$qwen38_amendment"
   second_labels="$annotations/model-qwen3.8-max/labels.csv"
 fi
 if [ "$pro_examples" -lt 180 ]; then
   fallback_annotation_preflight=${fallback_annotation_preflight:-$(ensure_fallback_annotation_preflight)}
-  run_judge model-glm5.3-adjudicator d-robotics/glm-5.3 "$fallback_annotation_preflight"
+  run_judge model-glm5.3-adjudicator d-robotics/glm-5.3 "$fallback_annotation_preflight" "$annotation_max"
   adjudicated_labels="$annotations/model-glm5.3-adjudicator/labels.csv"
 fi
 bun src/cli.ts boundary-frequency \

@@ -21,6 +21,7 @@
     "annotations:select": "bun src/cli.ts annotations-select",
     "annotations:freeze": "bun src/cli.ts annotations-freeze",
     "annotations:model": "bun scripts/model-annotator.ts",
+    "annotations:amend-budget": "bun scripts/amend-annotation-budget.ts",
     "annotations:reconcile-terminal": "bun scripts/reconcile-annotation-terminal-output.ts",
     "ablation:run": "bun scripts/ablation-runner.ts",
     "ablation:analyze": "bun src/cli.ts ablation-analyze",

@@ -5,6 +5,7 @@ import path from "node:path"
 import { z } from "zod"
 import { BoundaryCandidate } from "../src/annotation"
 import { assertSecretFree } from "../src/artifact"
+import { annotationPanelCap, annotationPanelOriginalCap, caps, totalCap } from "../src/budget"
 import { frozenAnnotationModelID } from "../src/host-executor"
 import {
   buildModelAnnotationPrompt,
@@ -128,6 +129,8 @@ const CampaignReceipt = z.object({
 })
 
 const CampaignManifest = CampaignReceipt.extend({
+  budgetAmendment: ArtifactReference.optional(),
+  authorizedMaxCostUSD: z.number().positive().optional(),
   completedAt: z.iso.datetime(),
   examples: z.number().int().positive(),
   screened: z.number().int().positive().optional(),
@@ -138,6 +141,23 @@ const CampaignManifest = CampaignReceipt.extend({
   settledSpendUSD: z.number().nonnegative(),
   costUSD: z.number().nonnegative(),
   labelsSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+})
+
+const AnnotationBudgetAmendment = z.object({
+  schemaVersion: z.literal(1),
+  protocol: z.literal(protocol.version),
+  method: z.literal("annotation-budget-amendment"),
+  authorization: z.literal("user-approved-budget-reallocation"),
+  authorizedAt: z.iso.datetime(),
+  annotator: z.string().min(1),
+  model: z.string().min(1),
+  candidatesSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+  preflightSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+  receiptSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+  previousMaxCostUSD: z.literal(annotationPanelOriginalCap),
+  maxCostUSD: z.literal(annotationPanelCap),
+  boundaryCapUSD: z.literal(caps.boundary),
+  totalCapUSD: z.literal(totalCap),
 })
 
 const concurrency = 2
@@ -195,6 +215,7 @@ const key = (await Bun.file(keyFile).text()).trim()
 if (!key) fail("Gateway key file is empty")
 
 const campaign = await loadOrCreateReceipt()
+const budgetAmendment = await loadBudgetAmendment(campaign)
 const records = new Map(
   (
     await Promise.all(
@@ -315,6 +336,8 @@ const settledSpendUSD = await readSettledSpend()
 if (settledSpendUSD < campaign.baselineSpendUSD) throw new Error("Gateway cumulative spend moved backwards")
 const final = {
   ...campaign,
+  budgetAmendment: budgetAmendment?.reference,
+  authorizedMaxCostUSD: budgetAmendment?.receipt.maxCostUSD,
   completedAt: new Date().toISOString(),
   examples: records.size,
   screened: candidates.length,
@@ -416,6 +439,8 @@ async function resumeCompletedCampaign() {
     manifest.baselineSpendUSD !== campaign.baselineSpendUSD ||
     manifest.maxCostUSD !== campaign.maxCostUSD ||
     manifest.perCallCeilingUSD !== campaign.perCallCeilingUSD ||
+    JSON.stringify(manifest.budgetAmendment) !== JSON.stringify(budgetAmendment?.reference) ||
+    manifest.authorizedMaxCostUSD !== budgetAmendment?.receipt.maxCostUSD ||
     manifest.examples !== expected.examples ||
     JSON.stringify(manifest.modelVersion) !== JSON.stringify(expected.modelVersion) ||
     manifest.promptTokens !== expected.promptTokens ||
@@ -681,7 +706,6 @@ async function loadOrCreateReceipt() {
       receipt.model !== model ||
       receipt.candidatesSHA256 !== candidatesSHA256 ||
       receipt.preflightSHA256 !== preflight.sha256 ||
-      receipt.maxCostUSD !== maxCostUSD ||
       receipt.perCallCeilingUSD !== perCallCeilingUSD
     )
       throw new Error("Annotation campaign receipt conflicts with this invocation")
@@ -704,6 +728,27 @@ async function loadOrCreateReceipt() {
   assertSecretFree(content)
   await writeFile(receiptPath, content, { encoding: "utf8", flag: "wx", mode: 0o600 })
   return receipt
+}
+
+async function loadBudgetAmendment(campaign: z.infer<typeof CampaignReceipt>) {
+  if (campaign.maxCostUSD === maxCostUSD) return undefined
+  const target = optionalAbsolute("AUTODRIVE_ANNOTATION_BUDGET_AMENDMENT")
+  if (!target) throw new Error("Annotation campaign budget change requires an immutable amendment")
+  const content = await Bun.file(target).text()
+  assertSecretFree(content)
+  const receipt = AnnotationBudgetAmendment.parse(JSON.parse(content))
+  const originalReceipt = await Bun.file(receiptPath).text()
+  if (
+    receipt.annotator !== annotator ||
+    receipt.model !== model ||
+    receipt.candidatesSHA256 !== candidatesSHA256 ||
+    receipt.preflightSHA256 !== preflight.sha256 ||
+    receipt.receiptSHA256 !== digest(originalReceipt) ||
+    receipt.previousMaxCostUSD !== campaign.maxCostUSD ||
+    receipt.maxCostUSD !== maxCostUSD
+  )
+    throw new Error("Annotation budget amendment conflicts with the immutable campaign")
+  return { receipt, reference: relativeReference(target, content) }
 }
 
 async function verify(reference: z.infer<typeof ArtifactReference>) {
@@ -763,6 +808,13 @@ function requireOption(name: string) {
 function requireAbsolute(name: string) {
   const value = Bun.env[name]
   if (!value || !path.isAbsolute(value)) fail(`${name} must be an absolute path`)
+  return value
+}
+
+function optionalAbsolute(name: string) {
+  const value = Bun.env[name]
+  if (!value) return undefined
+  if (!path.isAbsolute(value)) fail(`${name} must be an absolute path`)
   return value
 }
 
