@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import manifest from "../../../research/auto-drive/protocol/swe-evo-48.json"
 import { analyzeFormalMatrix } from "../src/formal-analysis"
 import { createRunPlan, parseManifest, protocol } from "../src/protocol"
+import { holm } from "../src/statistics"
 
 describe("formal matrix analysis", () => {
   test("validates all 384 paired rows and applies preregistered policy statistics", () => {
@@ -25,6 +26,7 @@ describe("formal matrix analysis", () => {
         model: run.model,
         strategy: run.strategy,
         repeat: run.repeat,
+        status: "succeeded" as const,
         resolved,
         fixRate: Number(resolved),
         firstBoundaryResolved: false,
@@ -47,6 +49,12 @@ describe("formal matrix analysis", () => {
     expect(analysis.comparisons.regex.adjustedPValue).toBeGreaterThanOrEqual(analysis.comparisons.regex.pValue)
     expect(analysis.replications[protocol.models.replication[0]]).toHaveLength(4)
     expect(analysis.off).toMatchObject({ trajectories: 48, resolved: 0 })
+    expect(analysis.comparisons.off).toMatchObject({ baselineOnly: 0, supervisorOnly: 10 })
+    expect(analysis.comparisons.off.resolvedDifference.estimate).toBeCloseTo(10 / 48)
+    const family = ["off", "oracle", "blind", "regex"] as const
+    expect(family.map((key) => analysis.comparisons[key].adjustedPValue)).toEqual(
+      holm(family.map((key) => analysis.comparisons[key].pValue)),
+    )
   })
 
   test("rejects partial, duplicate, or off-plan matrices", () => {
@@ -58,6 +66,7 @@ describe("formal matrix analysis", () => {
       model: plan[0].model,
       strategy: plan[0].strategy,
       repeat: plan[0].repeat,
+      status: "succeeded" as const,
       resolved: false,
       fixRate: 0,
       firstBoundaryResolved: false,
@@ -69,6 +78,87 @@ describe("formal matrix analysis", () => {
       costUSD: 0,
       latencyMS: 0,
     }
-    expect(() => analyzeFormalMatrix(Array.from({ length: 384 }, () => record), plan)).toThrow("duplicate")
+    expect(() =>
+      analyzeFormalMatrix(
+        Array.from({ length: 384 }, () => record),
+        plan,
+      ),
+    ).toThrow("duplicate")
+  })
+  test("rejects invalid metrics and repeated task identities before inference", () => {
+    const plan = createRunPlan(parseManifest(manifest))
+    const records = plan.map((run) => ({
+      runID: run.id,
+      taskID: run.taskID,
+      model: run.model,
+      strategy: run.strategy,
+      repeat: run.repeat,
+      status: "succeeded" as const,
+      resolved: false,
+      fixRate: 0,
+      firstBoundaryResolved: false,
+      firstBoundaryFixRate: 0,
+      manualContinuationCount: 0,
+      redundantTurns: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      costUSD: 0,
+      latencyMS: 0,
+    }))
+    expect(() =>
+      analyzeFormalMatrix(
+        records.map((record, i) => (i ? record : { ...record, fixRate: 2 })),
+        plan,
+      ),
+    ).toThrow()
+    expect(() =>
+      analyzeFormalMatrix(
+        records.map((record, i) => (i ? record : { ...record, costUSD: Number.NaN })),
+        plan,
+      ),
+    ).toThrow()
+    expect(() => analyzeFormalMatrix(records, plan, { bootstrapIterations: 0 })).toThrow()
+    const duplicateTask = plan.map((run) => ({ ...run, taskID: "same-task" }))
+    expect(() =>
+      analyzeFormalMatrix(
+        records.map((record) => ({ ...record, taskID: "same-task" })),
+        duplicateTask,
+      ),
+    ).toThrow()
+  })
+  test("counts terminal failures as unsuccessful while preserving raw grader outcomes", () => {
+    const plan = createRunPlan(parseManifest(manifest))
+    const records = plan.map((run) => ({
+      runID: run.id,
+      taskID: run.taskID,
+      model: run.model,
+      strategy: run.strategy,
+      repeat: run.repeat,
+      status: "failed" as const,
+      resolved: true,
+      fixRate: 1,
+      firstBoundaryResolved: false,
+      firstBoundaryFixRate: 0,
+      manualContinuationCount: 0,
+      redundantTurns: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      costUSD: 0,
+      latencyMS: 0,
+    }))
+    const analysis = analyzeFormalMatrix(records, plan, { bootstrapIterations: 100 })
+    expect(analysis.primary.repeatZero.supervisor).toMatchObject({
+      resolved: 0,
+      resolvedRate: 0,
+      rawResolved: 48,
+      rawResolvedRate: 1,
+      meanFixRate: 1,
+    })
+    expect(analysis.comparisons.off.resolvedDifference.estimate).toBe(0)
+    expect(analysis.outcomeDefinition).toEqual({
+      resolved: "completed-and-test-resolved",
+      fixRate: "raw-final-grader-fraction",
+    })
+    expect(records.every((record) => record.resolved)).toBeTrue()
   })
 })

@@ -16,6 +16,62 @@ import { loadPreflight } from "../src/preflight"
 import { protocol } from "../src/protocol"
 import { admitBoundaryResearchCost, assertBoundaryResearchReservation } from "../src/research-budget"
 
+const Reference = z.object({ path: z.string().min(1), sha256: z.string().regex(/^[a-f0-9]{64}$/) })
+const Record = z
+  .object({
+    schemaVersion: z.literal(1),
+    protocol: z.literal(protocol.version),
+    boundaryID: z.string().min(1),
+    variant: AblationVariant,
+    prediction: z.enum(["continue", "stop", "defer"]),
+    recordedAt: z.iso.datetime(),
+    model: z.string().min(1),
+    modelVersion: z.string().min(1),
+    promptTokens: z.number().int().nonnegative(),
+    completionTokens: z.number().int().nonnegative(),
+    request: Reference.optional(),
+    response: Reference.optional(),
+  })
+  .superRefine((record, context) => {
+    if (record.variant === "regex" && (record.request || record.response))
+      context.addIssue({ code: "custom", message: "Regex ablation cannot reference provider artifacts" })
+    if (record.variant !== "regex" && (!record.request || !record.response))
+      context.addIssue({ code: "custom", message: "Model ablation requires request and response artifacts" })
+  })
+const Receipt = z.object({
+  schemaVersion: z.literal(1),
+  protocol: z.literal(protocol.version),
+  method: z.literal("frozen-boundary-component-ablation"),
+  testSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+  preflightSHA256: z.string().regex(/^[a-f0-9]{64}$/),
+  startedAt: z.iso.datetime(),
+  baselineSpendUSD: z.number().nonnegative(),
+  maxCostUSD: z.number().positive(),
+  perCallCeilingUSD: z.number().positive(),
+})
+const Failure = z.object({
+  schemaVersion: z.literal(1),
+  protocol: z.literal(protocol.version),
+  boundaryID: z.string().min(1),
+  variant: AblationVariant.exclude(["regex"]),
+  recordedAt: z.iso.datetime(),
+  terminal: z.literal(true),
+  retryAllowed: z.literal(false),
+  kind: z.enum([
+    "provider-invalid-output",
+    "provider-http-error",
+    "provider-transport-error",
+    "response-secret-rejected",
+  ]),
+  httpStatus: z.number().int().optional(),
+  request: Reference,
+  response: Reference.optional(),
+  rejectedResponseSHA256: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/)
+    .optional(),
+})
+
 const concurrency = 2
 const testPath = path.resolve(requireOption("test"))
 const output = path.resolve(requireOption("output"))
@@ -40,14 +96,20 @@ const controller = preflight.receipt.models.find((item) => item.model === protoc
 if (!controller || controller.trajectoryCapacity < candidates.length * 4)
   fail("Ablation preflight does not cover all 504 controller calls")
 const modelID = protocol.models.controller.slice(protocol.models.controller.indexOf("/") + 1)
+const regexVersion = `sha256:${digest(await Bun.file(new URL("../../core/src/session/auto-drive.ts", import.meta.url)).text())}`
 const testSHA256 = digest(testContent)
 const requestsRoot = path.join(output, "requests")
 const responsesRoot = path.join(output, "responses")
 const recordsRoot = path.join(output, "records")
+const failuresRoot = path.join(output, "failures")
 const receiptPath = path.join(output, "receipt.json")
 const checkpointsPath = path.join(output, "spend-checkpoints.jsonl")
-await Promise.all([mkdir(requestsRoot, { recursive: true }), mkdir(responsesRoot, { recursive: true }), mkdir(recordsRoot, { recursive: true })])
-await Promise.all([output, requestsRoot, responsesRoot, recordsRoot].map((directory) => chmod(directory, 0o700)))
+await Promise.all(
+  [requestsRoot, responsesRoot, recordsRoot, failuresRoot].map((directory) => mkdir(directory, { recursive: true })),
+)
+await Promise.all(
+  [output, requestsRoot, responsesRoot, recordsRoot, failuresRoot].map((directory) => chmod(directory, 0o700)),
+)
 const key = (await Bun.file(keyFile).text()).trim()
 if (!key) fail("Gateway key file is empty")
 const campaign = await loadOrCreateReceipt()
@@ -60,7 +122,8 @@ const records = new Map(
           const file = Bun.file(path.join(recordsRoot, `${id}.json`))
           if (!(await file.exists())) return
           const record = Record.parse(await file.json())
-          if (record.boundaryID !== candidate.id || record.variant !== variant) throw new Error(`Conflicting ablation record: ${id}`)
+          if (record.boundaryID !== candidate.id || record.variant !== variant)
+            throw new Error(`Conflicting ablation record: ${id}`)
           if (variant !== "regex") await Promise.all([verify(record.request!), verify(record.response!)])
           return [id, record] as const
         }),
@@ -68,6 +131,24 @@ const records = new Map(
     )
   ).filter((item): item is NonNullable<typeof item> => !!item),
 )
+// An admitted request without a success record may already have been charged.
+// Do not turn an ambiguous crash or an invalid answer into another paid attempt.
+for (const candidate of candidates) {
+  for (const variant of AblationVariant.options.filter((variant) => variant !== "regex")) {
+    const id = `${candidate.id}.${variant}`
+    const failureFile = Bun.file(path.join(failuresRoot, `${id}.json`))
+    if (await failureFile.exists()) {
+      const failure = Failure.parse(await failureFile.json())
+      if (failure.boundaryID !== candidate.id || failure.variant !== variant || records.has(id))
+        throw new Error(`Conflicting terminal ablation record: ${id}`)
+      await verify(failure.request)
+      if (failure.response) await verify(failure.response)
+      throw new Error("Ablation campaign has terminal failed attempts; no automatic paid retry is permitted")
+    }
+    if (!records.has(id) && (await Bun.file(path.join(requestsRoot, `${id}.json`)).exists()))
+      throw new Error(`Ablation request has unresolved provider outcome; reconcile without replay: ${id}`)
+  }
+}
 
 for (const candidate of candidates) {
   const id = `${candidate.id}.regex`
@@ -80,7 +161,7 @@ for (const candidate of candidates) {
     prediction: createAblationPrediction(candidate, "regex").label,
     recordedAt: new Date().toISOString(),
     model: "production-regex",
-    modelVersion: protocol.commit,
+    modelVersion: regexVersion,
     promptTokens: 0,
     completionTokens: 0,
   })
@@ -100,17 +181,22 @@ for (let index = 0; index < pending.length; index += concurrency) {
   if (spent < 0) throw new Error("Gateway cumulative spend moved backwards")
   if (maxCostUSD - spent < batch.length * perCallCeilingUSD)
     throw new Error("Ablation budget cannot reserve the next bounded batch")
-  const completed = await Promise.all(batch.map(runModelVariant))
-  completed.forEach(({ id, record }) => records.set(id, record))
+  const completed = await Promise.allSettled(batch.map(runModelVariant))
+  completed.forEach((result) => {
+    if (result.status === "fulfilled") records.set(result.value.id, result.value.record)
+  })
   const settled = await readSettledSpend()
   const delta = settled - campaign.baselineSpendUSD
   await append(checkpointsPath, {
     timestamp: new Date().toISOString(),
     completed: records.size,
+    failed: completed.filter((result) => result.status === "rejected").length,
     settledSpendUSD: settled,
     observedSpendDeltaUSD: Number(delta.toFixed(7)),
   })
   if (delta > maxCostUSD) throw new Error("Ablation campaign exceeded its authorized cost ceiling")
+  if (completed.some((result) => result.status === "rejected"))
+    throw new Error("Ablation batch failed; immutable evidence and spend checkpoint retained, no automatic paid retry")
 }
 
 const predictions = AblationVariant.options.flatMap((variant) =>
@@ -135,16 +221,28 @@ const manifest = {
 }
 await Promise.all([
   writeFile(path.join(output, "predictions.jsonl"), serialized, { encoding: "utf8", mode: 0o600 }),
-  writeFile(path.join(output, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", { encoding: "utf8", mode: 0o600 }),
+  writeFile(path.join(output, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", {
+    encoding: "utf8",
+    mode: 0o600,
+  }),
 ])
-await admitBoundaryResearchCost(budgetLedger, "boundary-ablation:r1", {
-  amountUSD: manifest.costUSD,
-  promptTokens: manifest.promptTokens,
-  completionTokens: manifest.completionTokens,
-}, undefined, fixedBoundaryCostUSD)
+await admitBoundaryResearchCost(
+  budgetLedger,
+  "boundary-ablation:r1",
+  {
+    amountUSD: manifest.costUSD,
+    promptTokens: manifest.promptTokens,
+    completionTokens: manifest.completionTokens,
+  },
+  undefined,
+  fixedBoundaryCostUSD,
+)
 console.log(JSON.stringify({ output, predictions: predictions.length, costUSD: manifest.costUSD }))
 
-async function runModelVariant(item: { candidate: z.infer<typeof BoundaryCandidate>; variant: Exclude<z.infer<typeof AblationVariant>, "regex"> }) {
+async function runModelVariant(item: {
+  candidate: z.infer<typeof BoundaryCandidate>
+  variant: Exclude<z.infer<typeof AblationVariant>, "regex">
+}) {
   const id = `${item.candidate.id}.${item.variant}`
   const prompt = buildAblationPrompt(item.candidate, item.variant)
   const requestContent = JSON.stringify(buildAblationRequest(modelID, prompt))
@@ -156,14 +254,34 @@ async function runModelVariant(item: { candidate: z.infer<typeof BoundaryCandida
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
     body: requestContent,
     signal: AbortSignal.timeout(60_000),
-  })
-  const raw = await response.text()
-  if (!response.ok) throw new Error(`Ablation provider returned HTTP ${response.status}`)
-  assertSecretFree(raw)
-  const parsed = parseAblationResponse(item.candidate, item.variant, JSON.parse(raw))
-  const responseContent = JSON.stringify(JSON.parse(raw))
+  }).catch(() => undefined)
+  const request = reference(requestPath, requestContent)
+  if (!response) return terminalFailure(item, { kind: "provider-transport-error", request })
+  const raw = await response.text().catch(() => undefined)
+  if (raw === undefined)
+    return terminalFailure(item, { kind: "provider-transport-error", httpStatus: response.status, request })
+  const safe = await Promise.resolve()
+    .then(() => {
+      assertSecretFree(raw)
+      return true
+    })
+    .catch(() => false)
+  if (!safe)
+    return terminalFailure(item, {
+      kind: "response-secret-rejected",
+      httpStatus: response.status,
+      request,
+      rejectedResponseSHA256: digest(raw),
+    })
   const responsePath = path.join(responsesRoot, `${id}.json`)
-  await writeFile(responsePath, responseContent, { encoding: "utf8", flag: "wx", mode: 0o600 })
+  // Preserve raw response text before HTTP or model-output parsing can reject it.
+  await writeFile(responsePath, raw, { encoding: "utf8", flag: "wx", mode: 0o600 })
+  const evidence = { request, response: reference(responsePath, raw), httpStatus: response.status }
+  if (!response.ok) return terminalFailure(item, { ...evidence, kind: "provider-http-error" })
+  const parsed = await Promise.resolve()
+    .then(() => parseAblationResponse(item.candidate, item.variant, JSON.parse(raw)))
+    .catch(() => undefined)
+  if (!parsed) return terminalFailure(item, { ...evidence, kind: "provider-invalid-output" })
   const record = Record.parse({
     schemaVersion: 1,
     protocol: protocol.version,
@@ -175,11 +293,35 @@ async function runModelVariant(item: { candidate: z.infer<typeof BoundaryCandida
     modelVersion: parsed.modelVersion,
     promptTokens: parsed.promptTokens,
     completionTokens: parsed.completionTokens,
-    request: reference(requestPath, requestContent),
-    response: reference(responsePath, responseContent),
+    request,
+    response: evidence.response,
   })
   await persist(id, record)
   return { id, record }
+}
+
+async function terminalFailure(
+  item: { candidate: z.infer<typeof BoundaryCandidate>; variant: Exclude<z.infer<typeof AblationVariant>, "regex"> },
+  evidence: Pick<z.infer<typeof Failure>, "kind" | "request" | "response" | "httpStatus" | "rejectedResponseSHA256">,
+): Promise<never> {
+  const failure = Failure.parse({
+    schemaVersion: 1,
+    protocol: protocol.version,
+    boundaryID: item.candidate.id,
+    variant: item.variant,
+    recordedAt: new Date().toISOString(),
+    terminal: true,
+    retryAllowed: false,
+    ...evidence,
+  })
+  const content = JSON.stringify(failure, null, 2) + "\n"
+  assertSecretFree(content)
+  await writeFile(path.join(failuresRoot, `${item.candidate.id}.${item.variant}.json`), content, {
+    encoding: "utf8",
+    flag: "wx",
+    mode: 0o600,
+  })
+  throw new Error(`Terminal ablation failure: ${failure.kind}`)
 }
 
 async function persist(id: string, record: z.infer<typeof Record>) {
@@ -192,7 +334,12 @@ async function loadOrCreateReceipt() {
   const file = Bun.file(receiptPath)
   if (await file.exists()) {
     const receipt = Receipt.parse(await file.json())
-    if (receipt.testSHA256 !== testSHA256 || receipt.preflightSHA256 !== preflight.sha256 || receipt.maxCostUSD !== maxCostUSD || receipt.perCallCeilingUSD !== perCallCeilingUSD)
+    if (
+      receipt.testSHA256 !== testSHA256 ||
+      receipt.preflightSHA256 !== preflight.sha256 ||
+      receipt.maxCostUSD !== maxCostUSD ||
+      receipt.perCallCeilingUSD !== perCallCeilingUSD
+    )
       throw new Error("Ablation campaign receipt conflicts with this invocation")
     return receipt
   }
@@ -292,35 +439,3 @@ async function readOptional(filePath: string) {
   const file = Bun.file(filePath)
   return (await file.exists()) ? file.text() : ""
 }
-
-const Reference = z.object({ path: z.string().min(1), sha256: z.string().regex(/^[a-f0-9]{64}$/) })
-const Record = z.object({
-  schemaVersion: z.literal(1),
-  protocol: z.literal(protocol.version),
-  boundaryID: z.string().min(1),
-  variant: AblationVariant,
-  prediction: z.enum(["continue", "stop", "defer"]),
-  recordedAt: z.iso.datetime(),
-  model: z.string().min(1),
-  modelVersion: z.string().min(1),
-  promptTokens: z.number().int().nonnegative(),
-  completionTokens: z.number().int().nonnegative(),
-  request: Reference.optional(),
-  response: Reference.optional(),
-}).superRefine((record, context) => {
-  if (record.variant === "regex" && (record.request || record.response))
-    context.addIssue({ code: "custom", message: "Regex ablation cannot reference provider artifacts" })
-  if (record.variant !== "regex" && (!record.request || !record.response))
-    context.addIssue({ code: "custom", message: "Model ablation requires request and response artifacts" })
-})
-const Receipt = z.object({
-  schemaVersion: z.literal(1),
-  protocol: z.literal(protocol.version),
-  method: z.literal("frozen-boundary-component-ablation"),
-  testSHA256: z.string().regex(/^[a-f0-9]{64}$/),
-  preflightSHA256: z.string().regex(/^[a-f0-9]{64}$/),
-  startedAt: z.iso.datetime(),
-  baselineSpendUSD: z.number().nonnegative(),
-  maxCostUSD: z.number().positive(),
-  perCallCeilingUSD: z.number().positive(),
-})
