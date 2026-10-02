@@ -1,0 +1,711 @@
+{
+  "kind": "hypothetical-design-sensitivity-not-empirical-results",
+  "independentUnit": "matched task pair, not trajectory or repeated run",
+  "method": "Exact enumeration: D ~ Binomial(n, q); W | D ~ Binomial(D, p); reject two-sided exact McNemar at p-value <= alpha",
+  "assumptions": [
+    "All q and p values are hypothetical design assumptions; no pilot outcomes or labels are read or fitted.",
+    "Task pairs are independent and identically distributed; repository/task dependence can invalidate this power model.",
+    "alpha=0.0125 is a conservative sufficient rejection threshold for a four-comparison Holm family, not exact Holm joint power.",
+    "n=96 and n=192 are hypothetical independent task counts, not approved expansions or reinterpretations of repeated trajectories.",
+    "384 trajectories do not imply 384 independent tasks. Current primary analysis has 48 task pairs and repeated runs are dependent."
+  ],
+  "grid": {
+    "n": [
+      48,
+      96,
+      192
+    ],
+    "discordance": [
+      0.1,
+      0.25,
+      0.5
+    ],
+    "winProbability": [
+      0.5,
+      0.65,
+      0.75,
+      0.85
+    ],
+    "alpha": [
+      0.05,
+      0.0125
+    ]
+  },
+  "rows": [
+    {
+      "n": 48,
+      "discordance": 0.1,
+      "winProbability": 0.5,
+      "alpha": 0.05,
+      "expectedDifference": 0,
+      "power": 0.008018048051896452,
+      "probabilityMass": 1.0000000000000024
+    },
+    {
+      "n": 48,
+      "discordance": 0.1,
+      "winProbability": 0.5,
+      "alpha": 0.0125,
+      "expectedDifference": 0,
+      "power": 0.0006324839457452417,
+      "probabilityMass": 1.0000000000000024
+    },
+    {
+      "n": 48,
+      "discordance": 0.1,
+      "winProbability": 0.65,
+      "alpha": 0.05,
+      "expectedDifference": 0.030000000000000006,
+      "power": 0.02300175247737884,
+      "probabilityMass": 1.0000000000000027
+    },
+    {
+      "n": 48,
+      "discordance": 0.1,
+      "winProbability": 0.65,
+      "alpha": 0.0125,
+      "expectedDifference": 0.030000000000000006,
+      "power": 0.0028882811162327486,
+      "probabilityMass": 1.0000000000000027
+    },
+    {
+      "n": 48,
+      "discordance": 0.1,
+      "winProbability": 0.75,
+      "alpha": 0.05,
+      "expectedDifference": 0.05,
+      "power": 0.05777232584823136,
+      "probabilityMass": 1.0000000000000024
+    },
+    {
+      "n": 48,
+      "discordance": 0.1,
+      "winProbability": 0.75,
+      "alpha": 0.0125,
+      "expectedDifference": 0.05,
+      "power": 0.009561240973471028,
+      "probabilityMass": 1.0000000000000024
+    },
+    {
+      "n": 48,
+      "discordance": 0.1,
+      "winProbability": 0.85,
+      "alpha": 0.05,
+      "expectedDifference": 0.06999999999999999,
+      "power": 0.12888572881403315,
+      "probabilityMass": 1.0000000000000022
+    },
+    {
+      "n": 48,
+      "discordance": 0.1,
+      "winProbability": 0.85,
+      "alpha": 0.0125,
+      "expectedDifference": 0.06999999999999999,
+      "power": 0.02714457118460291,
+      "probabilityMass": 1.0000000000000022
+    },
+    {
+      "n": 48,
+      "discordance": 0.25,
+      "winProbability": 0.5,
+      "alpha": 0.05,
+      "expectedDifference": 0,
+      "power": 0.02441292239219195,
+      "probabilityMass": 0.9999999999999993
+    },
+    {
+      "n": 48,
+      "discordance": 0.25,
+      "winProbability": 0.5,
+      "alpha": 0.0125,
+      "expectedDifference": 0,
+      "power": 0.005083411411637016,
+      "probabilityMass": 0.9999999999999993
+    },
+    {
+      "n": 48,
+      "discordance": 0.25,
+      "winProbability": 0.65,
+      "alpha": 0.05,
+      "expectedDifference": 0.07500000000000001,
+      "power": 0.11037615871756802,
+      "probabilityMass": 0.9999999999999997
+    },
+    {
+      "n": 48,
+      "discordance": 0.25,
+      "winProbability": 0.65,
+      "alpha": 0.0125,
+      "expectedDifference": 0.07500000000000001,
+      "power": 0.035430176530097494,
+      "probabilityMass": 0.9999999999999997
+    },
+    {
+      "n": 48,
+      "discordance": 0.25,
+      "winProbability": 0.75,
+      "alpha": 0.05,
+      "expectedDifference": 0.125,
+      "power": 0.30749689177026346,
+      "probabilityMass": 0.9999999999999993
+    },
+    {
+      "n": 48,
+      "discordance": 0.25,
+      "winProbability": 0.75,
+      "alpha": 0.0125,
+      "expectedDifference": 0.125,
+      "power": 0.13608563156898096,
+      "probabilityMass": 0.9999999999999993
+    },
+    {
+      "n": 48,
+      "discordance": 0.25,
+      "winProbability": 0.85,
+      "alpha": 0.05,
+      "expectedDifference": 0.175,
+      "power": 0.6231556366059154,
+      "probabilityMass": 0.9999999999999991
+    },
+    {
+      "n": 48,
+      "discordance": 0.25,
+      "winProbability": 0.85,
+      "alpha": 0.0125,
+      "expectedDifference": 0.175,
+      "power": 0.38459651675206064,
+      "probabilityMass": 0.9999999999999991
+    },
+    {
+      "n": 48,
+      "discordance": 0.5,
+      "winProbability": 0.5,
+      "alpha": 0.05,
+      "expectedDifference": 0,
+      "power": 0.029452142761010294,
+      "probabilityMass": 1.0000000000000002
+    },
+    {
+      "n": 48,
+      "discordance": 0.5,
+      "winProbability": 0.5,
+      "alpha": 0.0125,
+      "expectedDifference": 0,
+      "power": 0.0068807224010210355,
+      "probabilityMass": 1.0000000000000002
+    },
+    {
+      "n": 48,
+      "discordance": 0.5,
+      "winProbability": 0.65,
+      "alpha": 0.05,
+      "expectedDifference": 0.15000000000000002,
+      "power": 0.23899809711302705,
+      "probabilityMass": 1.000000000000001
+    },
+    {
+      "n": 48,
+      "discordance": 0.5,
+      "winProbability": 0.65,
+      "alpha": 0.0125,
+      "expectedDifference": 0.15000000000000002,
+      "power": 0.10533413197434566,
+      "probabilityMass": 1.000000000000001
+    },
+    {
+      "n": 48,
+      "discordance": 0.5,
+      "winProbability": 0.75,
+      "alpha": 0.05,
+      "expectedDifference": 0.25,
+      "power": 0.6356093281677977,
+      "probabilityMass": 1.0000000000000002
+    },
+    {
+      "n": 48,
+      "discordance": 0.5,
+      "winProbability": 0.75,
+      "alpha": 0.0125,
+      "expectedDifference": 0.25,
+      "power": 0.4181462017599924,
+      "probabilityMass": 1.0000000000000002
+    },
+    {
+      "n": 48,
+      "discordance": 0.5,
+      "winProbability": 0.85,
+      "alpha": 0.05,
+      "expectedDifference": 0.35,
+      "power": 0.9425698746697703,
+      "probabilityMass": 1
+    },
+    {
+      "n": 48,
+      "discordance": 0.5,
+      "winProbability": 0.85,
+      "alpha": 0.0125,
+      "expectedDifference": 0.35,
+      "power": 0.8430930722912403,
+      "probabilityMass": 1
+    },
+    {
+      "n": 96,
+      "discordance": 0.1,
+      "winProbability": 0.5,
+      "alpha": 0.05,
+      "expectedDifference": 0,
+      "power": 0.021413157929626447,
+      "probabilityMass": 1.0000000000000049
+    },
+    {
+      "n": 96,
+      "discordance": 0.1,
+      "winProbability": 0.5,
+      "alpha": 0.0125,
+      "expectedDifference": 0,
+      "power": 0.004273255864728034,
+      "probabilityMass": 1.0000000000000049
+    },
+    {
+      "n": 96,
+      "discordance": 0.1,
+      "winProbability": 0.65,
+      "alpha": 0.05,
+      "expectedDifference": 0.030000000000000006,
+      "power": 0.0831794988501279,
+      "probabilityMass": 1.0000000000000049
+    },
+    {
+      "n": 96,
+      "discordance": 0.1,
+      "winProbability": 0.65,
+      "alpha": 0.0125,
+      "expectedDifference": 0.030000000000000006,
+      "power": 0.025086289188625332,
+      "probabilityMass": 1.0000000000000049
+    },
+    {
+      "n": 96,
+      "discordance": 0.1,
+      "winProbability": 0.75,
+      "alpha": 0.05,
+      "expectedDifference": 0.05,
+      "power": 0.22737681930605202,
+      "probabilityMass": 1.0000000000000049
+    },
+    {
+      "n": 96,
+      "discordance": 0.1,
+      "winProbability": 0.75,
+      "alpha": 0.0125,
+      "expectedDifference": 0.05,
+      "power": 0.09126300317248472,
+      "probabilityMass": 1.0000000000000049
+    },
+    {
+      "n": 96,
+      "discordance": 0.1,
+      "winProbability": 0.85,
+      "alpha": 0.05,
+      "expectedDifference": 0.06999999999999999,
+      "power": 0.4844477782152413,
+      "probabilityMass": 1.0000000000000047
+    },
+    {
+      "n": 96,
+      "discordance": 0.1,
+      "winProbability": 0.85,
+      "alpha": 0.0125,
+      "expectedDifference": 0.06999999999999999,
+      "power": 0.25992655464959463,
+      "probabilityMass": 1.0000000000000047
+    },
+    {
+      "n": 96,
+      "discordance": 0.25,
+      "winProbability": 0.5,
+      "alpha": 0.05,
+      "expectedDifference": 0,
+      "power": 0.029590559209319238,
+      "probabilityMass": 0.999999999999999
+    },
+    {
+      "n": 96,
+      "discordance": 0.25,
+      "winProbability": 0.5,
+      "alpha": 0.0125,
+      "expectedDifference": 0,
+      "power": 0.006827281000250588,
+      "probabilityMass": 0.999999999999999
+    },
+    {
+      "n": 96,
+      "discordance": 0.25,
+      "winProbability": 0.65,
+      "alpha": 0.05,
+      "expectedDifference": 0.07500000000000001,
+      "power": 0.2396162842014599,
+      "probabilityMass": 0.9999999999999994
+    },
+    {
+      "n": 96,
+      "discordance": 0.25,
+      "winProbability": 0.65,
+      "alpha": 0.0125,
+      "expectedDifference": 0.07500000000000001,
+      "power": 0.10544929091453055,
+      "probabilityMass": 0.9999999999999994
+    },
+    {
+      "n": 96,
+      "discordance": 0.25,
+      "winProbability": 0.75,
+      "alpha": 0.05,
+      "expectedDifference": 0.125,
+      "power": 0.6337937061835565,
+      "probabilityMass": 0.999999999999999
+    },
+    {
+      "n": 96,
+      "discordance": 0.25,
+      "winProbability": 0.75,
+      "alpha": 0.0125,
+      "expectedDifference": 0.125,
+      "power": 0.4164699805697975,
+      "probabilityMass": 0.999999999999999
+    },
+    {
+      "n": 96,
+      "discordance": 0.25,
+      "winProbability": 0.85,
+      "alpha": 0.05,
+      "expectedDifference": 0.175,
+      "power": 0.938443461841506,
+      "probabilityMass": 0.9999999999999988
+    },
+    {
+      "n": 96,
+      "discordance": 0.25,
+      "winProbability": 0.85,
+      "alpha": 0.0125,
+      "expectedDifference": 0.175,
+      "power": 0.8347467533987876,
+      "probabilityMass": 0.9999999999999988
+    },
+    {
+      "n": 96,
+      "discordance": 0.5,
+      "winProbability": 0.5,
+      "alpha": 0.05,
+      "expectedDifference": 0,
+      "power": 0.03654704246023048,
+      "probabilityMass": 1.0000000000000004
+    },
+    {
+      "n": 96,
+      "discordance": 0.5,
+      "winProbability": 0.5,
+      "alpha": 0.0125,
+      "expectedDifference": 0,
+      "power": 0.00813626776244008,
+      "probabilityMass": 1.0000000000000004
+    },
+    {
+      "n": 96,
+      "discordance": 0.5,
+      "winProbability": 0.65,
+      "alpha": 0.05,
+      "expectedDifference": 0.15000000000000002,
+      "power": 0.5019067676072945,
+      "probabilityMass": 1.0000000000000018
+    },
+    {
+      "n": 96,
+      "discordance": 0.5,
+      "winProbability": 0.65,
+      "alpha": 0.0125,
+      "expectedDifference": 0.15000000000000002,
+      "power": 0.2871170006793697,
+      "probabilityMass": 1.0000000000000018
+    },
+    {
+      "n": 96,
+      "discordance": 0.5,
+      "winProbability": 0.75,
+      "alpha": 0.05,
+      "expectedDifference": 0.25,
+      "power": 0.9353063387955511,
+      "probabilityMass": 0.9999999999999997
+    },
+    {
+      "n": 96,
+      "discordance": 0.5,
+      "winProbability": 0.75,
+      "alpha": 0.0125,
+      "expectedDifference": 0.25,
+      "power": 0.826924783430367,
+      "probabilityMass": 0.9999999999999997
+    },
+    {
+      "n": 96,
+      "discordance": 0.5,
+      "winProbability": 0.85,
+      "alpha": 0.05,
+      "expectedDifference": 0.35,
+      "power": 0.9994720897694535,
+      "probabilityMass": 0.9999999999999999
+    },
+    {
+      "n": 96,
+      "discordance": 0.5,
+      "winProbability": 0.85,
+      "alpha": 0.0125,
+      "expectedDifference": 0.35,
+      "power": 0.9964759410512044,
+      "probabilityMass": 0.9999999999999999
+    },
+    {
+      "n": 192,
+      "discordance": 0.1,
+      "winProbability": 0.5,
+      "alpha": 0.05,
+      "expectedDifference": 0,
+      "power": 0.02926816957942101,
+      "probabilityMass": 1.000000000000011
+    },
+    {
+      "n": 192,
+      "discordance": 0.1,
+      "winProbability": 0.5,
+      "alpha": 0.0125,
+      "expectedDifference": 0,
+      "power": 0.006220516747014811,
+      "probabilityMass": 1.000000000000011
+    },
+    {
+      "n": 192,
+      "discordance": 0.1,
+      "winProbability": 0.65,
+      "alpha": 0.05,
+      "expectedDifference": 0.030000000000000006,
+      "power": 0.19179450901263181,
+      "probabilityMass": 1.0000000000000115
+    },
+    {
+      "n": 192,
+      "discordance": 0.1,
+      "winProbability": 0.65,
+      "alpha": 0.0125,
+      "expectedDifference": 0.030000000000000006,
+      "power": 0.07529933053588125,
+      "probabilityMass": 1.0000000000000115
+    },
+    {
+      "n": 192,
+      "discordance": 0.1,
+      "winProbability": 0.75,
+      "alpha": 0.05,
+      "expectedDifference": 0.05,
+      "power": 0.523574365620236,
+      "probabilityMass": 1.000000000000011
+    },
+    {
+      "n": 192,
+      "discordance": 0.1,
+      "winProbability": 0.75,
+      "alpha": 0.0125,
+      "expectedDifference": 0.05,
+      "power": 0.3013621557146092,
+      "probabilityMass": 1.000000000000011
+    },
+    {
+      "n": 192,
+      "discordance": 0.1,
+      "winProbability": 0.85,
+      "alpha": 0.05,
+      "expectedDifference": 0.06999999999999999,
+      "power": 0.865718148229655,
+      "probabilityMass": 1.0000000000000109
+    },
+    {
+      "n": 192,
+      "discordance": 0.1,
+      "winProbability": 0.85,
+      "alpha": 0.0125,
+      "expectedDifference": 0.06999999999999999,
+      "power": 0.6916081891866146,
+      "probabilityMass": 1.0000000000000109
+    },
+    {
+      "n": 192,
+      "discordance": 0.25,
+      "winProbability": 0.5,
+      "alpha": 0.05,
+      "expectedDifference": 0,
+      "power": 0.03641999683310621,
+      "probabilityMass": 0.9999999999999976
+    },
+    {
+      "n": 192,
+      "discordance": 0.25,
+      "winProbability": 0.5,
+      "alpha": 0.0125,
+      "expectedDifference": 0,
+      "power": 0.008155173477643307,
+      "probabilityMass": 0.9999999999999976
+    },
+    {
+      "n": 192,
+      "discordance": 0.25,
+      "winProbability": 0.65,
+      "alpha": 0.05,
+      "expectedDifference": 0.07500000000000001,
+      "power": 0.5007607973010313,
+      "probabilityMass": 0.999999999999999
+    },
+    {
+      "n": 192,
+      "discordance": 0.25,
+      "winProbability": 0.65,
+      "alpha": 0.0125,
+      "expectedDifference": 0.07500000000000001,
+      "power": 0.2875429329024874,
+      "probabilityMass": 0.999999999999999
+    },
+    {
+      "n": 192,
+      "discordance": 0.25,
+      "winProbability": 0.75,
+      "alpha": 0.05,
+      "expectedDifference": 0.125,
+      "power": 0.9329189489661981,
+      "probabilityMass": 0.9999999999999969
+    },
+    {
+      "n": 192,
+      "discordance": 0.25,
+      "winProbability": 0.75,
+      "alpha": 0.0125,
+      "expectedDifference": 0.125,
+      "power": 0.8241562217915859,
+      "probabilityMass": 0.9999999999999969
+    },
+    {
+      "n": 192,
+      "discordance": 0.25,
+      "winProbability": 0.85,
+      "alpha": 0.05,
+      "expectedDifference": 0.175,
+      "power": 0.9993111245043262,
+      "probabilityMass": 0.9999999999999973
+    },
+    {
+      "n": 192,
+      "discordance": 0.25,
+      "winProbability": 0.85,
+      "alpha": 0.0125,
+      "expectedDifference": 0.175,
+      "power": 0.995792192054985,
+      "probabilityMass": 0.9999999999999973
+    },
+    {
+      "n": 192,
+      "discordance": 0.5,
+      "winProbability": 0.5,
+      "alpha": 0.05,
+      "expectedDifference": 0,
+      "power": 0.03945868766873037,
+      "probabilityMass": 0.9999999999999999
+    },
+    {
+      "n": 192,
+      "discordance": 0.5,
+      "winProbability": 0.5,
+      "alpha": 0.0125,
+      "expectedDifference": 0,
+      "power": 0.009498171764308097,
+      "probabilityMass": 0.9999999999999999
+    },
+    {
+      "n": 192,
+      "discordance": 0.5,
+      "winProbability": 0.65,
+      "alpha": 0.05,
+      "expectedDifference": 0.15000000000000002,
+      "power": 0.8204019655887242,
+      "probabilityMass": 1.0000000000000027
+    },
+    {
+      "n": 192,
+      "discordance": 0.5,
+      "winProbability": 0.65,
+      "alpha": 0.0125,
+      "expectedDifference": 0.15000000000000002,
+      "power": 0.6462173338287499,
+      "probabilityMass": 1.0000000000000027
+    },
+    {
+      "n": 192,
+      "discordance": 0.5,
+      "winProbability": 0.75,
+      "alpha": 0.05,
+      "expectedDifference": 0.25,
+      "power": 0.9989206511412735,
+      "probabilityMass": 0.9999999999999987
+    },
+    {
+      "n": 192,
+      "discordance": 0.5,
+      "winProbability": 0.75,
+      "alpha": 0.0125,
+      "expectedDifference": 0.25,
+      "power": 0.9941063072036417,
+      "probabilityMass": 0.9999999999999987
+    },
+    {
+      "n": 192,
+      "discordance": 0.5,
+      "winProbability": 0.85,
+      "alpha": 0.05,
+      "expectedDifference": 0.35,
+      "power": 0.9999999875171945,
+      "probabilityMass": 0.999999999999999
+    },
+    {
+      "n": 192,
+      "discordance": 0.5,
+      "winProbability": 0.85,
+      "alpha": 0.0125,
+      "expectedDifference": 0.35,
+      "power": 0.9999997335914945,
+      "probabilityMass": 0.999999999999999
+    }
+  ],
+  "zeroEventBounds": [
+    {
+      "n": 42,
+      "alpha": 0.05,
+      "confidence": 0.95,
+      "upper": 0.0688426078403949
+    },
+    {
+      "n": 126,
+      "alpha": 0.05,
+      "confidence": 0.95,
+      "upper": 0.02349523886667006
+    }
+  ],
+  "zeroEventCaveat": "Hypothetical zero events only. n=42 is an illustrative independent-observation count, not an expected or guaranteed class denominator. The grouped 54/126 split does not enforce 42 examples per class even when the full 180-example corpus has 60 per class. Actual STOP/DEFER risk estimates must use the realized class counts; n=126 is pooled, not a class-specific denominator. Correlated boundaries cannot be assumed independent. These are not measured safety rates or bounds for the current artifact.",
+  "provenance": {
+    "invocation": "cd packages/autodrive-eval && bun scripts/design-sensitivity.ts",
+    "networkCalls": 0,
+    "empiricalInputFiles": [],
+    "budgetChange": false,
+    "inputSha256": {
+      "packages/autodrive-eval/src/design-sensitivity.ts": "13a1498efa234544321cfe8838433eea7d560f870fcb069238cd8169a2a12687",
+      "packages/autodrive-eval/src/statistics.ts": "7b20309213ef860758dfe3aa1f97246f88068877e1e88eb5d00ff93309779f83",
+      "packages/autodrive-eval/test/design-sensitivity.test.ts": "6d716f2e5e9160fbb7ed6d2478c3cf3ffbfa916dc9255b0b04f10179059dbc68",
+      "packages/autodrive-eval/scripts/design-sensitivity.ts": "0164f584fd7be7597fb9a39339cf8e4bbe378a7e68987081b05d2448c804bf1b"
+    }
+  }
+}
