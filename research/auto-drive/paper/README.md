@@ -1,5 +1,7 @@
 # Paper build
 
+**2026-10-03: pre-results research draft, not a journal-ready submission.** See the [dated methodological errata](../protocol/errata-2026-10-03.md), [independent methodology audit](../reports/methodology-audit-2026-10-03.md), and [prospective journal design](../../../docs/plans/2026-10-03-autodrive-journal-design.md). These distinguish repaired analysis code from missing empirical evidence. The ACM-style layout is not a verified TSE or TOSEM submission template.
+
 The two PDFs share one source:
 
 - `anonymous.tex`: anonymized ACM-style preprint.
@@ -14,4 +16,4 @@ docker build --pull=false --provenance=false -f Dockerfile.texlive -t opencode-a
 bash build.sh
 ```
 
-After each build, run `pdfinfo`, extract text for missing citations, render every page with Poppler, and visually inspect the rendered pages. `package.sh` creates an arXiv source archive only after the PDFs pass these checks. Upload is not part of either script.
+After each build, run `pdfinfo`, extract text for missing citations, render every page with Poppler, and visually inspect the rendered pages. Then run `package.sh` to create a source archive and verify a clean unpacked build. The packaging script does not itself enforce visual, scientific, author-identity, or provenance gates; a successful archive is not a release approval. Upload is not part of either script.

@@ -1,4 +1,6 @@
 \documentclass[sigconf,nonacm]{acmart}
+% The final appendix page is a full-width table, not two text columns to balance.
+\setkeys{acmart.cls}{balance=false}
 
 \setcopyright{none}
 \settopmatter{printacmref=false,printfolios=true}
@@ -21,7 +23,7 @@
 \newcommand{\continueaction}{\textsc{Continue}}
 \newcommand{\stopaction}{\textsc{Stop}}
 \newcommand{\deferaction}{\textsc{Defer}}
-\newcommand{\pending}{\textcolor{red!70!black}{\ResultStatus}}
+\newcommand{\pending}{\textcolor{red!70!black}{\textsc{Pending}}}
 
 \title{AutoDrive: Turn-Boundary Continuation Control for Long-Horizon Coding Agents}
 
@@ -29,11 +31,13 @@
   \author{Anonymous Author(s)}
   \affiliation{%
     \institution{Anonymous Institution}
+    \city{Anonymous City}
     \country{Anonymous Country}}
 \else
   \author{Author Name Placeholder}
   \affiliation{%
     \institution{Affiliation Placeholder}
+    \city{City Placeholder}
     \country{Country Placeholder}}
 \fi
 
@@ -41,7 +45,7 @@
 \raggedbottom
 
 \begin{abstract}
-Coding agents often end a conversational turn before the admitted software task is complete. Users then re-enter short prompts such as ``continue,'' even when the next action is safe, in scope, and inferable from the existing trace. We call this failure \emph{premature session handoff}. We present \system, a session-scoped controller that evaluates terminal worker turns at safe boundaries, chooses among \continueaction, \stopaction, and \deferaction, and durably admits bounded follow-up work. The design separates model execution from continuation admission, preserves user queue and steering priority, and uses event-sourced state plus deterministic input identifiers to recover exactly once across a decision-to-admission crash window. We define a preregistered evaluation on all 48 SWE-EVO long-horizon tasks, a 384-trajectory model and policy matrix, a balanced 180-boundary corpus labeled by a disclosed independent model panel, component ablations, and fault injection. Primary outcomes cover task success, partial Fix Rate, manual continuation demand, unsafe continuation, redundant work, cost, latency, and recovery. This manuscript is a pre-results study draft: system and protocol claims are test-backed, while empirical outcome fields remain \ResultStatus{} until the frozen runs and reference labels are complete.
+Coding agents can end a conversational turn while a safe, authorized next action remains. We call this event \emph{premature session handoff}. We present \system, a session-scoped controller that chooses among \continueaction, \stopaction, and \deferaction{} and durably admits bounded follow-up work. The design separates model execution from continuation admission and reconciles deterministic input identifiers after a crash, while preserving user priority. The frozen study specifies 48 SWE-EVO tasks, a 384-trajectory policy and worker matrix, and five boundary-classification conditions. This is a pre-results manuscript: effectiveness estimates remain pending. Its six-step worker horizon induces terminal summaries, and its model-panel labels are a reference standard rather than human ground truth. Accordingly, the current design can test bounded continuation utility and agreement with that reference; natural handoff prevalence, human effort reduction, and runtime safety require additional evidence. We specify those limitations and the prospective extensions needed for journal-level conclusions.
 \end{abstract}
 
 \begin{CCSXML}
@@ -75,17 +79,17 @@ Interactive coding agents combine a language model, repository tools, execution 
 
 This interaction is not merely inconvenient. It fragments long-horizon execution, makes completion dependent on user vigilance, and confounds evaluation: a capable worker can receive a failing score because its interface yielded control at an arbitrary turn boundary. At the same time, automatically resuming every terminal response is unsafe. A worker may be waiting for a product choice, credentials, permission expansion, destructive confirmation, or missing acceptance criteria. Blind continuation can also create redundant model calls, unbounded loops, cost exhaustion, or repeated external effects.
 
-Prior systems establish important neighboring ideas. ReAct interleaves reasoning and action~\cite{yao2023react}; coding scaffolds such as SWE-agent and OpenHands provide interfaces and execution environments~\cite{yang2024sweagent,wang2024openhands}; and Magentic-One uses an orchestrator to plan, track progress, and recover from errors across specialized agents~\cite{fourney2024magenticone}. Recent work studies sequential abstention~\cite{luo2026abstention}, evidence-linked completion~\cite{liu2026ect}, and infinite agentic loops~\cite{hou2026loops}. These works motivate careful control but do not make a narrower question disappear: at the boundary of a single coding worker's terminal turn, should the same admitted session continue, stop, or return control to the user?
+Prior systems establish important neighboring ideas. ReAct interleaves reasoning and action~\cite{yao2023react}; coding scaffolds such as SWE-agent and OpenHands provide interfaces and execution environments~\cite{yang2024sweagent,wang2024openhands}; and Magentic-One uses an orchestrator to track progress and recover from errors~\cite{fourney2024magenticone}. SCATE directly addresses premature coding-agent termination through adaptive supervision for test generation~\cite{gu2026scate}. Sequential abstention~\cite{luo2026abstention}, evidence-linked completion~\cite{liu2026ect}, and infinite agentic loops~\cite{hou2026loops} further constrain novelty. Our narrower question is how a terminal-turn continuation decision can be integrated with durable admission, user preemption, and recovery, and whether that integration offers measurable utility under controlled budgets.
 
 We study that question through \system. The controller is scoped to the worker's repository location and the durable Session. It evaluates only safe turn boundaries and returns one of three actions. \continueaction{} admits one bounded queued input; \stopaction{} closes the automatic chain; and \deferaction{} returns control when the next action depends on human authority or information. A continuation decision is persisted before queue admission with a deterministic input identifier. Recovery can therefore reconcile a recorded decision with an existing or missing input without duplicating it.
 
 This paper makes four bounded contributions:
 
 \begin{enumerate}[leftmargin=*]
-  \item It formulates \emph{premature session handoff} separately from model stopping, task completion, abstention, and infinite loops.
-  \item It describes a three-state, safety-first continuation controller integrated with durable Session admission, user-priority scheduling, bounded retries, and exactly-once crash recovery.
-  \item It provides a preregistered evaluation: 48 SWE-EVO tasks, four policies, three worker models, 384 paid trajectories, a 180-boundary labeled set, cumulative ablations, and nine fault scenarios.
-  \item It releases an evaluation harness that rejects incomplete provenance, enforces a USD 800 budget, derives off-policy prefixes without extra runs, and computes exact McNemar, task-paired bootstrap, Holm-adjusted, kappa, and macro-F1 statistics.
+  \item It specifies three terminal-boundary actions and the distinction between continuation permission and task-completion evidence.
+  \item It integrates bounded continuation with durable Session admission, user-priority scheduling, and explicit crash-reconciliation invariants.
+  \item It provides a frozen evaluation specification: 48 SWE-EVO tasks, four policies, three worker models, 384 planned trajectories, a 180-boundary target, five information conditions, and nine fault scenarios.
+  \item It provides an artifact-validation and analysis harness, with explicit limits on which scientific claims its current measurements can support.
 \end{enumerate}
 
 We do not claim that supervisors, memory, termination critics, abstention, or loop bounds are new. The empirical contribution is conditional on the frozen study and will be reported even if \system{} produces null or negative utility.
@@ -203,6 +207,9 @@ The critical crash window lies between deciding to continue and admitting its fo
 
 This is exactly-once admission, not exactly-once provider execution. Provider work after a crash has no durable run identity in the current process-local scheduler; the paper does not claim clustered execution recovery. Duplicate advisory wakes coalesce at the Session coordinator, and durable inputs remain the source of truth.
 
+\paragraph{Conditional admission argument.}
+Assume that committed decision events survive restart, input IDs are unique in the durable store, admission compares the full input identity atomically, and a persisted decision always reuses its original ID. There can then be at most one admitted row for a decision: any second successful insertion would contradict ID uniqueness; an equivalent retry reuses the row and a conflicting retry fails. If the store becomes available and a recovery drain eventually runs, an unadmitted decision can also be admitted, provided it has not been superseded by user control. This establishes a conditional admission property, not model correctness, tool-side-effect idempotence, or a proof of the implementation. Process-crash tests must exercise the persistence assumptions independently.
+
 Recovery is a reconciliation operation rather than a retry loop. For a persisted continuation decision $d=(s,c,n,i,p)$ with Session $s$, chain $c$, sequence number $n$, input ID $i$, and prompt $p$, the reconciler performs one of three transitions. If $i$ is absent, it admits $(i,p)$ and records the source metadata. If $i$ names an equivalent pending input, it returns that row without mutation. If $i$ names a non-equivalent input, it raises a conflict and admits nothing. Thus a crash can delay admission, but it cannot select a second ID or increment the chain twice.
 
 The two persistence records serve different audit purposes. The updated event records settings changes and their effective source. The decided event records the controller action, reason, chain, count, prompt identity, policy path, and optional memory transition. The queued input repeats the chain and decision metadata so that transcript consumers can attribute an automatic user-like message without changing the schema of genuine user input.
@@ -248,6 +255,8 @@ The primary worker is \path{d-robotics/deepseek-v4-pro}. The twelve-task subset 
 
 Each run uses a pinned image digest and base commit, temperature zero, six worker steps per segment, five automatic continuations, 45 minutes, and at most two concurrent tasks. Exact provider model versions and normalized request hashes are mandatory trajectory fields. The host executor holds provider credentials; task containers do not receive them.
 
+The sixth-step runtime prompt explicitly requests a summary and remaining work while disabling tools. This creates a controlled interruption opportunity. Consequently, the source study measures continuation need under this six-step interface, not the prevalence of spontaneous handoffs in unrestricted agents. The first-boundary prefix is an early-stopping comparator with a smaller execution allowance; an improvement over it alone cannot attribute benefit to an intelligent controller rather than additional computation. Blind continuation provides a bounded additional-computation reference, but realized token use still differs. Matched-budget and natural-boundary studies require a separately frozen extension.
+
 Before either corpus collection or formal dispatch, a separately budgeted non-primary pilot must pass on SWE-bench Verified task \texttt{psf\_\_requests-1142}. The pilot pins dataset revision \texttt{c104f840}, the Parquet and task-input hashes, the official harness commit, and the public AMD64 image digest. It writes only to an isolated pilot index and never contributes to an RQ estimate. One v1.14 run was accepted as a negative pilot: it remained unresolved with F2P 0/1, P2P 5/5, Fix Rate zero, no automatic continuation, 20,014 total tokens, and USD 0.121062 cost. Formal dispatch remains separately gated.
 
 \subsection{Execution and isolation}
@@ -261,11 +270,13 @@ The oracle policy does not inspect a hidden reference patch. It invokes the same
 \subsection{Boundary corpus}
 The source sampling frame is independent of the 384 formal rows: 96 supervisor-only trajectories, comprising all 48 SWE-EVO tasks with two repeats. A dedicated source marker in the deterministic run key prevents identity overlap. A boundary-scope capacity receipt, at most two concurrent tasks, an unchanged USD 102 source subcap, and an external \path{boundary/} index are mandatory. Source outcomes cannot enter RQ2 or the formal cost ledger.
 
-From this frame we sample 180 real worker boundaries, balanced as 60 per class. Base trajectories are grouped into 54 development and 126 frozen test items. Extraction first verifies the trajectory, request, trace, model-metadata, preflight, and captured-patch hashes; it then removes hidden reasoning and the supervisor's observed decision. Qwen 3.7 Max and DeepSeek V4 Flash independently receive the same blinded packet and fixed rubric; DeepSeek V4 Pro supplies the distinct adjudication file after both are sealed. Every request, response, resolved version, and usage record is content-addressed. The corpus seal explicitly says \texttt{independent-model-panel}, never human gold, and freezes only after Cohen's $\kappa \geq 0.75$~\cite{cohen1960kappa}. If agreement or class balance fails, RQ3 is unavailable rather than prompt-tuning the judges or selecting another panel.
+The target is 180 real worker boundaries, balanced as 60 per class. Base trajectories are grouped into 54 development and 126 frozen test items. Extraction verifies artifact hashes and removes hidden reasoning and the supervisor's decision. The original reference panel comprises Qwen 3.7 Max and DeepSeek V4 Flash, with DeepSeek V4 Pro as adjudicator. The recorded availability amendment substitutes Qwen 3.8 Max when Flash coverage is insufficient, and GLM 5.3 when Pro coverage is insufficient. Requests, responses, usage, and exclusions remain auditable. The seal uses the schema label \texttt{independent-model-panel}; independence here means separately issued blinded requests, not independent model errors. In particular, the fallback pair shares a model family, and Qwen 3.8 is also the evaluated controller. Agreement with this panel cannot establish unbiased decision accuracy. Cohen's $\kappa \geq 0.75$~\cite{cohen1960kappa} is a freeze gate, not proof of label correctness. Failure of coverage, agreement, or balance leaves RQ3 unavailable under the current protocol.
 
-The five offline conditions are: production regex; supervisor with last output only; last output plus initial goal; last output plus initial goal and a derived trajectory summary; and last output plus initial goal and within-session memory. Summary and memory are parallel additions to the goal baseline. The deployed v1.14 supervisor receives the initial goal, last output, and within-session memory, but not the derived summary, so the final condition exactly matches its information sources. The primary boundary metric is macro-F1, with classwise F1 and STOP/DEFER unsafe-continuation rates.
+The implemented offline conditions are: production regex; supervisor with last output only; last output plus initial goal; last output plus initial goal and a derived trajectory summary; and last output plus initial goal and within-session memory. Summary and memory are parallel additions to the goal baseline, as specified by the dated August 31 execution seal. The deployed v1.14 supervisor receives the information sources in the final condition, but the offline runner allows 60 seconds and rejects invalid outputs whereas deployment defers after 15 seconds or parse failure. Offline macro-F1 therefore measures agreement conditional on the offline response contract; it is not deployed-controller reliability. The October 3 erratum records a contradictory cumulative-input entry in the historical ablation JSON and identifies the execution seal and unchanged prompt builder as the operative specification. The historical file is retained; an archived run must identify its actual prompt inputs, not infer them from that stale entry.
 
-Boundary sampling occurs after source trajectories are collected and before controller evaluation or formal dispatch. A boundary may enter the pool only when it has a complete admitted goal, the terminal worker response, a repository-state summary, permission state, and a stable base-trajectory identifier. A label-blind contingency was sealed after an interim artifact-count check: if the completed 96-run frame contains fewer than 180 extractable boundaries, every task receives one disjoint repeat-2 source run; otherwise no augmentation runs. Supplemental collection cannot stop based on labels, agreement, or later yield. Sampling is then balanced to 60 independently agreed examples per class; class balancing is reported and is not used to estimate population frequency. RQ1 therefore uses only the original unbalanced source frame, including trajectories with no usable later boundary, whereas RQ3 may use the source-marked augmented pool. Conflating these two estimands would bias the reported handoff frequency toward one third.
+Grouping by trajectory prevents adjacent boundaries from crossing the split, but does not prevent different repeats of the same SWE-EVO task from doing so. Any interpretation as held-out-task generalization is therefore unsupported. Later boundaries also depend on earlier source-controller choices. Memory deletion on a fixed trace estimates an information effect on those reachable states, not the end-to-end effect of disabling memory. A prospective extension needs task-level holdouts, independent human reference labels, and online memory-off trajectories.
+
+Boundary sampling occurs after source trajectories are collected and before controller evaluation or formal dispatch. Candidates contain the admitted goal, terminal worker output, derived trajectory summary, patch, optional Session memory, and stable task and trajectory identifiers. Explicit permission state is not a separate candidate field; a judge can infer authority only to the extent that the captured text documents it. That limitation is especially important for DEFER labels. A label-blind contingency was sealed after an interim artifact-count check: if the completed 96-run frame contains fewer than 180 extractable boundaries, every task receives one disjoint repeat-2 source run; otherwise no augmentation runs. Supplemental collection cannot stop based on labels, agreement, or later yield. Sampling is then balanced to 60 adjudicated examples per class, including possible disagreements between the two initial judges; balancing does not guarantee agreement or estimate population frequency. RQ1 uses only the original unbalanced source frame, while RQ3 may use the augmented pool. Conflating these two estimands would bias the reported handoff frequency toward one third.
 
 \subsection{Fault injection}
 
@@ -273,15 +284,15 @@ Nine scenarios target both correctness and safety: crash after decision/before a
 
 \subsection{Measures and analysis}
 
-Resolved rate is the official binary task outcome. Fix Rate follows SWE-EVO's partial metric over \texttt{FAIL\_TO\_PASS} and \texttt{PASS\_TO\_PASS} tests~\cite{le2025sweevo}. We additionally measure manual continuations, redundant turns, prompt/completion tokens, cost, wall latency, and recovery. A model timeout, loop, or exhausted budget counts as failure rather than missing data.
+Operational resolved rate requires both a completed execution and a passing official task grade. A passing patch attached to a failed execution is retained as a raw grader observation, not counted as operational success. Fix Rate follows SWE-EVO's partial metric over \texttt{FAIL\_TO\_PASS} and \texttt{PASS\_TO\_PASS} tests~\cite{le2025sweevo}; it describes the observed patch even when execution fails. The automated executor records token use, cost, wall latency, and unchanged-patch turns. A model timeout or loop represented by a valid trajectory remains a failed outcome. Charged harness exclusions and undispatched rows require a separate disposition table; the current complete-matrix analyzer refuses them rather than imputing zero-cost failures.
 
-A manual continuation is a user-originated input whose normalized content requests progress without adding requirements, permission, or information. Automatic inputs never increment this count. A redundant turn is one in which the worker neither changes the repository, increases Fix Rate, produces new diagnostic evidence, nor resolves a previously documented uncertainty. The same disclosed model-review procedure classifies any residual ambiguous redundancy cases after quantitative outcomes are frozen. Unsafe continuation is counted whenever the controller admits after a frozen STOP or DEFER reference label; the two source labels remain separate in reporting.
+A manual continuation would be a user-originated request for progress without additional requirements or authority. The automated executor has no human participant and records this field as zero for every policy. Those zeros cannot estimate saved human interventions; the corresponding manuscript field remains pending. Similarly, the implemented \texttt{redundantTurns} field counts unchanged patch hashes. We call it the \emph{unchanged-patch proxy}, because diagnostics and verification can be useful without changing a patch. Semantic redundancy requires separately adjudicated tool evidence. Offline predictions of CONTINUE on reference STOP or DEFER items are label-conditioned false-continuation rates, not observed permission violations. Actual unauthorized execution requires a permission-aware action trace. Ordinary trajectory completion is not a fault-injection recovery measurement.
 
 Paired binary outcomes use a two-sided exact McNemar test~\cite{mcnemar1947}. If $b$ tasks resolve only under the baseline and $c$ only under treatment, the two-sided exact value is $2\Pr[X\leq\min(b,c)]$ for $X\sim\operatorname{Binomial}(b+c,0.5)$, capped at one. Concordant tasks do not enter this test.
 
-Task-level differences use 10,000 paired bootstrap resamples with percentile 95\% intervals~\cite{efron1993bootstrap}. The resampling unit is the benchmark task, preserving within-task policy pairing and combining repeats inside the task before resampling. A fixed analysis seed is part of the environment record. Preregistered policy families use Holm correction~\cite{holm1979}; raw and adjusted values are both released. The analysis harness tests these implementations against known cases and derives every numerical manuscript macro from validated JSONL. No failed trajectory is converted to missing, and no post-hoc exclusion changes the primary frozen table.
+Primary repeat-zero differences use 10,000 paired task bootstrap resamples with percentile 95\% intervals~\cite{efron1993bootstrap}. A fixed analysis seed is part of the environment record. The four supervisor contrasts---own off prefix, oracle, blind, and regex---form the Holm-corrected binary-outcome family~\cite{holm1979}; raw and adjusted values are released. The extra repeats and twelve-task replications are descriptive, not additional independent tasks. Task resampling quantifies variation across the observed tasks, not across a population of independent repositories; repository sensitivity is needed because 26 of 48 tasks come from DVC. Failed valid trajectories remain in the analysis. Any missing required row prevents a complete-matrix result and is disclosed with its reason.
 
-For RQ2, the primary estimand is the task-averaged supervisor-minus-off difference on the 48-task primary run. Regex, blind, and oracle contrasts are secondary members of the corrected family. For RQ3, the estimand is macro-F1 on the 126 frozen boundary items, accompanied by classwise confusion counts. For RQ4, safety rates use label-conditioned denominators, while cost and latency use all dispatched runs. Cross-model estimates retain the same definitions but are explicitly descriptive because the twelve-task subset is not powered as a replacement primary sample.
+For RQ2, the primary estimand is the task-averaged supervisor-minus-off difference on the 48-task primary run. Regex, blind, and oracle contrasts are secondary members of the corrected family. For RQ3, the estimand is macro-F1 on the 126 frozen boundary items, accompanied by classwise confusion counts. For RQ4, false-continuation rates use label-conditioned denominators. Current paired cost and latency estimates require the complete accepted matrix; an all-dispatch cost estimate additionally needs charged exclusions and cannot be inferred from those pairs alone. Cross-model estimates retain the same definitions but are explicitly descriptive because the twelve-task subset is not powered as a replacement primary sample.
 
 \subsection{Budget and artifact gates}
 
@@ -291,7 +302,7 @@ Charged harness failures that block a valid trajectory are sealed as exclusions:
 
 \section{RQ1: Premature Handoff Frequency}
 
-The primary estimate is the fraction of first boundaries whose frozen human label is \continueaction. We also report boundaries per trajectory, task-level clustering, and frequency by repository and worker. The preregistered answer is \PrematureFrequency{}. No frequency is inferred from regex matches or from the existence of a ``next steps'' phrase; only frozen labels count.
+The available-case estimate is the fraction of labeled first boundaries assigned \continueaction{} by the sealed model reference: \PrematureFrequency{}. Its denominator is \PrematureLabeledCount{} labeled boundaries from \PrematureSourceCount{} planned source trajectories, with \PrematureMissingCount{} missing. It concerns the primary worker under the imposed six-step limit. Missing labels or boundaries may depend on task difficulty and provider failures, so this conditional rate is not an all-source or natural-handoff estimate. If $c$ observed first boundaries are CONTINUE, $m$ are missing, and $N$ were planned, the unidentified all-source proportion lies between $c/N$ and $(c+m)/N$ when every missing item is allowed either class. These are worst-case bounds, not confidence intervals.
 
 We will examine whether handoffs concentrate near agent step limits, after summaries, after partial test execution, or after provider stop reasons. This analysis distinguishes interface termination from substantive inability. It is descriptive and does not reclassify benchmark outcomes.
 
@@ -303,15 +314,15 @@ Table~\ref{tab:results} is generated from the frozen trajectory index. The main 
   \caption{Primary SWE-EVO outcomes. Values remain pending until all accepted traces pass provenance checks.}
   \label{tab:results}
   \centering
-  \begin{tabular}{lccc}
+  \begin{tabular}{lcc}
     \toprule
-    Policy & Resolved & Fix Rate & Manual prompts \\
+    Policy & Resolved & Fix Rate \\
     \midrule
-    Off prefix & \pending & \pending & \pending \\
-    Oracle & \OracleResolved & \pending & \pending \\
-    Blind & \BlindResolved & \pending & \pending \\
-    Regex & \RegexResolved & \pending & \pending \\
-    Supervisor & \SupervisorResolved & \SupervisorFixRate & \ManualReduction \\
+    Off prefix & \OffResolved & \OffFixRate \\
+    Oracle & \OracleResolved & \OracleFixRate \\
+    Blind & \BlindResolved & \BlindFixRate \\
+    Regex & \RegexResolved & \RegexFixRate \\
+    Supervisor & \SupervisorResolved & \SupervisorFixRate \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -320,25 +331,25 @@ Before the formal matrix, we completed a paid v1.13 execution canary on one DVC 
 
 \input{generated/canary-v1.13}
 
-The supervisor's resolved-rate difference is \SupervisorDelta{}. We will not interpret a non-significant result as equivalence. A controller may reduce manual prompts without changing resolution, or raise Fix Rate without reaching full resolution. These outcomes are reported independently.
+The supervisor-minus-own-prefix resolved-rate difference is \SupervisorDelta{}, with task-bootstrap 95\% interval \SupervisorDeltaCI{} and Holm-adjusted $p=\SupervisorAdjustedP{}$. The separately paired supervisor-minus-regex difference is \RegexDelta{} (95\% interval \RegexDeltaCI{}). We will not interpret a non-significant result as equivalence. Neither contrast measures saved human time or isolates controller quality from realized compute; the latter requires matched-budget evidence.
 
 \section{RQ3: Component Contributions}
 
 The frozen boundary macro-F1 for the deployed-input supervisor row is \BoundaryMacroFOne{}. The offline table will show whether the initial goal resolves ambiguous ``done'' statements and compare a derived trajectory summary with within-session memory as parallel additions. We report the exact prompt composition for each row and per-class confusion matrices because macro-F1 can hide unsafe directionality.
 
-Memory is evaluated within Session only. No default worktree file is written, and no information transfers across benchmark tasks. Thus an observed memory effect represents continuity inside an admitted task, not cross-task training or retrieval.
+Memory is evaluated within Session only. No default worktree file is written, and no information transfers across benchmark tasks. A fixed-history difference estimates the contribution of the supplied memory text on source-controller-reachable states. It does not estimate the effect of memory on the subsequent worker trajectory or establish that memory is beneficial online.
 
 \section{RQ4: Safety, Cost, and Recovery}
 
-The STOP unsafe-continuation rate is \StopUnsafeRate{} and the DEFER unsafe-continuation rate is \DeferUnsafeRate{}. We report them separately because redundant work after STOP and autonomy violations after DEFER have different operational costs. Blind continuation is expected to define a high-autonomy reference, not a safe deployment policy.
+The offline false-continuation rate on reference STOP is \StopUnsafeRate{} and on reference DEFER is \DeferUnsafeRate{}. Their class-conditioned denominators and model reference must accompany the estimates. A decision error does not by itself demonstrate an executed unsafe action; a runtime safety study must trace permission checks and resulting side effects.
 
-The supervisor's token/cost difference is \CostDelta{} and latency difference is \LatencyDelta{}. Recovery succeeds in \RecoveryRate{} of injected cases under the preregistered invariant. These placeholders will be populated only by the analysis pipeline; fault unit tests establish mechanism correctness but do not substitute for end-to-end recovery measurements.
+The supervisor-minus-regex monetary cost difference is \CostDelta{} and wall-latency difference is \LatencyDelta{}. Cost includes controller calls; token and verifier costs require separate accounting. Process-crash recovery is \RecoveryRate{} until a distinct fault-campaign artifact records injected and recovered trials. The manuscript generator does not reuse the ordinary trajectory success flag for this quantity.
 
 \section{Error Analysis}
 
 After the frozen run, two fixed independent model reviewers assign one primary failure category and optional secondary categories to unresolved or unsafe cases, with the third fixed judge breaking disagreements. Planned categories are: worker capability failure; wrong continuation decision; correct continuation with ineffective next prompt; repeated strategy; stale or misleading summary; memory contamination within a Session; verifier mismatch; permission/defer error; provider/runtime failure; and benchmark defect. These are disclosed model judgments and are reported separately from executable grader outcomes.
 
-The v1.13 canary already supplies two observed cases without changing the frozen taxonomy. Regex produced a missed continuation: it persisted STOP on an empty patch even though the worker listed unfinished implementation and validation and the F2P test failed. The full supervisor correctly recovered that boundary and durably admitted one queue continuation. At the next boundary, its eventual semantic action was again CONTINUE, but the streamed response completed 16.839 seconds after release and missed the 15-second deadline; the v1.13 regex fallback then persisted STOP. The extra segment produced no patch and is counted as redundant. This is classified as a provider/runtime latency failure with a secondary wrong fallback decision, not as evidence that supervision generally harms utility. Before any formal row was accepted, v1.14 changed failure handling to \deferaction{} while preserving the 15-second deadline and all experimental factors.
+The v1.13 canary supplies two descriptive cases. Regex persisted STOP on an empty patch while the worker listed unfinished implementation and validation and the F2P test failed. The supervisor durably admitted one continuation. Its next semantic response was CONTINUE, but it completed 16.839 seconds after release, beyond the 15-second deadline; the historical regex fallback persisted STOP. The extra segment produced no patch and increments the unchanged-patch proxy, which does not establish semantic redundancy. The case motivates inspecting latency and decision handling separately. Before any formal row was accepted, v1.14 changed failure handling to \deferaction{} while preserving the deadline and experimental factors. In Table~\ref{tab:canary-ablation}, the historical column ``Redun.'' denotes this patch-based proxy.
 
 The accepted v1.14 non-primary pilot exposes the corresponding abstention path. Its controller produced valid \continueaction{} JSON 30.241 seconds after request release, but the 15-second deadline had already persisted \deferaction{}. No continuation occurred, the task remained unresolved, and all seven provider responses plus usage and settled cost were retained. We classify this as provider/runtime latency rather than a semantic policy error. It is a single descriptive pilot, not an ablation row or evidence of treatment effect.
 
@@ -350,7 +361,7 @@ We will sample both false continuations and missed continuations, preserving tas
 
 \section{Threats to Validity}\label{sec:threats}
 
-\textbf{Construct validity.} A static ``continue'' input is only an approximation to human follow-up. Manual continuation count measures interaction demand, not user satisfaction. The three labels compress nuanced states. The independent model panel is reproducible and blinded but is not expert human judgment; shared training data, provider alignment, or family similarity may create correlated errors that kappa does not reveal. We therefore call the labels a model-based reference standard, publish all judge outputs, and keep executable task-verifier outcomes separate.
+\textbf{Construct validity.} A static ``continue'' input is only an approximation to human follow-up; the automated study does not measure human effort. Its explicit six-step summary instruction induces boundaries, so even complete source data cannot establish natural handoff prevalence. The three labels compress nuanced states. The model panel is blinded but is not expert human judgment: fallback judges overlap with the controller family and, for Qwen 3.8, the controller itself. Separate calls and high kappa cannot eliminate that circularity. A task's repeats may also cross the trajectory-grouped split. We therefore restrict classifier findings to agreement with the stated reference on that split, not unbiased or held-out-task accuracy.
 
 \textbf{Internal validity.} Provider services may be nondeterministic at temperature zero, and model aliases may move. We therefore record resolved model versions and request hashes, repeat the primary worker on a stratified subset, and pair each off prefix with its own trace. The same Qwen 3.8 Max controller across workers isolates one source of variation but may favor outputs it understands better. The gateway aliases do not reveal direct upstream revisions, limiting reproducibility outside the sealed gateway snapshot.
 
@@ -358,13 +369,13 @@ The single-task canary is especially vulnerable to this threat: its policy rows 
 
 The non-primary task image also contained untracked \path{build/} before worker execution. Consequently, the pilot's identical first and final build-only patch hashes preserve repository provenance but their byte and file counts cannot be attributed to the model. The official tests and unresolved classification remain usable. The schema-v4 baseline gate prevents recurrence by computing model patches from the recorded startup tree. Quarantining startup-root changes could hide intentional edits to generated artifacts, so every excluded path remains in the trace and must be reported in artifact diagnostics.
 
-The gateway exposes cumulative spend only after settlement, so a long context can cross a per-run reservation before the host observes final cost. The harness now rejects such a row before empirical admission, records actual rather than capped spend, and stops before the category ledger can exceed its hard limit. This preserves budget accounting but cannot recover the excluded source item; exclusion counts and reasons must therefore accompany the released sampling frame.
+The gateway exposes cumulative spend only after settlement, so a long context can cross a per-run reservation before the host observes final cost. The harness records actual rather than capped spend and stops subsequent admissions when a ceiling is exhausted. Reservations cannot guarantee that delayed settlement never overshoots a cap. A charged excluded record cannot be recovered by treating it as zero cost or by silently rerunning it. Exclusion counts, reasons, and outcome bounds must accompany the sampling frame; absent a complete disposition analysis, complete-case estimates cannot stand in for the intended all-task result.
 
 \textbf{Benchmark validity.} SWE-EVO is public, Python-only, and uneven across repositories; DVC contributes many tasks. Public histories may be contaminated in model training. The benchmark's tests can still be incomplete or implementation-specific. We publish task-level results and do not generalize to all software development.
 
 \textbf{External validity.} The system is integrated into one agent runtime with durable Sessions. Agents without equivalent queue, event, or location abstractions may require different recovery mechanisms. The study covers coding tasks, not web purchase, messaging, trading, deployment, or other high-impact domains where \deferaction{} policies should be stricter.
 
-\textbf{Statistical conclusion validity.} Forty-eight tasks limit power, and the twelve-task cross-model set is descriptive. We report intervals and corrected tests rather than using thresholded significance as the only evidence. Results are completed and released even if effects are null or negative.
+\textbf{Statistical conclusion validity.} Forty-eight tasks limit power, and the twelve-task cross-model set is descriptive. The 384 trajectories do not constitute 384 independent task pairs. Repository concentration, repeated tasks, and grouped boundaries further reduce the independence available for generalization. We report intervals and corrected tests rather than using thresholded significance as the only evidence. Zero observed false continuations would still permit a nonzero population rate; safety cannot be asserted from a point estimate alone. Results are released even if effects are null, negative, or incomplete.
 
 \section{Related Work}
 
@@ -372,13 +383,32 @@ The gateway exposes cumulative spend only after settlement, so a long context ca
 
 \textbf{Orchestration and reflection.} ReAct alternates reasoning with environment action~\cite{yao2023react}. Magentic-One's lead orchestrator plans and re-plans across a multi-agent team~\cite{fourney2024magenticone}. \system{} is narrower: a Location-scoped controller observes a single worker only at terminal turn boundaries and emits a durable Session scheduling decision. We therefore do not claim the first supervisor or progress tracker.
 
+\textbf{Premature termination and adaptive supervision.} SCATE uses contextual-bandit supervision for coding-agent test generation, choosing interventions using coverage and cost feedback~\cite{gu2026scate}. It is a close comparator, not merely background motivation. Its domain-specific state and reward cannot be transferred to release-level repair without a disclosed adaptation. AnalysisBench also reports premature termination and discrepancies between self-validation and independently checked outcomes~\cite{bouzenia2026analysisbench}. Together, these works rule out novelty based only on identifying premature termination or automating a continuation request. AutoDrive's prospective distinction is the integration of defer-aware control with durable admission and user priority; its incremental value remains to be measured against resource-matched and close published controls.
+
+\begin{table*}[t]
+  \caption{Mechanism-level positioning. Differences are design distinctions, not measured advantages or claims that other systems lack unlisted features.}
+  \label{tab:related}
+  \centering\small
+  \begin{tabular}{p{0.18\textwidth}p{0.35\textwidth}p{0.37\textwidth}}
+    \toprule
+    Work & Relevant mechanism & Necessary comparison or scope boundary \\
+    \midrule
+    SCATE~\cite{gu2026scate} & Adaptive, coverage/cost-sensitive coding-agent supervision & Reproduce supported test-generation task or disclose a repair-domain adaptation. \\
+    Magentic-One~\cite{fourney2024magenticone} & Task and progress ledgers in team orchestration & Match worker resources for a ledger-controller comparison. \\
+    Agentic Abstention~\cite{luo2026abstention} & Sequential abstention and reusable stopping guidance & Distinguish fixed cross-episode rules from Session-local memory. \\
+    Evidence-Carrying Termination~\cite{liu2026ect} & Completion gated by replayable trace evidence & Admission identity does not certify task completion or external truth. \\
+    AutoDrive (this work) & Three actions, bounded queue admission, crash reconciliation & Benefit beyond static extra compute and runtime safety remain empirical questions. \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
 \textbf{Stopping and abstention.} Agentic Abstention frames stopping under uncertainty as a sequential decision and shows that timing matters~\cite{luo2026abstention}. Evidence-Carrying Termination gates COMPLETE on typed, replayable evidence~\cite{liu2026ect}. These works emphasize avoiding unsupported action or completion. AutoDrive's three states incorporate both concerns, but its central target is the complementary failure: returning control while safe work remains. It does not certify external truth or completion evidence.
 
 \textbf{Loop safety.} Infinite Agentic Loops arise from unbounded feedback paths across model, tool, framework, and runtime behavior~\cite{hou2026loops}. AutoDrive uses a persisted continuation limit, finite provider retries, and a \deferaction{} state. These are runtime bounds, not a static detector and not a proof that all loops are absent.
 
 \section{Conclusion}
 
-Provider turn completion and software task completion are different events. \system{} makes that distinction explicit with a three-state boundary controller and durable, bounded, exactly-once follow-up admission. The implementation unifies API, UI, and slash-command control; preserves human priority; avoids implicit worktree memory; and fails closed on conflicting recovery state. A frozen evaluation will determine whether these mechanisms improve long-horizon coding outcomes at acceptable safety and cost. Until those runs and disclosed reference judgments complete, this paper claims a tested system and a reproducible protocol---not an empirical gain.
+Provider turn completion and software task completion are different events. \system{} makes that distinction explicit with a three-state controller and durable, bounded follow-up admission. Its implementation and conditional admission argument motivate a controlled study, but do not establish an empirical gain. The frozen study concerns an imposed turn limit and a disclosed model reference. A separately specified journal extension must test natural boundaries, matched-resource controls, external reference judgments, and real process-crash recovery before broader claims are warranted. The current artifact is a pre-results research draft, not a completed journal evaluation.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}

@@ -47,19 +47,19 @@ Every task record additionally pins the start and end version, base commit, envi
 
 \continueaction{} requires an incomplete admitted goal, a concrete next action, existing scope and permission, no material missing preference, and a routine or reversible engineering action. \stopaction{} requires proportionate completion evidence or absence of useful in-scope work. \deferaction{} applies to subjective choices, credentials or missing requirements, expanded permission, destructive/external/monetary action, or uncertainty only the user can resolve. \deferaction{} takes precedence over \continueaction.
 
-The final corpus will contain 60 items per label. Independent label files include a confidence level, evidence sentence, and next action or missing information. No supervisor prediction is visible to annotators. Base trajectories cannot cross development and test sets.
+The target corpus contains 60 items per label; failure to obtain it is a study outcome, not permission to synthesize examples. Separate label files include a confidence level, evidence sentence, and next action or missing information. No supervisor prediction is visible to annotators. Base trajectories cannot cross development and test sets, but task identities can recur through different trajectories. The split therefore does not establish held-out-task performance.
 
 Candidate acquisition has its own 96-run plan: all 48 SWE-EVO tasks, two repeats, the primary worker, and the full supervisor. A literal \texttt{boundary-corpus} component in the deterministic run key makes every source identity disjoint from the formal matrix. A fresh boundary-scope receipt must attest capacity 96 for both logical worker and controller. The command writes trajectories and its append-only ledger below external \path{boundary/}, never below the formal result path, and applies the USD $102/96$ per-run ceiling. Every accepted source trajectory remains in the released sampling frame even when it produces no selectable item.
 
 \subsection{Annotation instrument and freeze}
 
-Judge models receive a rendered packet, not the raw result index. The packet contains the admitted goal verbatim, worker/model identity hidden behind a neutral code, the terminal provider response, the preceding tool/test evidence needed to interpret it, a repository-state summary, current permission constraints, and the boundary identifier. Costs, downstream outcomes, supervisor outputs, other labels, and reference patches are withheld.
+Judge models receive a rendered packet, not the raw result index. Its fields are the admitted goal, terminal worker output, derived trajectory summary, repository patch, and within-session memory. The prompt does not supply a dedicated worker/model identity or permission-state field. Permission or tool evidence can be judged only when present in the captured text; this is weaker than a complete authority audit. Costs, downstream outcomes, the current supervisor prediction, other labels, and reference patches are withheld. Historical memory remains visible and can encode earlier controller reasoning, another reason the model-panel reference is not independent of the system under study.
 
 For every item, the annotator records: label; high, medium, or low confidence; one evidence sentence; a concrete next action for \continueaction{}; or the missing decision/information for \deferaction{}. A \stopaction{} label must point to completion evidence or explain why no useful in-scope action remains. Blank rationales fail schema validation.
 
 Two fixed judge-model label files are sealed by hash before agreement is calculated. Cohen's kappa is computed over the three nominal labels, without confidence weighting. The third fixed judge supplies a separate adjudication file. If $\kappa<0.75$ or any adjudicated class has fewer than 60 candidates after the label-blind augmentation, the RQ3 gate fails; judge prompts are not revised after observing labels. The released artifact preserves model identities and versions, requests, responses, complete usage, pre-adjudication files, their hashes, the agreement report, and adjudicated labels. The resulting reference standard is explicitly model-based rather than human gold.
 
-The exact 54/126 split is group-constrained by base trajectory. The split routine uses a frozen seed and rejects any assignment that misses a class target or places one base trajectory in both pools. Development labels can be used for prompt and regex iteration. Test labels are opened only after controller prompts, parsing, fallback, and ablation ordering are frozen.
+The exact 54/126 split is group-constrained by base trajectory. The routine enforces split sizes, the full corpus's 60-per-class totals, and no base trajectory in both pools. It does not guarantee 18/42 per class in development/test; realized split counts must accompany every class-conditioned metric. General development work must not alter the fixed model-panel prompts after labels are observed. The older annotation guide's instruction to relabel after low kappa conflicts with the later dated amendment; the amendment's stop-and-report rule governs this frozen study, as recorded in the October 3 erratum. Test labels are opened only after controller prompts, parsing, fallback, and ablation ordering are frozen.
 
 \subsection{Fault invariants}
 
@@ -72,7 +72,7 @@ The exact 54/126 split is group-constrained by base trajectory. The split routin
     \midrule
     Decision before admission & Recovery admits the deterministic input exactly once. \\
     Admission before promotion & The pending input survives restart and promotes once. \\
-    Duplicate wake & No duplicate provider execution or SessionInput row. \\
+    Duplicate wake & Within a live process, wakes coalesce; no duplicate SessionInput row. This is not cross-crash provider exactly-once execution. \\
     User preemption & Real steer/queue input takes priority and begins a new chain. \\
     Supervisor timeout & The call terminates at 15 seconds, persists DEFER, and admits no continuation. \\
     Invalid JSON & Parsing persists DEFER without heuristic guessing or implicit continuation. \\
@@ -85,11 +85,11 @@ The exact 54/126 split is group-constrained by base trajectory. The split routin
 
 \subsection{Recovery procedure}
 
-Fault injection operates at named storage boundaries rather than arbitrary wall-clock delays. For the first crash window, a failpoint terminates the process after the decided event commits and before input admission begins. The restarted drain reloads the event, recomputes no decision, and reconciles the stored input ID. For the second window, termination occurs after admission commits but before the scheduler can promote the input. Restart must discover the pending row; creating a replacement is a failure even if the transcript text would match.
+The required process-crash campaign operates at named storage boundaries rather than arbitrary wall-clock delays; it is not yet a measured recovery-rate result. For the first crash window, a failpoint must terminate the process after the decided event commits and before input admission begins. The restarted drain must reload the event, recompute no decision, and reconcile the stored input ID. For the second window, termination occurs after admission commits but before the scheduler can promote the input. Restart must discover the pending row; creating a replacement is a failure even if the transcript text would match.
 
 Duplicate wake testing issues multiple advisory wakes for the same Session while one drain is active. The process-local coordinator must join or coalesce them, while different Session IDs remain eligible for concurrent drains. User-preemption testing inserts both steering and queued user input around an automatic pending row and verifies real-user priority plus a fresh automatic chain. Timeout, provider-error, empty-response, unavailable-model, and invalid-JSON tests record the supervisor failure mode and require explicit DEFER. Provider-error tests also distinguish retryable from non-retryable worker errors and assert the five-attempt bound. The maximum-count scenario restarts between continuations to ensure the durable count, rather than process memory, enforces the limit.
 
-Recovery success requires all invariants simultaneously: one source input ID, correct delivery mode, unchanged prompt, correct chain and sequence metadata, no skipped user input, no extra provider turn, and a traceable terminal classification. Merely reaching an idle Session is not recovery evidence.
+Recovery success at these admission failpoints requires one source input ID, correct delivery mode, unchanged prompt, correct chain and sequence metadata, no skipped user input, and a traceable terminal classification. Provider-call counts are checked within the tested pre-execution crash windows; they are not a guarantee of idempotent provider or tool effects after arbitrary interruption. Merely reaching an idle Session is not recovery evidence.
 
 \subsection{Artifact schema}
 
@@ -98,7 +98,7 @@ Each trajectory index row contains four groups of fields:
 \begin{itemize}[leftmargin=*]
   \item \emph{identity}: run, task, policy, worker/controller model, repeat, and attempt;
   \item \emph{outcome}: timestamps, status, failure class, resolution, Fix Rate, and first-boundary prefix outcome;
-  \item \emph{operation}: continuation, manual, redundancy, token, cost, latency, safety, and recovery measures; and
+  \item \emph{operation}: continuation, token, cost, latency, and unchanged-patch counters, plus historical fields for manual, safety, and recovery values that require independent measurement before interpretation; and
   \item \emph{provenance}: resolved model version, normalized request SHA-256, image digest, task base and implementation commits, and content-addressed trace path.
 \end{itemize}
 
@@ -165,9 +165,9 @@ The public API is also versioned behavior. V2 accepts a Session-level update and
 
 \subsection{Frozen snapshot construction}
 
-Analysis begins only when the validator sees exactly 384 unique accepted run IDs, no unknown matrix identity, all trace hashes present, and category spend within the cap. The run index, ledger, trace-hash list, label files, adjudication log, environment lock, model request manifest, and analysis commit are hashed into one snapshot manifest. Derived files are written into a new directory named by that snapshot hash; analysis never updates raw JSONL in place.
+The release protocol requires exactly 384 unique accepted run IDs for complete-matrix inference, no unknown matrix identity, all trace hashes present, and reconciled spend. It additionally requires the run index, ledger, trace-hash list, label files, adjudication log, environment lock, model request manifest, and analysis commit to be hashed into one snapshot manifest. The complete snapshot is not yet available. Standalone analysis and result-rendering commands validate structure and numerical consistency; they do not independently bind every source artifact to a cryptographic seal. A successful command is therefore insufficient release evidence. Derived release files must be written into a new directory named by the snapshot hash, never over raw JSONL.
 
-The pipeline emits a run-level CSV, task-level paired CSV, policy summary JSON, boundary confusion matrices, bootstrap draws, raw and Holm-adjusted tests, cost ledger summary, failure taxonomy, and LaTeX result macros. Manuscript tables reference those macros or generated table fragments. A visible pending macro is retained unless every dependency for that result passes its gate. Thus a complete trajectory matrix cannot accidentally populate boundary metrics when labels remain unfrozen, and fault unit tests cannot populate the end-to-end recovery estimate.
+Required release products are a run-level CSV, task-level paired CSV, policy summary JSON, boundary confusion matrices, raw and Holm-adjusted tests, cost ledger summary, failure taxonomy, and LaTeX result macros. Manuscript tables reference generated fragments. The current renderer requires the complete formal matrix and all five boundary summaries and refuses unsupported manual-effort and recovery values. It is a structural guard, not a substitute for label-seal verification or independent numerical review. Bootstrap settings and the generating analysis version must accompany each interval.
 
 \subsection{Numerical audit}
 
@@ -179,14 +179,18 @@ The audit also checks direction labels. A positive supervisor delta always means
 
 The anonymous and signed manuscripts share the same body, bibliography, generated result files, and appendix. A single wrapper controls author metadata. Before public release, trace sanitization removes host paths, account identifiers, and unrelated repository secrets while retaining commands, outputs, model content, and hashes needed for scientific review. Redaction locations are logged; redaction does not change numerical inputs.
 
-The arXiv source archive contains the signed wrapper, shared source, bibliography, appendix, and generated result fragments. It excludes raw traces, credentials, build caches, PDFs, and local absolute paths. The archive is unpacked into a clean directory and compiled with the same digest-locked, network-disabled TeX image. Author names, affiliations, email, order, license, disclosure text, and final PDF require separate user approval before any upload.
+The arXiv source archive contains the placeholder-author wrapper, shared source, bibliography, appendix, and generated result fragments. It excludes raw traces, credentials, build caches, PDFs, and local absolute paths. Packaging alone does not certify scientific or submission readiness. Release verification requires unpacking into a clean directory and compiling with the same digest-locked, network-disabled TeX image. Author names, affiliations, email, order, license, disclosure text, and final PDF require separate user approval before any upload.
+
+\section{Prospective Journal Extension (Not Executed)}
+
+The October 3 design document separates new experiments from the frozen v1.14 study. It is a proposal, not a new paid-run authorization or a source of empirical results. Its central question is whether defer-aware continuation improves externally verified task success at a fixed total resource envelope, compared with static continuation, an unsegmented native worker, and a relevant published controller.
+
+Three studies address different identification problems. First, an unbalanced, outcome-blind natural-boundary sample distinguishes native terminal responses, imposed step limits, provider failures, permission gates, and exhausted budgets. Second, paired task experiments compare whole-session policies under common total worker-plus-controller budgets, with randomized blocked dispatch and a frozen model-epoch policy. Six-step and longer-segment conditions are separated from native execution; task-level and repository-sensitive analyses prevent repeated traces from becoming fictitious independent tasks. Third, external boundary judgments and real process-death fault tests evaluate authority decisions and durable admission independently of test resolution.
+
+Fixed-trace ablations remove goal, summary, or memory information from an identical boundary, whereas online ablations disable one component for the full Session. The former measure decision dependence; only the latter measure downstream task effects. A three-state versus no-defer condition must be restricted to an isolated synthetic authority challenge with no real external effects. The complete protocol must specify its sample size, resource envelope, comparator adaptation, reference raters, inference family, missing-data rules, and immutable identifiers before collection. No positive result or sample size is a guarantee of acceptance.
 
 \section{Result Publication Rules}
 
 All outcome macros are generated after the trajectory index contains 384 accepted run IDs and boundary labels pass the freeze gate. Tables and figures are regenerated from that snapshot. Hand-edited numerical results are prohibited. The final manuscript records the analysis commit, result snapshot hash, container digest, complete model identifiers, actual spend, and all deviations. The anonymous and signed PDFs are compiled from the same source with only author metadata changed.
-
-\section{Full Frozen Task Manifest}
-
-Table~\ref{tab:task-manifest} is generated directly from the digest-pinned protocol manifest. It makes the exact benchmark scope auditable without relying on a mutable dataset viewer.
 
 \input{generated/task-manifest}
