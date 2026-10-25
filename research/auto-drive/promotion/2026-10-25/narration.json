@@ -1,0 +1,20 @@
+{
+  "title": "AutoDrive：让智能体知道何时继续，何时停下",
+  "language": "zh-CN",
+  "disclosure": "机制示意 · 研究预览 · 合成配音",
+  "project_url": "https://github.com/eust-w/opencode/tree/auto-drive-engine",
+  "scenes": [
+    {"id": "hook", "eyebrow": "长任务，为什么总要说继续？", "title": "任务没完。\n对话先停了。", "subtitle": "一个回合结束，不等于任务已经完成。", "lines": ["写代码的智能体，任务还没做完，却先停下来问你：要继续吗？"]},
+    {"id": "intro", "eyebrow": "INTRODUCING", "title": "AutoDrive", "subtitle": "回合边界续推控制", "lines": ["AutoDrive，研究的就是这个回合边界。", "什么时候继续，什么时候停止，什么时候应该把决定交还给人。"]},
+    {"id": "layer", "eyebrow": "控制层，而非基础模型", "title": "给智能体\n加一道决策边界", "subtitle": "基于 OpenCode 的研究原型", "lines": ["它不是新的基础模型，而是基于 OpenCode 的续推控制原型。"]},
+    {"id": "continue", "eyebrow": "01 / CONTINUE", "title": "该做的，继续做。", "subtitle": "未完成 · 下一步明确 · 授权范围内", "lines": ["任务没完成，下一步明确且仍在授权范围内，选择继续。"]},
+    {"id": "stop", "eyebrow": "02 / STOP", "title": "该停的，停下来。", "subtitle": "完成，或不再继续", "lines": ["已经完成，或不该再继续，选择停止。"]},
+    {"id": "defer", "eyebrow": "03 / DEFER", "title": "需要人，就交给人。", "subtitle": "信息不足 · 主观选择 · 扩大权限", "lines": ["缺少信息、需要主观选择，或者涉及扩大权限，就暂缓，交给用户。"]},
+    {"id": "queue", "eyebrow": "PERSIST → ADMIT", "title": "先记录决定，\n再进入队列。", "subtitle": "持久决策 → 待处理输入 → 安全边界", "lines": ["三种决定，先写入会话记录。", "需要续推时，再进入持久队列。"]},
+    {"id": "priority", "eyebrow": "HUMAN FIRST", "title": "用户优先。\n续推有上限。", "subtitle": "新的用户输入优先 · 有限续推", "lines": ["用户的新输入优先处理。", "自动续推有次数上限，不能无限循环。"]},
+    {"id": "goal", "eyebrow": "研究目标", "title": "少一点“继续”，\n保留人的控制权。", "subtitle": "这是待验证的目标，不是效果承诺。", "lines": ["这套机制的目标，是减少反复输入继续，同时保留人的控制权。"]},
+    {"id": "evidence", "eyebrow": "OPEN RESEARCH", "title": "代码已公开。\n研究仍在进行。", "subtitle": "评测工具 / 论文草稿 / 未完成结果如实披露", "lines": ["代码、评测工具和论文草稿已经开源。", "完整对比与消融实验仍在进行，不把测试通过当成科研结论。"]},
+    {"id": "limits", "eyebrow": "EVIDENCE MATTERS", "title": "机制示意，\n不是性能跑分。", "subtitle": "不宣称已完成正式评测或已发表论文。", "lines": ["本片展示的是机制示意，不是性能跑分，也不是已发表的论文成果。"]},
+    {"id": "outro", "eyebrow": "BUILD · REPRODUCE · QUESTION", "title": "什么时候继续？\n一起验证。", "subtitle": "GitHub · eust-w/opencode · auto-drive-engine", "lines": ["如果你也在探索长任务智能体，欢迎查看项目，复现实验。", "一起审视，它该继续，还是该停。"]}
+  ]
+}
