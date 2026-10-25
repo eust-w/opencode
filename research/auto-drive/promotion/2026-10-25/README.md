@@ -27,7 +27,7 @@ Release 同时提供横竖封面、SRT、WAV，以及 `autodrive-media-evidence.
 
 验收范围：
 
-- 27 项本地测试通过（音频 9、渲染 11、导出验收 7）。这不是 AutoDrive 的研究评测结果。
+- 2026-10-26 共 33 项本地测试通过（音频 9、渲染 11、导出验收 7、封面 6）。这不是 AutoDrive 的研究评测结果。
 - 检查横竖版各场景、逐句字幕边界与编码后抽帧。竖版为右侧互动按钮和底部平台界面留出空间，仍需在实际发布界面确认裁切。
 - Whisper tiny 独立回读覆盖全部 17 句，但存在同音字与术语转写错误；未经人工试听，不能据此证明发音完美。
 - 固定脚本、模型 revision、权重哈希、声线与测量时序。字体、FFmpeg 和不同 CPU 环境可能影响像素或音频结果，不承诺跨环境字节完全一致。
@@ -47,11 +47,14 @@ python3 -m venv .venv
   --timeline output/rebuild/timeline.json --audio output/rebuild/narration.wav \
   --output output/rebuild
 .venv/bin/python verify.py --output output/rebuild
+.venv/bin/python cover.py --output output/rebuild-cover
 ```
 
 首次配音会下载固定版本的公开模型，无需提供商 key。默认使用本机的 STHeiti Medium 和 DIN Alternate 字体；其他系统应通过 `AUTODRIVE_CJK_FONT` 和 `AUTODRIVE_LATIN_FONT` 指定自己有权使用的字体。此仓库不分发字体文件。Pillow 固定为 12.3.0。
 
 `audio.py --limit 1` 是开发抽样，会隔离到 `output/audio-sample/`；不能作为成片依据。`render.py --preview` 在没有实测时间线时只生成标明预览用途的布局图；最终编码拒绝这种虚拟时序。
+
+`cover.py` 生成新的 1600×1200 B站封面和文字边界报告，不读取或修改原封面。11 处文案均落在 `(80,150,1520,1050)` 安全区内，兼容原生 4:3 与居中 16:9 预览；CLI 遇到已存在的输出文件会拒绝覆盖。2026-10-26 已在实际上传界面检查两种比例。新增封面附件单独记录校验值，不覆盖原 Release 的媒体、校验清单或证据包。
 
 依赖审计复现：
 
@@ -70,10 +73,27 @@ pip-audit -r audio-environment.txt --no-deps --disable-pip
 - [六平台文案](platform-copy.md)：B站、抖音、视频号、小红书、YouTube、X 的标题、正文、话题和合成内容披露。
 - [发布检查单](publishing-checklist.md)：官方资料与尚待账号界面确认的要求。
 - [音频来源与许可](audio-license.md)：Kokoro 固定声线、哈希、生成命令和回读限制。
-- [音频生成](audio.py)、[画面渲染](render.py)、[成片验收](verify.py)：完整制作链。
+- [音频生成](audio.py)、[画面渲染](render.py)、[成片验收](verify.py)、[双比例安全区封面](cover.py)：制作链。
 
 ## 发布状态的边界
 
 媒体生成和 GitHub 下载不代表六个社交平台已发布。每次发布还需确认账号、完成平台要求的声明，并保留提交后状态与实际作品链接。上传完成、审核中和公开可播放必须分别记录。私人账号标识和后台截图不进入公共仓库。
 
 本轮只制作单条项目介绍的两个比例与分平台文案，不授权定时发布、批量互动或多账号放大。视频明确标注合成配音和机制示意，没有真人声纹克隆或外部音乐。
+
+## 平台交付记录
+
+以下为对应日期的界面验证记录，不代表未来可用性或匿名访问保证：
+
+| 平台 | 状态 | 最近验证 |
+| --- | --- | --- |
+| [B站](https://www.bilibili.com/video/BV1odnD6bEpp/) | 已发布；公开作品页实际播放，4:3 封面和 AI 标识已检查 | 2026-10-26 |
+| [YouTube](https://www.youtube.com/watch?v=P3LjUDonfaU) | 已公开；实际播放至 1:24，独立中文字幕、转写和 AI 标识可见；非儿童向 | 2026-10-26 |
+| [X](https://x.com/eustancewu/status/2114308646717038680) | 已发布；登录态作品页实际播放，字幕和 AI 标识已检查 | 2026-10-25 |
+| 小红书 | 已发布；创作者列表与带平台查看令牌的作品页已验证播放；不公开保存该令牌 | 2026-10-25 |
+| 抖音 | 按用户要求保留其他项目旧草稿，本次未上传或发布 | 2026-10-26 |
+| 视频号 | 浏览器安全限制，未上传或发布；未尝试绕过限制 | 2026-10-26 |
+
+YouTube 自定义缩略图要求账号手机验证，本次使用平台提供的视频帧；未代办身份验证。平台版权检查显示无问题不等于法律保证。后台账号路由、提交回执及截图仅保存在被 Git 忽略的本机目录。
+
+封面增量验证：完整本地测试 33/33，独立封面复核 6/6；未修改模型、实验、运行时或依赖版本。仓库级 `bun audit` 在 2026-10-26 仍报告 408 项告警（9 critical、156 high、192 moderate、51 low），没有将测试通过表述为安全审核通过。`npm audit` 因本仓库无 npm lockfile 不适用，未为此创建或修改锁文件。
