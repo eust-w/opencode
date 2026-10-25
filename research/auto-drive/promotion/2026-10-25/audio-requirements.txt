@@ -1,0 +1,13 @@
+kokoro==0.9.4
+misaki[zh]==0.9.4
+soundfile==0.13.1
+torch==2.13.0
+transformers==4.51.3
+huggingface-hub==0.34.4
+numpy==2.2.6
+# Independent local transcription check, not used to generate the voice.
+openai-whisper==20250625
+numba==0.68.0
+llvmlite==0.50.0
+tiktoken==0.14.0
+more-itertools==11.2.1

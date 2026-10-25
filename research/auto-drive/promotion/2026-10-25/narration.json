@@ -11,9 +11,9 @@
     {"id": "stop", "eyebrow": "02 / STOP", "title": "该停的，停下来。", "subtitle": "完成，或不再继续", "lines": ["已经完成，或不该再继续，选择停止。"]},
     {"id": "defer", "eyebrow": "03 / DEFER", "title": "需要人，就交给人。", "subtitle": "信息不足 · 主观选择 · 扩大权限", "lines": ["缺少信息、需要主观选择，或者涉及扩大权限，就暂缓，交给用户。"]},
     {"id": "queue", "eyebrow": "PERSIST → ADMIT", "title": "先记录决定，\n再进入队列。", "subtitle": "持久决策 → 待处理输入 → 安全边界", "lines": ["三种决定，先写入会话记录。", "需要续推时，再进入持久队列。"]},
-    {"id": "priority", "eyebrow": "HUMAN FIRST", "title": "用户优先。\n续推有上限。", "subtitle": "新的用户输入优先 · 有限续推", "lines": ["用户的新输入优先处理。", "自动续推有次数上限，不能无限循环。"]},
+    {"id": "priority", "eyebrow": "HUMAN FIRST", "title": "用户引导优先。\n续推有上限。", "subtitle": "安全边界接入 steer · 有限续推", "lines": ["用户的引导输入，在安全边界优先接入。", "每条自动续推链，都有明确的次数上限。"]},
     {"id": "goal", "eyebrow": "研究目标", "title": "少一点“继续”，\n保留人的控制权。", "subtitle": "这是待验证的目标，不是效果承诺。", "lines": ["这套机制的目标，是减少反复输入继续，同时保留人的控制权。"]},
-    {"id": "evidence", "eyebrow": "OPEN RESEARCH", "title": "代码已公开。\n研究仍在进行。", "subtitle": "评测工具 / 论文草稿 / 未完成结果如实披露", "lines": ["代码、评测工具和论文草稿已经开源。", "完整对比与消融实验仍在进行，不把测试通过当成科研结论。"]},
+    {"id": "evidence", "eyebrow": "OPEN RESEARCH", "title": "代码已公开。\n研究尚未完成。", "subtitle": "评测工具 / 论文草稿 / 未完成结果如实披露", "lines": ["代码、评测工具和论文草稿已经开源。", "完整对比与消融实验尚未完成，不把测试通过当成科研结论。"]},
     {"id": "limits", "eyebrow": "EVIDENCE MATTERS", "title": "机制示意，\n不是性能跑分。", "subtitle": "不宣称已完成正式评测或已发表论文。", "lines": ["本片展示的是机制示意，不是性能跑分，也不是已发表的论文成果。"]},
     {"id": "outro", "eyebrow": "BUILD · REPRODUCE · QUESTION", "title": "什么时候继续？\n一起验证。", "subtitle": "GitHub · eust-w/opencode · auto-drive-engine", "lines": ["如果你也在探索长任务智能体，欢迎查看项目，复现实验。", "一起审视，它该继续，还是该停。"]}
   ]
